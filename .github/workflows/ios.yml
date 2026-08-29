@@ -37,6 +37,7 @@ jobs:
             -scheme TallinnTasteBuds
             -destination 'generic/platform=iOS Simulator'
             -configuration Debug
+            -derivedDataPath build
             CODE_SIGNING_ALLOWED=NO)
           # xcbeautify ships with the runner image, but the build must not fail
           # merely because a future image drops it.
@@ -45,3 +46,29 @@ jobs:
           else
             "${build[@]}"
           fi
+
+      - name: Check the generated Info.plist
+        shell: bash
+        run: |
+          set -euo pipefail
+          plist=build/Build/Products/Debug-iphonesimulator/TallinnTasteBuds.app/Info.plist
+          echo "--- Info.plist ---"
+          plutil -p "$plist"
+
+          fail=0
+          check() {
+            if plutil -p "$plist" | grep -q "$2"; then
+              echo "ok: $1"
+            else
+              echo "::error::$1 is missing from the built Info.plist"
+              fail=1
+            fi
+          }
+          # Background audio is what keeps the radio alive behind the lock
+          # screen; without it the app silently loses its one native trick.
+          check "background audio"        '"UIBackgroundModes" => \[' 
+          check "  the audio mode"        '"audio"'
+          check "location purpose string" '"NSLocationWhenInUseUsageDescription"'
+          check "display name"            '"CFBundleDisplayName" => "Tallinn Taste Buds"'
+          check "encryption answer"       '"ITSAppUsesNonExemptEncryption"'
+          exit $fail
