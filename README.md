@@ -83,6 +83,11 @@ The app is therefore useful on the plane and current in the city.
 
 ## Building it
 
+**Never opened Xcode before?** Read
+[docs/RUN-ON-YOUR-PHONE.md](docs/RUN-ON-YOUR-PHONE.md) instead — it walks through
+running the app in the simulator and on your own iPhone without writing a line of
+code or paying Apple anything.
+
 Requires Xcode 16 or later on macOS.
 
 ```sh
