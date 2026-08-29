@@ -22,6 +22,16 @@ final class RadioPlayer {
         }
     }
 
+    /// Follow a language change while playing. `data/radio.json` gives most
+    /// languages a station of their own, so the station is part of what the
+    /// language picker chooses — leaving the old one playing would make the
+    /// choice half-apply. Does nothing when the radio is off, or when both
+    /// languages share a station and there is nothing to move to.
+    func follow(_ station: RadioStation?) {
+        guard isPlaying, let station, station != self.station else { return }
+        play(station)
+    }
+
     func play(_ station: RadioStation) {
         failed = false
         do {

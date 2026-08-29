@@ -34,6 +34,15 @@ struct MapScreen: View {
             .background(theme.wash)
             .navigationTitle(store.strings("wordmark"))
             .navigationBarTitleDisplayMode(.inline)
+            .onChange(of: store.lang) { _, lang in
+                radio.follow(store.radio?.station(for: lang))
+            }
+            // A stream fails several seconds after the tap that started it, so
+            // the message has to wait for the failure rather than be looked for
+            // the instant the button is pressed.
+            .onChange(of: radio.failed) { _, failed in
+                if failed { show(store.strings("radioFail")) }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { languageMenu }
                 ToolbarItemGroup(placement: .topBarTrailing) {
@@ -172,9 +181,7 @@ struct MapScreen: View {
 
     private var radioButton: some View {
         Button {
-            let station = store.radio?.station(for: store.lang)
-            radio.toggle(station)
-            if radio.failed { show(store.strings("radioFail")) }
+            radio.toggle(store.radio?.station(for: store.lang))
         } label: {
             Image(systemName: radio.isPlaying ? "stop.circle" : "play.circle")
                 .accessibilityLabel(radio.isPlaying ? store.strings("radioStop") : store.strings("radioPlay"))
