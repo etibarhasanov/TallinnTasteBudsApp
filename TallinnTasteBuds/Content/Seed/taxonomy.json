@@ -1,0 +1,147 @@
+{
+  "types": [
+    {
+      "id": "casual",
+      "en": "Casual/Solo",
+      "et": "Vabas vormis/üksi",
+      "fi": "Rento/yksin",
+      "az": "Rahat/tək",
+      "ru": "Неформально/в одиночку",
+      "pt": "Casual/sozinho",
+      "es": "Informal/solo",
+      "tr": "Rahat/tek başına"
+    },
+    {
+      "id": "restaurant",
+      "en": "Restaurant",
+      "et": "Restoran",
+      "fi": "Ravintola",
+      "az": "Restoran",
+      "ru": "Ресторан",
+      "pt": "Restaurante",
+      "es": "Restaurante",
+      "tr": "Restoran"
+    },
+    {
+      "id": "bakery",
+      "en": "Bakery",
+      "et": "Pagariäri",
+      "fi": "Leipomo",
+      "az": "Çörəkxana",
+      "ru": "Пекарня",
+      "pt": "Padaria",
+      "es": "Panadería",
+      "tr": "Fırın"
+    },
+    {
+      "id": "coffee",
+      "en": "Coffee/tea",
+      "et": "Kohv/tee",
+      "fi": "Kahvi/tee",
+      "az": "Kofe/çay",
+      "ru": "Кофе/чай",
+      "pt": "Café/chá",
+      "es": "Café/té",
+      "tr": "Kahve/çay"
+    },
+    {
+      "id": "pub",
+      "en": "Beer/pub",
+      "et": "Õlu/pubi",
+      "fi": "Olut/pubi",
+      "az": "Pivə/pab",
+      "ru": "Пиво/паб",
+      "pt": "Cerveja/pub",
+      "es": "Cerveza/pub",
+      "tr": "Bira/pub"
+    },
+    {
+      "id": "hidden-gem",
+      "en": "Hidden gem",
+      "et": "Peidetud pärl",
+      "fi": "Piilohelmi",
+      "az": "Gizli inci",
+      "ru": "Находка",
+      "pt": "Joia escondida",
+      "es": "Joya escondida",
+      "tr": "Gizli cevher"
+    },
+    {
+      "id": "cheap-eats",
+      "en": "Cheap eats",
+      "et": "Soodne",
+      "fi": "Edullinen",
+      "az": "Ucuz",
+      "ru": "Недорого",
+      "pt": "Barato",
+      "es": "Barato",
+      "tr": "Hesaplı"
+    },
+    {
+      "id": "date",
+      "en": "Date night",
+      "et": "Kohting",
+      "fi": "Treffit",
+      "az": "Görüş",
+      "ru": "Свидание",
+      "pt": "Encontro",
+      "es": "Cita",
+      "tr": "Buluşma"
+    },
+    {
+      "id": "laptop",
+      "en": "Laptop friendly",
+      "et": "Sülearvutisõbralik",
+      "fi": "Läppärille sopiva",
+      "az": "Noutbukla işləmək",
+      "ru": "С ноутбуком",
+      "pt": "Bom para portátil",
+      "es": "Bueno para portátil",
+      "tr": "Laptopa uygun"
+    },
+    {
+      "id": "asian",
+      "en": "Asian",
+      "et": "Aasia",
+      "fi": "Aasialainen",
+      "az": "Asiya",
+      "ru": "Азиатская",
+      "pt": "Asiático",
+      "es": "Asiática",
+      "tr": "Asya"
+    },
+    {
+      "id": "vegan",
+      "en": "Vegan",
+      "et": "Vegan",
+      "fi": "Vegaani",
+      "az": "Vegan",
+      "ru": "Веганское",
+      "pt": "Vegano",
+      "es": "Vegano",
+      "tr": "Vegan"
+    },
+    {
+      "id": "fine-dining",
+      "en": "Fine dining",
+      "et": "Kõrgköök",
+      "fi": "Fine dining",
+      "az": "Yüksək mətbəx",
+      "ru": "Высокая кухня",
+      "pt": "Alta gastronomia",
+      "es": "Alta cocina",
+      "tr": "Fine dining"
+    },
+    {
+      "id": "caucasian",
+      "en": "Caucasus",
+      "et": "Kaukaasia",
+      "fi": "Kaukasia",
+      "az": "Qafqaz",
+      "ru": "Кавказская",
+      "pt": "Cáucaso",
+      "es": "Cáucaso",
+      "tr": "Kafkasya"
+    }
+  ]
+}

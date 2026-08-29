@@ -1,0 +1,47 @@
+name: build
+
+# Builds the app for the simulator on every push, so a change that does not
+# compile is caught here rather than the next time someone opens Xcode.
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build for iOS Simulator
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # The snapshot bundled into the build is checked first, on the same
+      # principle as the website's own validate step: bad data never ships.
+      - name: Validate the bundled snapshot
+        run: node Tools/validate-seed.mjs
+
+      - name: Show the selected Xcode
+        run: xcodebuild -version
+
+      - name: Build
+        shell: bash
+        run: |
+          set -o pipefail
+          build=(xcodebuild build
+            -project TallinnTasteBuds.xcodeproj
+            -scheme TallinnTasteBuds
+            -destination 'generic/platform=iOS Simulator'
+            -configuration Debug
+            CODE_SIGNING_ALLOWED=NO)
+          # xcbeautify ships with the runner image, but the build must not fail
+          # merely because a future image drops it.
+          if command -v xcbeautify >/dev/null 2>&1; then
+            "${build[@]}" | xcbeautify --renderer github-actions
+          else
+            "${build[@]}"
+          fi

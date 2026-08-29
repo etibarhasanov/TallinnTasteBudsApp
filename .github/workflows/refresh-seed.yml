@@ -1,0 +1,43 @@
+name: refresh-seed
+
+# The app reads its content from the website at runtime, so this workflow does
+# not keep the app up to date — the app does that by itself, on every launch.
+#
+# What this keeps current is the snapshot compiled into the build, which is only
+# what a reader sees on a first launch with no network. Weekly is plenty.
+
+on:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Pull the current content from the site
+        run: ./Tools/refresh-seed.sh
+
+      - name: Check it before committing it
+        run: node Tools/validate-seed.mjs
+
+      - name: Commit if anything changed
+        run: |
+          if git diff --quiet -- TallinnTasteBuds/Content/Seed; then
+            echo "snapshot already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add TallinnTasteBuds/Content/Seed
+          git commit -m "Refresh the bundled content snapshot from the website"
+          git push

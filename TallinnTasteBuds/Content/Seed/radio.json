@@ -1,0 +1,36 @@
+{
+  "default": {
+    "name": "Raadio Tallinn",
+    "url": "https://icecast.err.ee/raadiotallinn.mp3"
+  },
+  "byLanguage": {
+    "az": {
+      "name": "Anti Radio",
+      "url": "https://stream.antiradio.net/radio/8000/web"
+    },
+    "en": {
+      "name": "Radio Paradise",
+      "url": "https://stream.radioparadise.com/mp3-192"
+    },
+    "fi": {
+      "name": "YleX",
+      "url": "https://icecast.live.yle.fi/radio/YleX/icecast.audio"
+    },
+    "pt": {
+      "name": "Itapema FM",
+      "url": "https://playerservices.streamtheworld.com/api/livestream-redirect/ITA_FLO.mp3"
+    },
+    "ru": {
+      "name": "Наше Радио",
+      "url": "https://nashe1.hostingradio.ru/nashe-256"
+    },
+    "es": {
+      "name": "Loca FM Urban",
+      "url": "https://s1.we4stream.com:2020/stream/locaurban"
+    },
+    "tr": {
+      "name": "Joy Türk Rock",
+      "url": "https://playerservices.streamtheworld.com/api/livestream-redirect/JOYTURK_ROCK.mp3"
+    }
+  }
+}
