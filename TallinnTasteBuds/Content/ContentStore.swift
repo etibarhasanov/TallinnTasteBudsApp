@@ -158,16 +158,19 @@ final class ContentStore {
 
     func deal(for place: Place) -> Deal? { liveDeals[place.id] }
 
-    /// The filter chips: the taxonomy types that at least one place uses, plus
-    /// the discount chip when there is a live discount to filter to.
+    /// The filter chips, in the site's order: the discount first, because it is
+    /// the only one that is an offer rather than a description, then the
+    /// taxonomy types that at least one place uses, in taxonomy.json's own
+    /// order. "All" is drawn by the view ahead of both.
     var chips: [Chip] {
         let used = Set(places.flatMap(\.types))
-        var result = taxonomy.types
-            .filter { used.contains($0.id) }
-            .map { Chip(id: $0.id, label: $0.label(in: lang)) }
+        var result: [Chip] = []
         if !liveDeals.isEmpty {
             result.append(Chip(id: Self.dealFilter, label: strings("filterDiscount")))
         }
+        result += taxonomy.types
+            .filter { used.contains($0.id) }
+            .map { Chip(id: $0.id, label: $0.label(in: lang)) }
         return result
     }
 

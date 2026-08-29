@@ -54,13 +54,34 @@ struct MapScreen: View {
                 }
                 .annotationTitles(.hidden)
             }
-            if location.isAuthorised {
-                UserAnnotation()
+            if let here = location.location {
+                Annotation(store.strings("locateHere"), coordinate: here.coordinate) {
+                    hereDot
+                }
+                .annotationTitles(.hidden)
             }
         }
         .mapStyle(.standard(pointsOfInterest: .excludingAll))
         .mapControls { MapCompass() }
         .ignoresSafeArea(edges: .bottom)
+    }
+
+    /// Deliberately not a pin. The site gives "here" a colour of its own —
+    /// blue beside the red places, orange beside the green ones — so that the
+    /// one dot that is not a recommendation never reads as one.
+    private var hereDot: some View {
+        ZStack {
+            Circle()
+                .fill(theme.here.opacity(0.20))
+                .frame(width: 32, height: 32)
+            Circle()
+                .fill(theme.here)
+                .frame(width: 15, height: 15)
+            Circle()
+                .stroke(theme.paper, lineWidth: 2.5)
+                .frame(width: 15, height: 15)
+        }
+        .accessibilityLabel(store.strings("locateHere"))
     }
 
     private func pin(for place: Place) -> some View {
