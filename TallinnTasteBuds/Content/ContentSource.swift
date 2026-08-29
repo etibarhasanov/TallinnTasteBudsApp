@@ -9,9 +9,14 @@ import Foundation
 /// repo, push, and the change is live in the app the next time it refreshes.
 /// No App Store release is involved.
 enum ContentSource {
-    /// The production host. Cloudflare Pages serves `data/*` with
-    /// `must-revalidate`, so a conditional request is always answered honestly.
-    static let productionBase = URL(string: "https://tallinntastebuds.pages.dev")!
+    /// The production host — the site's own domain, the one its canonical tag
+    /// names. Cloudflare Pages serves `data/*` with `must-revalidate`, so a
+    /// conditional request is always answered honestly.
+    ///
+    /// The project's `tallinntastebuds.pages.dev` address serves the same files
+    /// from the same deployment and stays valid, so it is the address to fall
+    /// back to by hand if the domain ever has a bad day.
+    static let productionBase = URL(string: "https://tallinntastebuds.ee")!
 
     /// Overridable at runtime, so a preview deployment can be pointed at without
     /// a rebuild: set `ttb.contentBaseURL` in UserDefaults (or pass

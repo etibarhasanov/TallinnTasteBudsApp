@@ -29,7 +29,7 @@ enum AppStrings {
             .discountOffer: "Discount", .discountOpen: "Get the code",
             .about: "About", .openWebsite: "Open the website",
             .aboutBody: "Every place on this map has been visited and approved in person. There are no scores: being on the map is the verdict.",
-            .syncNote: "Places, text and photos come from tallinntastebuds.pages.dev, so the app shows whatever the website shows."
+            .syncNote: "Places, text and photos come from tallinntastebuds.ee, so the app shows whatever the website shows."
         ],
         "et": [
             .tabMap: "Kaart", .tabList: "Kohad", .tabSaved: "Salvestatud",
@@ -40,7 +40,7 @@ enum AppStrings {
             .discountOffer: "Soodustus", .discountOpen: "Võta kood",
             .about: "Teave", .openWebsite: "Ava veebileht",
             .aboutBody: "Igas selle kaardi kohas olen ise käinud ja selle heaks kiitnud. Hindeid pole: kaardil olemine ongi hinnang.",
-            .syncNote: "Kohad, tekstid ja pildid tulevad lehelt tallinntastebuds.pages.dev, seega rakendus näitab sedasama, mida veebileht."
+            .syncNote: "Kohad, tekstid ja pildid tulevad lehelt tallinntastebuds.ee, seega rakendus näitab sedasama, mida veebileht."
         ],
         "ru": [
             .tabMap: "Карта", .tabList: "Места", .tabSaved: "Сохранённое",
@@ -51,7 +51,18 @@ enum AppStrings {
             .discountOffer: "Скидка", .discountOpen: "Получить код",
             .about: "О приложении", .openWebsite: "Открыть сайт",
             .aboutBody: "В каждом месте на этой карте я был лично и одобрил его. Оценок нет: попадание на карту и есть оценка.",
-            .syncNote: "Места, тексты и фотографии берутся с tallinntastebuds.pages.dev, поэтому приложение показывает то же, что и сайт."
+            .syncNote: "Места, тексты и фотографии берутся с tallinntastebuds.ee, поэтому приложение показывает то же, что и сайт."
+        ],
+        "uk": [
+            .tabMap: "Карта", .tabList: "Місця", .tabSaved: "Збережені",
+            .sort: "Сортувати", .sortNearest: "Найближчі", .save: "Зберегти", .saved: "Збережено",
+            .savedEmpty: "Ще нічого не збережено.",
+            .savedEmptyHint: "Торкніться закладки біля місця, щоб воно лишилося тут.",
+            .appearance: "Вигляд", .appearanceSystem: "Системний",
+            .discountOffer: "Знижка", .discountOpen: "Отримати код",
+            .about: "Про застосунок", .openWebsite: "Відкрити сайт",
+            .aboutBody: "У кожному місці на цій карті я був особисто і схвалив його. Оцінок немає: потрапити на карту — це вже вирок.",
+            .syncNote: "Місця, тексти та фото беруться з tallinntastebuds.ee, тому застосунок показує те саме, що й сайт."
         ],
         "fi": [
             .tabMap: "Kartta", .tabList: "Paikat", .tabSaved: "Tallennetut",
@@ -62,7 +73,7 @@ enum AppStrings {
             .discountOffer: "Alennus", .discountOpen: "Hae koodi",
             .about: "Tietoja", .openWebsite: "Avaa sivusto",
             .aboutBody: "Olen käynyt jokaisessa tämän kartan paikassa itse ja hyväksynyt sen. Pisteitä ei ole: kartalla oleminen on tuomio.",
-            .syncNote: "Paikat, tekstit ja kuvat tulevat osoitteesta tallinntastebuds.pages.dev, joten sovellus näyttää saman kuin sivusto."
+            .syncNote: "Paikat, tekstit ja kuvat tulevat osoitteesta tallinntastebuds.ee, joten sovellus näyttää saman kuin sivusto."
         ],
         "az": [
             .tabMap: "Xəritə", .tabList: "Yerlər", .tabSaved: "Yadda saxlanan",
@@ -73,7 +84,7 @@ enum AppStrings {
             .discountOffer: "Endirim", .discountOpen: "Kodu al",
             .about: "Haqqında", .openWebsite: "Saytı aç",
             .aboutBody: "Bu xəritədəki hər yerdə özüm olmuşam və bəyənmişəm. Bal yoxdur: xəritədə olmaq elə qiymətdir.",
-            .syncNote: "Yerlər, mətnlər və şəkillər tallinntastebuds.pages.dev saytından gəlir, ona görə tətbiq saytda nə varsa onu göstərir."
+            .syncNote: "Yerlər, mətnlər və şəkillər tallinntastebuds.ee saytından gəlir, ona görə tətbiq saytda nə varsa onu göstərir."
         ],
         "pt": [
             .tabMap: "Mapa", .tabList: "Lugares", .tabSaved: "Guardados",
@@ -84,7 +95,7 @@ enum AppStrings {
             .discountOffer: "Desconto", .discountOpen: "Obter o código",
             .about: "Sobre", .openWebsite: "Abrir o site",
             .aboutBody: "Estive pessoalmente em todos os lugares deste mapa e aprovei-os. Não há pontuações: estar no mapa é o veredicto.",
-            .syncNote: "Os lugares, os textos e as fotos vêm de tallinntastebuds.pages.dev, por isso a aplicação mostra o mesmo que o site."
+            .syncNote: "Os lugares, os textos e as fotos vêm de tallinntastebuds.ee, por isso a aplicação mostra o mesmo que o site."
         ],
         "es": [
             .tabMap: "Mapa", .tabList: "Sitios", .tabSaved: "Guardados",
@@ -95,7 +106,7 @@ enum AppStrings {
             .discountOffer: "Descuento", .discountOpen: "Conseguir el código",
             .about: "Acerca de", .openWebsite: "Abrir la web",
             .aboutBody: "He estado en persona en todos los sitios de este mapa y los he aprobado. No hay puntuaciones: estar en el mapa es el veredicto.",
-            .syncNote: "Los sitios, los textos y las fotos vienen de tallinntastebuds.pages.dev, así que la app muestra lo mismo que la web."
+            .syncNote: "Los sitios, los textos y las fotos vienen de tallinntastebuds.ee, así que la app muestra lo mismo que la web."
         ],
         "tr": [
             .tabMap: "Harita", .tabList: "Mekânlar", .tabSaved: "Kaydedilenler",
@@ -106,7 +117,7 @@ enum AppStrings {
             .discountOffer: "İndirim", .discountOpen: "Kodu al",
             .about: "Hakkında", .openWebsite: "Siteyi aç",
             .aboutBody: "Bu haritadaki her mekâna kendim gittim ve onayladım. Puan yok: haritada olmak zaten karardır.",
-            .syncNote: "Mekânlar, metinler ve fotoğraflar tallinntastebuds.pages.dev adresinden gelir; yani uygulama sitede ne varsa onu gösterir."
+            .syncNote: "Mekânlar, metinler ve fotoğraflar tallinntastebuds.ee adresinden gelir; yani uygulama sitede ne varsa onu gösterir."
         ]
     ]
 }

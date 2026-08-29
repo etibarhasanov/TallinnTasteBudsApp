@@ -1,6 +1,6 @@
 # Tallinn Tastebuds — iOS app
 
-The iPhone and iPad app for [Tallinn Tastebuds](https://tallinntastebuds.pages.dev),
+The iPhone and iPad app for [Tallinn Tastebuds](https://tallinntastebuds.ee),
 built from the same content the website reads.
 
 SwiftUI, iOS 17 and later, no third-party dependencies.
@@ -21,7 +21,7 @@ the network**, from the same host.
    etibarhasanov/tallinntastebuds  (git push)
                  |
                  v
-   Cloudflare Pages — tallinntastebuds.pages.dev
+   Cloudflare Pages — tallinntastebuds.ee
                  |
         +--------+---------+
         |                  |

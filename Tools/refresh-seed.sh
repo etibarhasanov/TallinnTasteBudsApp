@@ -7,7 +7,7 @@
 # the site has not changed.
 set -euo pipefail
 
-BASE="${TTB_BASE:-https://tallinntastebuds.pages.dev}"
+BASE="${TTB_BASE:-https://tallinntastebuds.ee}"
 SEED="$(cd "$(dirname "$0")/.." && pwd)/TallinnTasteBuds/Content/Seed"
 
 for name in restaurants taxonomy ui deals radio; do
