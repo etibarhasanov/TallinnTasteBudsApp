@@ -75,9 +75,11 @@ Five or six shots is plenty. Worth showing:
 Turn the radio off before shooting: the stop icon in a screenshot invites
 questions you do not need during review.
 
-> If you would rather not produce iPad screenshots, say so and the app can be
-> made iPhone-only. It runs fine on iPad either way; this is purely about how
-> much you have to photograph.
+**Look at the iPad before you photograph it.** The app supports iPad and the
+layout adapts, but nobody has yet seen it on that screen — run it once in an
+iPad simulator and check the map, a place, and the list before shooting. If
+something reads badly at that width, it is worth fixing before the listing is
+built around a screenshot of it.
 
 ---
 
