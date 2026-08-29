@@ -161,7 +161,7 @@ struct MapScreen: View {
         Menu {
             Picker(store.app(.appearance), selection: $style) {
                 ForEach(StylePreference.allCases) { option in
-                    Text(option.label(store.strings)).tag(option)
+                    Text(store.app(option.labelKey)).tag(option)
                 }
             }
         } label: {

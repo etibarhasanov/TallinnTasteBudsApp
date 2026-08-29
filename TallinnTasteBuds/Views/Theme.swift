@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// The website's two styles, to the value, from `assets/styles.css`.
+/// The app's two styles.
 ///
-/// The site calls them Red and Green; Red is the light one and Green is the
-/// dark one, so the app maps them onto light and dark and offers the same
-/// choice the rail on the site does — plus "System", which a phone needs and a
-/// browser tab does not.
+/// Red is the site's own light palette, to the value, from `assets/styles.css`.
+/// The dark one is the app's: the site's dark style is a mint green, and this
+/// is pink, built on the same seven roles so that every screen keeps working
+/// without knowing which style it is drawing.
 struct Theme {
     let ink: Color
     let muted: Color
@@ -27,37 +27,40 @@ struct Theme {
         here: Color(hex: 0x0B62C4)
     )
 
-    static let green = Theme(
-        ink: Color(hex: 0xE7F1EA),
-        muted: Color(hex: 0xA2B7A9),
-        paper: Color(hex: 0x1D2A23),
-        wash: Color(hex: 0x101A15),
-        hairline: Color(hex: 0x354740),
-        accent: Color(hex: 0x6FD39A),
-        accentLit: Color(hex: 0x93E7B7),
-        here: Color(hex: 0xE0873A)
+    /// Plum paper under a pink accent. `here` goes cyan for the same reason it
+    /// goes orange in the site's green: the dot showing where you are has to be
+    /// the one thing on the map that is not the accent colour.
+    static let pink = Theme(
+        ink: Color(hex: 0xF6E8EE),
+        muted: Color(hex: 0xBFA2AE),
+        paper: Color(hex: 0x2A1B22),
+        wash: Color(hex: 0x170E13),
+        hairline: Color(hex: 0x443039),
+        accent: Color(hex: 0xF59AC0),
+        accentLit: Color(hex: 0xFFBCD7),
+        here: Color(hex: 0x56C8E0)
     )
 
     static func of(_ scheme: ColorScheme) -> Theme {
-        scheme == .dark ? .green : .red
+        scheme == .dark ? .pink : .red
     }
 }
 
-/// The reader's choice of style, persisted. The same two the site offers, and
-/// only those: a third option that follows the phone looks identical to
-/// whichever of these the phone is already set to, which is a choice that
-/// cannot be seen.
+/// The reader's choice of style, persisted. Two, and only two: a third option
+/// that follows the phone looks identical to whichever of these the phone is
+/// already set to, which is a choice that cannot be seen.
 enum StylePreference: String, CaseIterable, Identifiable {
-    case red, green
+    case red, pink
     var id: String { rawValue }
 
     var colorScheme: ColorScheme {
-        self == .green ? .dark : .light
+        self == .pink ? .dark : .light
     }
 
-    /// The label comes from `ui.json` so it is translated with everything else.
-    func label(_ strings: Strings) -> String {
-        self == .green ? strings("styleGreen") : strings("styleRed")
+    /// Named in the app's own strings rather than in `ui.json`. The site names
+    /// its dark style Green, and this one is not that.
+    var labelKey: AppStrings.Key {
+        self == .pink ? .stylePink : .styleRed
     }
 }
 
