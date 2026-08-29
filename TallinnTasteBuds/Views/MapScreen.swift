@@ -17,6 +17,9 @@ struct MapScreen: View {
     @Environment(\.theme) private var theme
 
     @State private var camera: MapCameraPosition = .region(MapScreen.tallinnRegion)
+    /// The pin MapKit says was tapped. Held only for the instant it takes to
+    /// turn into an open sheet.
+    @State private var selectedID: String?
     @State private var toast: String?
 
     static let tallinnRegion = MKCoordinateRegion(
@@ -55,12 +58,22 @@ struct MapScreen: View {
 
     private var places: [Place] { store.visiblePlaces(near: location.location) }
 
+    /// Taps are MapKit's job, not a Button's.
+    ///
+    /// A Button inside an annotation takes the touch that lands on it and keeps
+    /// it, so a pinch that happens to start with one finger over a pin never
+    /// forms and the map sits still. With seventy-odd pins on screen that is
+    /// not an edge case, it is most pinches. Handing selection to MapKit fixes
+    /// it at the root: the pin content is inert, MapKit does the hit-testing,
+    /// and it already knows the difference between a tap on a pin and the first
+    /// finger of a pinch.
     private var map: some View {
-        Map(position: $camera) {
+        Map(position: $camera, selection: $selectedID) {
             ForEach(places) { place in
                 Annotation(place.name, coordinate: place.coordinate, anchor: .center) {
                     pin(for: place)
                 }
+                .tag(place.id)
                 .annotationTitles(.hidden)
             }
             if let here = location.location {
@@ -73,6 +86,14 @@ struct MapScreen: View {
         .mapStyle(.standard(pointsOfInterest: .excludingAll))
         .mapControls { MapCompass() }
         .ignoresSafeArea(edges: .bottom)
+        .onChange(of: selectedID) { _, id in
+            guard let id, let place = store.place(id: id) else { return }
+            opened = place
+            // Let go of the selection immediately, so tapping the same pin
+            // again after closing the sheet opens it again rather than being
+            // a no-op against a selection that never changed.
+            selectedID = nil
+        }
     }
 
     /// Deliberately not a pin. The site gives "here" a colour of its own —
@@ -90,30 +111,29 @@ struct MapScreen: View {
                 .stroke(theme.paper, lineWidth: 2.5)
                 .frame(width: 15, height: 15)
         }
+        .allowsHitTesting(false)
         .accessibilityLabel(store.strings("locateHere"))
     }
 
+    /// Just a drawing. It carries no gesture of its own — see `map` above.
     private func pin(for place: Place) -> some View {
-        Button {
-            opened = place
-        } label: {
-            ZStack {
+        ZStack {
+            Circle()
+                .fill(place.closed ? theme.muted : theme.accent)
+                .frame(width: 16, height: 16)
+            Circle()
+                .stroke(theme.paper, lineWidth: 2.5)
+                .frame(width: 16, height: 16)
+            if store.deal(for: place) != nil {
                 Circle()
-                    .fill(place.closed ? theme.muted : theme.accent)
-                    .frame(width: 16, height: 16)
-                Circle()
-                    .stroke(theme.paper, lineWidth: 2.5)
-                    .frame(width: 16, height: 16)
-                if store.deal(for: place) != nil {
-                    Circle()
-                        .stroke(theme.accentLit, lineWidth: 2)
-                        .frame(width: 26, height: 26)
-                }
+                    .stroke(theme.accentLit, lineWidth: 2)
+                    .frame(width: 26, height: 26)
             }
-            .frame(width: 34, height: 34)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        // Bigger than the dot so a finger can find it, and a filled shape so
+        // MapKit counts the gap between the rings as part of the pin.
+        .frame(width: 32, height: 32)
+        .contentShape(Circle())
         .accessibilityLabel(store.strings("openPlace", ["name": place.name]))
     }
 
