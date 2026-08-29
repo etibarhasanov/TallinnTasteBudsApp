@@ -51,12 +51,20 @@ enum ContentSource {
     /// The website's own discount page. The rotating code is generated there and
     /// checked by the staff page against the same clock, so the app deliberately
     /// does not reimplement it — it opens the page the staff already trust.
-    static func dealURL(placeID: String, lang: String) -> URL {
+    ///
+    /// The place goes in as `r`, which is what `deal.js` reads. `spot` is the
+    /// map page's parameter and means nothing here: passing it leaves the page
+    /// with no place at all, and it says so politely instead of failing.
+    ///
+    /// `style` only knows the site's two, so the app's pink asks for the site's
+    /// dark rather than falling through to its light.
+    static func dealURL(placeID: String, lang: String, darkStyle: Bool) -> URL {
         var components = URLComponents(url: base.appendingPathComponent("deal.html"),
                                        resolvingAgainstBaseURL: false)!
         components.queryItems = [
-            URLQueryItem(name: "spot", value: placeID),
-            URLQueryItem(name: "lang", value: lang)
+            URLQueryItem(name: "r", value: placeID),
+            URLQueryItem(name: "lang", value: lang),
+            URLQueryItem(name: "style", value: darkStyle ? "green" : "red")
         ]
         return components.url!
     }

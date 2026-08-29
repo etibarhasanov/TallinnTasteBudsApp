@@ -10,6 +10,7 @@ struct PlaceDetailView: View {
     @Environment(ContentStore.self) private var store
     @Environment(Favourites.self) private var favourites
     @Environment(\.theme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
@@ -106,7 +107,11 @@ struct PlaceDetailView: View {
                 // Opened on the site rather than generated here: the code rotates
                 // on a clock the staff verifier shares, and two implementations of
                 // that would be one too many.
-                web = IdentifiedURL(url: ContentSource.dealURL(placeID: place.id, lang: store.lang))
+                web = IdentifiedURL(url: ContentSource.dealURL(
+                    placeID: place.id,
+                    lang: store.lang,
+                    darkStyle: colorScheme == .dark
+                ))
             }
             .font(.display(14))
             .foregroundStyle(theme.paper)
@@ -273,6 +278,7 @@ struct PhotoLightbox: View {
 
     @Environment(ContentStore.self) private var store
     @Environment(\.theme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
     @State private var current: Int = 0
 
