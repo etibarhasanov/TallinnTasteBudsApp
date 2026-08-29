@@ -110,7 +110,9 @@ final class ContentStore {
         if case .updated(let value) = dealsResult { deals = value }
         if case .updated(let value) = radioResult { radio = value }
 
-        let failed = [placesResult, typesResult, uiResult].contains { $0.failed }
+        // Checked one by one rather than through an array: each result is a
+        // different `Fetched<T>`, and there is no array that holds all five.
+        let failed = placesResult.failed || typesResult.failed || uiResult.failed
             || dealsResult.failed || radioResult.failed
         if failed {
             lastError = strings("loadError")
