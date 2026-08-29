@@ -11,6 +11,7 @@ struct AboutScreen: View {
         NavigationStack {
             List {
                 Section {
+                    mark
                     Text(store.app(.aboutBody))
                         .font(.running(16))
                         .foregroundStyle(theme.ink)
@@ -36,5 +37,25 @@ struct AboutScreen: View {
             .navigationTitle(store.app(.about))
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    /// The painting the map is named for, pulled from the site so that
+    /// repainting it there repaints it here.
+    private var mark: some View {
+        VStack(spacing: 10) {
+            RemoteImage(url: ContentSource.markURL, contentMode: .fit)
+                .frame(maxWidth: 220, maxHeight: 170)
+                .clipShape(RoundedRectangle(cornerRadius: 2))
+            Text(store.strings("wordmark"))
+                .font(.display(20, weight: .bold))
+                .foregroundStyle(theme.ink)
+            Text(store.strings("tagline"))
+                .font(.running(14))
+                .foregroundStyle(theme.muted)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .accessibilityElement(children: .combine)
     }
 }

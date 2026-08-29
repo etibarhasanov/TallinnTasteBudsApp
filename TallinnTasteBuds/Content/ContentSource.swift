@@ -56,6 +56,14 @@ enum ContentSource {
         return components.url!
     }
 
+    /// The identity mark: a photograph of the watercolour the site is named
+    /// for. Fetched rather than bundled, so repainting it on the site repaints
+    /// it here — only the app icon has to be a copy, because iOS draws that
+    /// before the app has run.
+    static var markURL: URL {
+        base.appendingPathComponent("assets/logo/mark.webp")
+    }
+
     static var instagramProfile: URL {
         URL(string: "https://www.instagram.com/tallinntastebuds/")!
     }

@@ -245,7 +245,7 @@ final class ContentStore {
     /// The list is a starting guess only — the real set comes from `ui.json`,
     /// and `settleLanguage()` corrects anything the site does not have.
     private static func preferredLanguage() -> String {
-        let offered = ["en", "et", "ru", "fi", "az", "pt", "es", "tr"]
+        let offered = ["en", "et", "ru", "uk", "fi", "az", "pt", "es", "tr"]
         for preferred in Locale.preferredLanguages {
             let code = String(preferred.prefix(2)).lowercased()
             if offered.contains(code) { return code }
