@@ -20,7 +20,18 @@ struct MapScreen: View {
     /// The pin MapKit says was tapped. Held only for the instant it takes to
     /// turn into an open sheet.
     @State private var selectedID: String?
+    /// Whether the map is close enough in to put names beside the pins.
+    @State private var showNames = false
     @State private var toast: String?
+
+    /// The site starts labelling at Leaflet zoom 14. On a phone that is a view
+    /// roughly two kilometres wide, and at Tallinn's latitude two kilometres of
+    /// longitude is about 0.034 degrees — so this is that threshold, expressed
+    /// in the units MapKit reports.
+    ///
+    /// MapKit declutters overlapping titles itself, which is the collision
+    /// planning the site has to do by hand.
+    static let nameSpan: CLLocationDegrees = 0.034
 
     static let tallinnRegion = MKCoordinateRegion(
         center: LocationProvider.tallinn,
@@ -74,7 +85,7 @@ struct MapScreen: View {
                     pin(for: place)
                 }
                 .tag(place.id)
-                .annotationTitles(.hidden)
+                .annotationTitles(showNames ? .visible : .hidden)
             }
             if let here = location.location {
                 Annotation(store.strings("locateHere"), coordinate: here.coordinate) {
@@ -86,6 +97,12 @@ struct MapScreen: View {
         .mapStyle(.standard(pointsOfInterest: .excludingAll))
         .mapControls { MapCompass() }
         .ignoresSafeArea(edges: .bottom)
+        // The site paints its labels on zoomend and moveend rather than during
+        // the gesture, and the same restraint suits here: names that appear
+        // halfway through a pinch are noise.
+        .onMapCameraChange(frequency: .onEnd) { context in
+            showNames = context.region.span.longitudeDelta < Self.nameSpan
+        }
         .onChange(of: selectedID) { _, id in
             guard let id, let place = store.place(id: id) else { return }
             opened = place
