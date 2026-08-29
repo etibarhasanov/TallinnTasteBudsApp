@@ -19,8 +19,8 @@ final class ContentStore {
     /// The raw `ui.json` table. `strings` below is the view onto it.
     private(set) var uiTable: [String: [String: String]] = [:]
 
-    /// When the content last came off the network, for the line in Settings.
-    /// Nil means everything on screen is the cached or seeded copy.
+    /// When the content last came off the network. Nil means everything on
+    /// screen is the cached or seeded copy.
     private(set) var lastSynced: Date?
     private(set) var isRefreshing = false
     private(set) var lastError: String?

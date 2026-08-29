@@ -10,11 +10,11 @@ struct RootView: View {
     /// share one detail sheet rather than each keeping their own.
     @State private var opened: Place?
 
-    enum Tab { case map, list, saved, settings }
+    enum Tab { case map, list, saved, about }
 
     var body: some View {
         TabView(selection: $selection) {
-            MapScreen(opened: $opened)
+            MapScreen(opened: $opened, style: $style)
                 .tabItem { Label(store.app(.tabMap), systemImage: "map") }
                 .tag(Tab.map)
 
@@ -26,9 +26,9 @@ struct RootView: View {
                 .tabItem { Label(store.app(.tabSaved), systemImage: "bookmark") }
                 .tag(Tab.saved)
 
-            SettingsScreen(style: $style)
-                .tabItem { Label(store.app(.tabSettings), systemImage: "gearshape") }
-                .tag(Tab.settings)
+            AboutScreen()
+                .tabItem { Label(store.app(.about), systemImage: "info.circle") }
+                .tag(Tab.about)
         }
         .tint(Theme.of(scheme).accent)
         .environment(\.theme, Theme.of(scheme))

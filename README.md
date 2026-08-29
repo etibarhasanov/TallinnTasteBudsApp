@@ -68,9 +68,11 @@ exist never does.
 
 ### Three layers, so it always draws something
 
-1. **The network.** Every launch and every return to the foreground revalidates
-   all five files against their stored ETags. An unchanged file costs a 304 and
-   no body.
+1. **The network.** Opening the app revalidates all five files against their
+   stored ETags — on a cold launch and on every return to the foreground. That
+   is the only time it fetches: there is no polling and no pull-to-refresh, so
+   the app is never quietly using the network behind you. An unchanged file
+   costs a 304 and no body.
 2. **The disk.** Whatever was last fetched, in Application Support. This is what
    the first frame draws, so the app never shows a spinner where the map goes.
 3. **The bundle.** A snapshot committed under `TallinnTasteBuds/Content/Seed/`,
@@ -135,7 +137,7 @@ TallinnTasteBuds/
     AppStrings.swift            the few words the app needs that the site has no equivalent for
     Seed/                       the offline snapshot (refreshed weekly)
   Services/                     location, saved places, radio
-  Views/                        map, list, detail, saved, settings
+  Views/                        map, list, detail, saved, about
 Tools/
   refresh-seed.sh               pull a current snapshot from the site
   validate-seed.mjs             check the snapshot against what the decoders need

@@ -28,7 +28,6 @@ struct ListScreen: View {
                 placement: .navigationBarDrawer(displayMode: .always),
                 prompt: store.strings("searchPlaceholder")
             )
-            .refreshable { await store.refresh() }
         }
     }
 

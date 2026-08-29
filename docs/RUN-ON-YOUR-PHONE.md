@@ -129,9 +129,9 @@ phones.
 | *"Unsupported Xcode version" / the project will not open* | Your Xcode is older than 16. Update it, or tell Claude. |
 | *"Failed to register bundle identifier"* | Someone already used that id. Change it as in step 4b. |
 | *"Untrusted Developer"* on the phone | Trust it: Settings → General → VPN & Device Management. |
-| App opens but the map is empty | It could not reach the site and has no snapshot yet. Check the phone's connection and pull down to refresh. |
+| App opens but the map is empty | It could not reach the site and has no snapshot yet. Check the phone's connection, then close the app fully and reopen it. |
 | App worked yesterday, now it will not open | The 7 days are up. Plug in, press ▶︎. |
-| Location button does nothing | Allow location when asked, or Settings → Tallinn Tastebuds → Location. |
+| Location button does nothing | Allow location when asked, or iPhone Settings → Tallinn Tastebuds → Location. |
 
 ## What you never have to do
 

@@ -9,6 +9,7 @@ import SwiftUI
 /// knows how to drive.
 struct MapScreen: View {
     @Binding var opened: Place?
+    @Binding var style: StylePreference
 
     @Environment(ContentStore.self) private var store
     @Environment(LocationProvider.self) private var location
@@ -34,7 +35,11 @@ struct MapScreen: View {
             .navigationTitle(store.strings("wordmark"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { radioButton }
+                ToolbarItem(placement: .topBarLeading) { languageMenu }
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    appearanceMenu
+                    radioButton
+                }
             }
         }
     }
@@ -108,6 +113,40 @@ struct MapScreen: View {
                 .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
         }
         .buttonStyle(.plain)
+    }
+
+    /// The site keeps language and colour in the rail beside the map, because
+    /// that is what they change. Same here, rather than a screen away.
+    private var languageMenu: some View {
+        Menu {
+            Picker(store.strings("language"), selection: languageBinding) {
+                ForEach(store.strings.languages) { language in
+                    Text(language.name).tag(language.code)
+                }
+            }
+        } label: {
+            Image(systemName: "globe")
+                .accessibilityLabel(store.strings("language"))
+        }
+    }
+
+    /// Written out rather than taken off `$store` so picking a language also
+    /// remembers it — that is what `select(language:)` is for.
+    private var languageBinding: Binding<String> {
+        Binding(get: { store.lang }, set: { store.select(language: $0) })
+    }
+
+    private var appearanceMenu: some View {
+        Menu {
+            Picker(store.app(.appearance), selection: $style) {
+                Text(store.app(.appearanceSystem)).tag(StylePreference.system)
+                Text(store.strings("styleRed")).tag(StylePreference.red)
+                Text(store.strings("styleGreen")).tag(StylePreference.green)
+            }
+        } label: {
+            Image(systemName: "circle.lefthalf.filled")
+                .accessibilityLabel(store.app(.appearance))
+        }
     }
 
     private var radioButton: some View {
