@@ -15,7 +15,7 @@ enum AppStrings {
     enum Key: String {
         case tabMap, tabList, tabSaved
         case sort, sortNearest, save, saved, savedEmpty, savedEmptyHint
-        case appearance, appearanceSystem
+        case appearance
         case discountOffer, discountOpen, about, aboutBody, openWebsite, syncNote
     }
 
@@ -25,7 +25,7 @@ enum AppStrings {
             .sort: "Sort", .sortNearest: "Nearest", .save: "Save", .saved: "Saved",
             .savedEmpty: "Nothing saved yet.",
             .savedEmptyHint: "Tap the bookmark on a place to keep it here.",
-            .appearance: "Appearance", .appearanceSystem: "System",
+            .appearance: "Appearance",
             .discountOffer: "Discount", .discountOpen: "Get the code",
             .about: "About", .openWebsite: "Open the website",
             .aboutBody: "Every place on this map has been visited and approved in person. There are no scores: being on the map is the verdict.",
@@ -36,7 +36,7 @@ enum AppStrings {
             .sort: "Järjesta", .sortNearest: "Lähim", .save: "Salvesta", .saved: "Salvestatud",
             .savedEmpty: "Midagi pole veel salvestatud.",
             .savedEmptyHint: "Puuduta koha juures järjehoidjat, et see siia jääks.",
-            .appearance: "Välimus", .appearanceSystem: "Süsteemne",
+            .appearance: "Välimus",
             .discountOffer: "Soodustus", .discountOpen: "Võta kood",
             .about: "Teave", .openWebsite: "Ava veebileht",
             .aboutBody: "Igas selle kaardi kohas olen ise käinud ja selle heaks kiitnud. Hindeid pole: kaardil olemine ongi hinnang.",
@@ -47,7 +47,7 @@ enum AppStrings {
             .sort: "Сортировка", .sortNearest: "Ближайшие", .save: "Сохранить", .saved: "Сохранено",
             .savedEmpty: "Пока ничего не сохранено.",
             .savedEmptyHint: "Нажмите закладку у места, чтобы оно осталось здесь.",
-            .appearance: "Оформление", .appearanceSystem: "Системное",
+            .appearance: "Оформление",
             .discountOffer: "Скидка", .discountOpen: "Получить код",
             .about: "О приложении", .openWebsite: "Открыть сайт",
             .aboutBody: "В каждом месте на этой карте я был лично и одобрил его. Оценок нет: попадание на карту и есть оценка.",
@@ -58,7 +58,7 @@ enum AppStrings {
             .sort: "Сортувати", .sortNearest: "Найближчі", .save: "Зберегти", .saved: "Збережено",
             .savedEmpty: "Ще нічого не збережено.",
             .savedEmptyHint: "Торкніться закладки біля місця, щоб воно лишилося тут.",
-            .appearance: "Вигляд", .appearanceSystem: "Системний",
+            .appearance: "Вигляд",
             .discountOffer: "Знижка", .discountOpen: "Отримати код",
             .about: "Про застосунок", .openWebsite: "Відкрити сайт",
             .aboutBody: "У кожному місці на цій карті я був особисто і схвалив його. Оцінок немає: потрапити на карту — це вже вирок.",
@@ -69,7 +69,7 @@ enum AppStrings {
             .sort: "Järjestä", .sortNearest: "Lähin", .save: "Tallenna", .saved: "Tallennettu",
             .savedEmpty: "Mitään ei ole vielä tallennettu.",
             .savedEmptyHint: "Napauta paikan kirjanmerkkiä, niin se jää tänne.",
-            .appearance: "Ulkoasu", .appearanceSystem: "Järjestelmä",
+            .appearance: "Ulkoasu",
             .discountOffer: "Alennus", .discountOpen: "Hae koodi",
             .about: "Tietoja", .openWebsite: "Avaa sivusto",
             .aboutBody: "Olen käynyt jokaisessa tämän kartan paikassa itse ja hyväksynyt sen. Pisteitä ei ole: kartalla oleminen on tuomio.",
@@ -80,7 +80,7 @@ enum AppStrings {
             .sort: "Sırala", .sortNearest: "Ən yaxın", .save: "Yadda saxla", .saved: "Saxlanıb",
             .savedEmpty: "Hələ heç nə saxlanmayıb.",
             .savedEmptyHint: "Yerin yanındakı əlfəcinə toxun ki, burada qalsın.",
-            .appearance: "Görünüş", .appearanceSystem: "Sistem",
+            .appearance: "Görünüş",
             .discountOffer: "Endirim", .discountOpen: "Kodu al",
             .about: "Haqqında", .openWebsite: "Saytı aç",
             .aboutBody: "Bu xəritədəki hər yerdə özüm olmuşam və bəyənmişəm. Bal yoxdur: xəritədə olmaq elə qiymətdir.",
@@ -91,7 +91,7 @@ enum AppStrings {
             .sort: "Ordenar", .sortNearest: "Mais perto", .save: "Guardar", .saved: "Guardado",
             .savedEmpty: "Ainda não guardou nada.",
             .savedEmptyHint: "Toque no marcador de um lugar para o manter aqui.",
-            .appearance: "Aspeto", .appearanceSystem: "Sistema",
+            .appearance: "Aspeto",
             .discountOffer: "Desconto", .discountOpen: "Obter o código",
             .about: "Sobre", .openWebsite: "Abrir o site",
             .aboutBody: "Estive pessoalmente em todos os lugares deste mapa e aprovei-os. Não há pontuações: estar no mapa é o veredicto.",
@@ -102,7 +102,7 @@ enum AppStrings {
             .sort: "Ordenar", .sortNearest: "Más cerca", .save: "Guardar", .saved: "Guardado",
             .savedEmpty: "Aún no has guardado nada.",
             .savedEmptyHint: "Toca el marcador de un sitio para que se quede aquí.",
-            .appearance: "Apariencia", .appearanceSystem: "Sistema",
+            .appearance: "Apariencia",
             .discountOffer: "Descuento", .discountOpen: "Conseguir el código",
             .about: "Acerca de", .openWebsite: "Abrir la web",
             .aboutBody: "He estado en persona en todos los sitios de este mapa y los he aprobado. No hay puntuaciones: estar en el mapa es el veredicto.",
@@ -113,7 +113,7 @@ enum AppStrings {
             .sort: "Sırala", .sortNearest: "En yakın", .save: "Kaydet", .saved: "Kaydedildi",
             .savedEmpty: "Henüz bir şey kaydedilmedi.",
             .savedEmptyHint: "Burada kalması için mekânın yer imine dokunun.",
-            .appearance: "Görünüm", .appearanceSystem: "Sistem",
+            .appearance: "Görünüm",
             .discountOffer: "İndirim", .discountOpen: "Kodu al",
             .about: "Hakkında", .openWebsite: "Siteyi aç",
             .aboutBody: "Bu haritadaki her mekâna kendim gittim ve onayladım. Puan yok: haritada olmak zaten karardır.",

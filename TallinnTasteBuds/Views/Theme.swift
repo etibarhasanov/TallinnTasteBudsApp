@@ -43,26 +43,21 @@ struct Theme {
     }
 }
 
-/// The reader's choice of style, persisted. `system` follows the phone.
+/// The reader's choice of style, persisted. The same two the site offers, and
+/// only those: a third option that follows the phone looks identical to
+/// whichever of these the phone is already set to, which is a choice that
+/// cannot be seen.
 enum StylePreference: String, CaseIterable, Identifiable {
-    case system, red, green
+    case red, green
     var id: String { rawValue }
 
-    var colorScheme: ColorScheme? {
-        switch self {
-        case .system: return nil
-        case .red: return .light
-        case .green: return .dark
-        }
+    var colorScheme: ColorScheme {
+        self == .green ? .dark : .light
     }
 
     /// The label comes from `ui.json` so it is translated with everything else.
     func label(_ strings: Strings) -> String {
-        switch self {
-        case .system: return strings("styleLabel")
-        case .red: return strings("styleRed")
-        case .green: return strings("styleGreen")
-        }
+        self == .green ? strings("styleGreen") : strings("styleRed")
     }
 }
 

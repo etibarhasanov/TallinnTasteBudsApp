@@ -160,9 +160,9 @@ struct MapScreen: View {
     private var appearanceMenu: some View {
         Menu {
             Picker(store.app(.appearance), selection: $style) {
-                Text(store.app(.appearanceSystem)).tag(StylePreference.system)
-                Text(store.strings("styleRed")).tag(StylePreference.red)
-                Text(store.strings("styleGreen")).tag(StylePreference.green)
+                ForEach(StylePreference.allCases) { option in
+                    Text(option.label(store.strings)).tag(option)
+                }
             }
         } label: {
             Image(systemName: "circle.lefthalf.filled")
