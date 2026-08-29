@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Keeps the radio alive once the app leaves the foreground.
+
+	     This cannot be expressed as a build setting: INFOPLIST_KEY_ only
+	     honours the keys Xcode has a name for, and UIBackgroundModes is not
+	     one of them, so INFOPLIST_KEY_UIBackgroundModes was accepted in
+	     silence and dropped. Xcode merges this file with the keys it
+	     generates, so everything else stays a build setting.
+
+	     It lives outside TallinnTasteBuds/ because that folder is a
+	     synchronised group: a plist inside it would also be copied into the
+	     bundle as a resource. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
+</dict>
+</plist>
