@@ -13,14 +13,15 @@ struct ListScreen: View {
         @Bindable var store = store
         NavigationStack {
             VStack(spacing: 0) {
+                head
                 FilterChips()
                 Divider().overlay(theme.hairline)
                 list
             }
             .background(theme.wash)
-            .navigationTitle(store.strings("listTitle"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) { BrandMark() }
                 ToolbarItem(placement: .topBarTrailing) { sortMenu($store.sort) }
             }
             .searchable(
@@ -33,6 +34,30 @@ struct ListScreen: View {
 
     private var places: [Place] {
         store.visiblePlaces(near: location.location)
+    }
+
+    /// The site's list head: the word the panel is standing in, over the name
+    /// of what is under it. The title used to be the navigation bar's, and the
+    /// bar now carries the logo instead — which is what the header had been
+    /// missing, a search field and a count of places and no sign of whose map
+    /// this is.
+    private var head: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(store.strings("listTitle"))
+                .font(.display(19, weight: .semibold))
+                .tracking(-0.4)
+                .foregroundStyle(theme.ink)
+            Text(store.strings("eyebrow").uppercased(with: Locale(identifier: store.lang)))
+                .font(.mono(10))
+                .tracking(1.6)   // the site's .16em, at 10px
+                .foregroundStyle(theme.muted)
+            Spacer(minLength: 0)
+        }
+        .lineLimit(1)
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
     }
 
     @ViewBuilder
