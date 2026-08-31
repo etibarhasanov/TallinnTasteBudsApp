@@ -147,23 +147,42 @@ struct MapScreen: View {
         }
         .onChange(of: selectedID) { _, id in
             guard let id, let group = groups.first(where: { $0.id == id }) else { return }
-            if let place = group.place {
-                opened = place
-            } else {
-                // Zoom in until the group comes apart, which is the only thing
-                // a cluster can usefully do when tapped.
-                withAnimation {
-                    let span = PinCluster.spanThatSplits(group, width: mapWidth)
-                    camera = .region(MKCoordinateRegion(
-                        center: group.coordinate,
-                        span: MKCoordinateSpan(latitudeDelta: span * 0.6, longitudeDelta: span)
-                    ))
-                }
-            }
             // Let go of the selection immediately, so tapping the same pin
             // again after closing the sheet opens it again rather than being
             // a no-op against a selection that never changed.
             selectedID = nil
+            if let place = group.place {
+                opened = place
+            } else {
+                zoom(into: group)
+            }
+        }
+    }
+
+    /// Tighten the view until the group comes apart, which is the only thing a
+    /// cluster can usefully do when tapped.
+    ///
+    /// Two things here are deliberate, and both are about not asking MapKit for
+    /// something it will refuse. A region it will not accept is not an error it
+    /// reports — it is an assertion, and the app goes down with it — so the
+    /// numbers are checked rather than assumed. And the camera moves on the
+    /// next turn of the run loop rather than inside the selection change that
+    /// asked for it: at that moment MapKit is still settling the selection, and
+    /// rewriting the camera underneath it is a re-entrant change to a view that
+    /// is already mid-update.
+    private func zoom(into group: PinCluster.Group) {
+        let span = PinCluster.spanThatSplits(group, width: mapWidth)
+        guard span.isFinite, span > 0,
+              CLLocationCoordinate2DIsValid(group.coordinate) else { return }
+        let region = MKCoordinateRegion(
+            center: group.coordinate,
+            span: MKCoordinateSpan(
+                latitudeDelta: min(span * 0.6, 90),
+                longitudeDelta: min(span, 180)
+            )
+        )
+        Task {
+            withAnimation { camera = .region(region) }
         }
     }
 

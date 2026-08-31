@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// The logo: the painting beside the name, the way the site's header card
-/// carries it.
+/// The logo: the mark beside the name, the way the site's header carries it.
 ///
 /// The site's reasoning for putting the two together, kept. Stacked, the mark
 /// was a picture parked in a corner with half a line of nothing beside it,
 /// which reads as something left there rather than as the logo. Beside the
-/// name it has a job.
+/// name it has a job. On a phone the site has since taken the card off the
+/// pair entirely and gone round with the crop, which is what this does.
 ///
 /// A navigation bar is one line tall, so the name does not break after
 /// "Tallinn" here the way it does on the site — but the lockup is the same
@@ -19,11 +19,6 @@ struct BrandMark: View {
     @Environment(ContentStore.self) private var store
     @Environment(MarkImage.self) private var mark
     @Environment(\.theme) private var theme
-
-    /// The crop is 82 by 64 on the site, and the aspect ratio is fixed here so
-    /// the lockup does not resize under the wordmark when the fetched copy
-    /// lands on top of the bundled one.
-    private static let aspect: CGFloat = 82.0 / 64.0
 
     var body: some View {
         HStack(spacing: 8) {
@@ -40,18 +35,24 @@ struct BrandMark: View {
         .accessibilityAddTraits(.isHeader)
     }
 
+    /// Round, and the square crop rather than the wide one — the site's own
+    /// change. This is not a picture on a page, it is the account's face at the
+    /// top of a map, in the position and at the size a profile picture
+    /// occupies; round is what that position means, and the mouth fills a
+    /// circle where the wide crop would have to be cut again to fit one.
+    ///
     /// Nothing is drawn until there is something to draw: the space is held so
     /// the wordmark does not jump sideways when the picture arrives.
     @ViewBuilder
     private var painting: some View {
         Group {
-            if let brand = mark.brand {
-                brand.resizable().aspectRatio(contentMode: .fill)
+            if let face = mark.pin {
+                face.resizable().aspectRatio(contentMode: .fill)
             } else {
                 Color.clear
             }
         }
-        .frame(width: height * Self.aspect, height: height)
-        .clipShape(RoundedRectangle(cornerRadius: 2))
+        .frame(width: height, height: height)
+        .clipShape(Circle())
     }
 }

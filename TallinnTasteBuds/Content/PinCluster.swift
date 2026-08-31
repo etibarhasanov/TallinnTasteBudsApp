@@ -14,8 +14,18 @@ import Foundation
 /// more x than a degree of longitude does, by 1/cos(latitude), so it is scaled
 /// before the two are compared.
 enum PinCluster {
-    /// The site's CLUSTER_PX.
-    static let spacing: Double = 52
+    /// The site's CLUSTER_PX: exactly as wide as a pin and its halo, and not a
+    /// point wider. A pin is 22 across with a 2.5 rim on each side, so two of
+    /// them 32 apart are two separate circles with daylight between them —
+    /// nothing to merge. Anything closer and one dot is sitting on the other,
+    /// which is the only thing grouping is here to fix.
+    ///
+    /// It used to be 52, a fingertip's width, on the theory that two pins you
+    /// cannot comfortably tap apart may as well be one. That grouped pairs the
+    /// eye could plainly see as two, and it fed the size ramp: a longer
+    /// distance groups more places, more places make bigger dots. Tapping is
+    /// not the problem the dots were solving — overlap is.
+    static let spacing: Double = 32
 
     /// The site's CLUSTER_ZOOM_MAX of 17, in the units MapKit reports. Zoom 14
     /// is about 0.034 degrees across on a phone, and each level halves it.
@@ -94,24 +104,30 @@ enum PinCluster {
 
     /// Past ten places the dot stops growing with every one of them and steps
     /// instead, and the count stops being a number anybody counts: it says
-    /// "10+". The site's tiers, unchanged.
+    /// "10+".
+    ///
+    /// The widths step by six and stop at 58. They used to run to 94, which is
+    /// most of a phone's width in one circle: a cluster of thirty stopped being
+    /// a mark on the map and became a hole in it, covering the streets you were
+    /// reading to decide whether to zoom in. A dot only has to be big enough to
+    /// hold its number and to rank against its neighbours, and 58 does both.
     private static let tiers: [(over: Int, label: Int, diameter: Double)] = [
-        (over: 50, label: 50, diameter: 94),
-        (over: 30, label: 30, diameter: 84),
-        (over: 20, label: 20, diameter: 74),
-        (over: 10, label: 10, diameter: 64)
+        (over: 50, label: 50, diameter: 58),
+        (over: 30, label: 30, diameter: 52),
+        (over: 20, label: 20, diameter: 46),
+        (over: 10, label: 10, diameter: 40)
     ]
 
-    /// Ten places is twice the radius of two, which is the whole of the rule
-    /// under the tiers: 24 and 4 are the only pair of round numbers that give
-    /// it — d(2) is 32, d(10) is 64, and 32 doubled is 64. The first tier picks
-    /// up at exactly the width ten left off at, so 10 and 10+ are the same
-    /// circle wearing different words, which is what they are.
-    ///
-    /// Against a 22 point pin at the small end and nearly four times one at the
-    /// big end, so a cluster is never mistaken for a place at any count.
+    /// Two is 32, the width of a pin and its halo — the smallest a cluster can
+    /// be and still not be mistaken for the one place it is standing in front
+    /// of — and every further place adds half a point of radius, so ten is 40.
+    /// The ramp is deliberately shallow: a cluster is a signpost, not a bar
+    /// chart. It has to say "more here than there" and stay out of the way of
+    /// the map underneath, and a dot that doubles its width by ten places does
+    /// neither. The first tier picks up at exactly the width ten left off at,
+    /// so 10 and 10+ are the same circle wearing different words.
     static func dotDiameter(_ count: Int) -> Double {
-        tier(count)?.diameter ?? 24 + Double(count) * 4
+        tier(count)?.diameter ?? 30 + Double(count)
     }
 
     static func shownCount(_ count: Int) -> String {

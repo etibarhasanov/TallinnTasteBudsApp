@@ -137,8 +137,17 @@ struct ClusterFace: View {
             .padding(-width / 2)
     }
 
+    /// The site's ring of eight, in ems of the number's own size, so the casing
+    /// thickens with the digits instead of thinning out under the big ones.
+    private static let casing: [CGPoint] = [
+        CGPoint(x: 0.09, y: 0.09), CGPoint(x: -0.09, y: 0.09),
+        CGPoint(x: 0.09, y: -0.09), CGPoint(x: -0.09, y: -0.09),
+        CGPoint(x: 0.12, y: 0), CGPoint(x: -0.12, y: 0),
+        CGPoint(x: 0, y: 0.12), CGPoint(x: 0, y: -0.12)
+    ]
+
     /// The count grows with the dot it sits in — a third of the width, so ten
-    /// places carry a 17 point number where two carry a 13 point one. A fixed
+    /// places carry a 14 point number where two carry a 12 point one. A fixed
     /// size was the whole reason the digits were hard to find: it read as a
     /// caption on a picture rather than as the thing the picture is there to
     /// count.
@@ -146,18 +155,24 @@ struct ClusterFace: View {
     /// The casing is the other half. Nothing is laid over the mark, so the
     /// digits sit straight on a photograph that runs from near-black in the gap
     /// of the mouth to near-white on the teeth, and the accent alone disappears
-    /// against the dark half of it. A halo of paper around the glyphs, the way
+    /// against the dark half of it. A ring of paper around the glyphs, the way
     /// a map label has always cased itself, carries them across both: it leaves
-    /// the picture untouched everywhere the letters are not. Stacked shadows
-    /// rather than the site's ring of eight offset copies, which is the same
-    /// idea said in the language SwiftUI has for it.
+    /// the picture untouched everywhere the letters are not.
+    ///
+    /// Drawn as eight offset copies, as on the site, rather than as stacked
+    /// shadows. A shadow is an offscreen pass per layer, and these are views
+    /// the map redraws on every frame of a pinch.
     private var number: some View {
-        Text(PinCluster.shownCount(count))
-            .font(.mono(diameter * 0.36))
-            .foregroundStyle(theme.accent)
-            .shadow(color: theme.paper, radius: diameter * 0.05)
-            .shadow(color: theme.paper, radius: diameter * 0.05)
-            .shadow(color: theme.paper, radius: diameter * 0.05)
+        let size = diameter * 0.36
+        let glyphs = Text(PinCluster.shownCount(count)).font(.mono(size))
+        return ZStack {
+            ForEach(Self.casing.indices, id: \.self) { index in
+                glyphs
+                    .foregroundStyle(theme.paper)
+                    .offset(x: Self.casing[index].x * size, y: Self.casing[index].y * size)
+            }
+            glyphs.foregroundStyle(theme.accent)
+        }
     }
 }
 
