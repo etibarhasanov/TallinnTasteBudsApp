@@ -46,11 +46,7 @@ struct PlaceRow: View {
                         .lineLimit(1)
                 }
 
-                if place.closed {
-                    Text(store.strings("closed"))
-                        .font(.mono(11))
-                        .foregroundStyle(theme.muted)
-                }
+                DepthMark(place: place)
             }
 
             Spacer(minLength: 0)

@@ -22,6 +22,11 @@ struct MapScreen: View {
     @State private var selectedID: String?
     /// Whether the map is close enough in to put names beside the pins.
     @State private var showNames = false
+    /// How wide a slice of the world is on screen, and how many points wide the
+    /// map is drawn — together they say how far apart two pins look, which is
+    /// what decides whether they share a dot.
+    @State private var visibleSpan = MapScreen.tallinnRegion.span.longitudeDelta
+    @State private var mapWidth: Double = 390
     @State private var toast: String?
 
     /// The site starts labelling at Leaflet zoom 14. On a phone that is a view
@@ -78,14 +83,31 @@ struct MapScreen: View {
     /// it at the root: the pin content is inert, MapKit does the hit-testing,
     /// and it already knows the difference between a tap on a pin and the first
     /// finger of a pinch.
+    /// What is actually drawn: one dot per group, where a group is usually one
+    /// place and sometimes several that would land on top of each other.
+    private var groups: [PinCluster.Group] {
+        PinCluster.groups(for: places, span: visibleSpan, width: mapWidth)
+    }
+
     private var map: some View {
         Map(position: $camera, selection: $selectedID) {
-            ForEach(places) { place in
-                Annotation(place.name, coordinate: place.coordinate, anchor: .center) {
-                    pin(for: place)
+            ForEach(groups) { group in
+                if let place = group.place {
+                    Annotation(place.name, coordinate: place.coordinate, anchor: .center) {
+                        PinFace(place: place)
+                            .accessibilityLabel(store.strings("openPlace", ["name": place.name]))
+                    }
+                    .tag(group.id)
+                    .annotationTitles(showNames ? .visible : .hidden)
+                } else {
+                    Annotation("", coordinate: group.coordinate, anchor: .center) {
+                        ClusterFace(count: group.places.count)
+                            .accessibilityLabel(store.strings(
+                                "clusterLabel", ["count": String(group.places.count)]))
+                    }
+                    .tag(group.id)
+                    .annotationTitles(.hidden)
                 }
-                .tag(place.id)
-                .annotationTitles(showNames ? .visible : .hidden)
             }
             if let here = location.location {
                 Annotation(store.strings("locateHere"), coordinate: here.coordinate) {
@@ -97,15 +119,38 @@ struct MapScreen: View {
         .mapStyle(.standard(pointsOfInterest: .excludingAll))
         .mapControls { MapCompass() }
         .ignoresSafeArea(edges: .bottom)
+        .background {
+            // How wide the map is drawn decides how far apart two pins look.
+            // A GeometryReader behind it rather than onGeometryChange, which
+            // arrived in iOS 18 and this app runs from 17.
+            GeometryReader { geo in
+                Color.clear
+                    .onAppear { mapWidth = geo.size.width }
+                    .onChange(of: geo.size.width) { _, width in mapWidth = width }
+            }
+        }
         // The site paints its labels on zoomend and moveend rather than during
         // the gesture, and the same restraint suits here: names that appear
         // halfway through a pinch are noise.
         .onMapCameraChange(frequency: .onEnd) { context in
-            showNames = context.region.span.longitudeDelta < Self.nameSpan
+            visibleSpan = context.region.span.longitudeDelta
+            showNames = visibleSpan < Self.nameSpan
         }
         .onChange(of: selectedID) { _, id in
-            guard let id, let place = store.place(id: id) else { return }
-            opened = place
+            guard let id, let group = groups.first(where: { $0.id == id }) else { return }
+            if let place = group.place {
+                opened = place
+            } else {
+                // Zoom in until the group comes apart, which is the only thing
+                // a cluster can usefully do when tapped.
+                withAnimation {
+                    let span = PinCluster.spanThatSplits(group, width: mapWidth)
+                    camera = .region(MKCoordinateRegion(
+                        center: group.coordinate,
+                        span: MKCoordinateSpan(latitudeDelta: span * 0.6, longitudeDelta: span)
+                    ))
+                }
+            }
             // Let go of the selection immediately, so tapping the same pin
             // again after closing the sheet opens it again rather than being
             // a no-op against a selection that never changed.
@@ -130,28 +175,6 @@ struct MapScreen: View {
         }
         .allowsHitTesting(false)
         .accessibilityLabel(store.strings("locateHere"))
-    }
-
-    /// Just a drawing. It carries no gesture of its own — see `map` above.
-    private func pin(for place: Place) -> some View {
-        ZStack {
-            Circle()
-                .fill(place.closed ? theme.muted : theme.accent)
-                .frame(width: 16, height: 16)
-            Circle()
-                .stroke(theme.paper, lineWidth: 2.5)
-                .frame(width: 16, height: 16)
-            if store.deal(for: place) != nil {
-                Circle()
-                    .stroke(theme.accentLit, lineWidth: 2)
-                    .frame(width: 26, height: 26)
-            }
-        }
-        // Bigger than the dot so a finger can find it, and a filled shape so
-        // MapKit counts the gap between the rings as part of the pin.
-        .frame(width: 32, height: 32)
-        .contentShape(Circle())
-        .accessibilityLabel(store.strings("openPlace", ["name": place.name]))
     }
 
     private var controls: some View {

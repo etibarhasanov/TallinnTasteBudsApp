@@ -57,6 +57,15 @@ struct PlaceDetailView: View {
     // MARK: - Pieces
 
     private var photos: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(store.strings("photos").uppercased())
+                .font(.mono(10))
+                .foregroundStyle(theme.muted)
+            photoStrip
+        }
+    }
+
+    private var photoStrip: some View {
         TabView {
             ForEach(Array(place.photos.enumerated()), id: \.offset) { index, file in
                 RemoteImage(url: ContentSource.photoURL(placeID: place.id, file: file))
@@ -80,15 +89,24 @@ struct PlaceDetailView: View {
                 .foregroundStyle(theme.ink)
             HStack(spacing: 8) {
                 PriceGauge(price: place.price, dimmed: place.closed)
-                Text(store.typeLabels(for: place).joined(separator: " · "))
-                    .font(.mono(12))
-                    .foregroundStyle(theme.muted)
+                DepthMark(place: place)
+            }
+            if !store.typeLabels(for: place).isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(store.strings("types").uppercased())
+                        .font(.mono(10))
+                        .foregroundStyle(theme.muted)
+                    Text(store.typeLabels(for: place).joined(separator: " · "))
+                        .font(.running(14))
+                        .foregroundStyle(theme.ink)
+                }
+                .padding(.top, 2)
             }
         }
     }
 
     private var closedNote: some View {
-        Text(store.strings("closedNote"))
+        Text(store.strings(place.closedNoteKey))
             .font(.mono(12))
             .foregroundStyle(theme.muted)
             .padding(12)
@@ -203,6 +221,15 @@ struct PlaceDetailView: View {
     }
 
     private var video: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(store.strings(place.isTikTok ? "video" : "reel").uppercased())
+                .font(.mono(10))
+                .foregroundStyle(theme.muted)
+            videoButton
+        }
+    }
+
+    private var videoButton: some View {
         Button {
             if let reel = place.reel { web = IdentifiedURL(url: reel) }
         } label: {

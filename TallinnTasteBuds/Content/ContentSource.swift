@@ -77,6 +77,11 @@ enum ContentSource {
         base.appendingPathComponent("assets/logo/mark.webp")
     }
 
+    /// The square crop, shown round. Every pin on the map wears it.
+    static var roundMarkURL: URL {
+        base.appendingPathComponent("assets/logo/mark-round.webp")
+    }
+
     static var instagramProfile: URL {
         URL(string: "https://www.instagram.com/tallinntastebuds/")!
     }

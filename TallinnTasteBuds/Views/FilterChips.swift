@@ -26,6 +26,7 @@ struct FilterChips: View {
             .padding(.vertical, 8)
         }
         .background(theme.wash)
+        .accessibilityLabel(store.strings("filters"))
     }
 
     private func chip(label: String, selected: Bool, action: @escaping () -> Void) -> some View {

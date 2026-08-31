@@ -6,6 +6,7 @@ struct TallinnTasteBudsApp: App {
     @State private var favourites = Favourites()
     @State private var location = LocationProvider()
     @State private var radio = RadioPlayer()
+    @State private var mark = MarkImage()
     @AppStorage("ttb.style") private var style: StylePreference = .paper
     @Environment(\.scenePhase) private var scenePhase
 
@@ -16,12 +17,14 @@ struct TallinnTasteBudsApp: App {
                 .environment(favourites)
                 .environment(location)
                 .environment(radio)
+                .environment(mark)
                 .preferredColorScheme(style.colorScheme)
                 .task {
                     // The first refresh happens behind the cached copy that is
                     // already on screen, so the app never shows a spinner where
                     // the map should be.
                     await store.refresh()
+                    await mark.refresh()
                 }
                 .onChange(of: scenePhase) { _, phase in
                     // Coming back to the app is the natural moment to pick up an
