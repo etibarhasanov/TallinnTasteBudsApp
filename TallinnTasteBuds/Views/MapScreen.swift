@@ -28,6 +28,9 @@ struct MapScreen: View {
     @State private var visibleSpan = MapScreen.tallinnRegion.span.longitudeDelta
     @State private var mapWidth: Double = 390
     @State private var toast: String?
+    /// Whether the filter row is unrolled. Shut is the map's default state, and
+    /// on the site shut also means "All" — see `FilterDrawer`.
+    @State private var filtersOpen = false
 
     /// The site starts labelling at Leaflet zoom 14. On a phone that is a view
     /// roughly two kilometres wide, and at Tallinn's latitude two kilometres of
@@ -51,7 +54,6 @@ struct MapScreen: View {
                 if let toast { toastView(toast) }
             }
             .background(theme.wash)
-            .navigationTitle(store.strings("wordmark"))
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: store.lang) { _, lang in
                 radio.follow(store.radio?.station(for: lang))
@@ -64,6 +66,10 @@ struct MapScreen: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { languageMenu }
+                // The site's header card, as much of it as a navigation bar
+                // holds: the painting beside the name, rather than the name on
+                // its own.
+                ToolbarItem(placement: .principal) { BrandMark() }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     appearanceMenu
                     radioButton
@@ -102,8 +108,11 @@ struct MapScreen: View {
                 } else {
                     Annotation("", coordinate: group.coordinate, anchor: .center) {
                         ClusterFace(count: group.places.count)
+                            // The count the dot is wearing, which past ten is
+                            // "10+" rather than a number.
                             .accessibilityLabel(store.strings(
-                                "clusterLabel", ["count": String(group.places.count)]))
+                                "clusterLabel",
+                                ["count": PinCluster.shownCount(group.places.count)]))
                     }
                     .tag(group.id)
                     .annotationTitles(.hidden)
@@ -177,10 +186,17 @@ struct MapScreen: View {
         .accessibilityLabel(store.strings("locateHere"))
     }
 
+    /// Everything standing on top of the map.
+    ///
+    /// It carries no ground of its own, and that is load-bearing rather than
+    /// decorative: a background here is a surface, and a surface takes the
+    /// touches that land on it away from the map underneath. The chips and the
+    /// buttons each carry their own paper, and the gaps between them are map.
     private var controls: some View {
         VStack(spacing: 0) {
-            FilterChips()
-                .background(.thinMaterial)
+            FilterDrawer(open: $filtersOpen)
+                .padding(.horizontal, 12)
+                .padding(.top, 8)
             Spacer()
             HStack(spacing: 10) {
                 actionButton(icon: "die.face.5", label: store.strings("randomPick"), action: surpriseMe)
@@ -190,19 +206,32 @@ struct MapScreen: View {
         }
     }
 
+    /// The site's rail buttons: a pill in paper, the label in small uppercase
+    /// mono, and the icon alone carrying the accent.
     private func actionButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Label(label, systemImage: icon)
-                .font(.display(13))
-                .labelStyle(.titleAndIcon)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(theme.paper)
-                .foregroundStyle(theme.ink)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
-                .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundStyle(theme.accent)
+                // Uppercased in the reader's own language, because the site
+                // does it in CSS and Turkish and Azerbaijani do not agree with
+                // English about what the capital of an "i" is.
+                Text(label.uppercased(with: Locale(identifier: store.lang)))
+                    .font(.mono(10))
+                    .tracking(1.3)   // the site's .13em, at 10px
+                    .foregroundStyle(theme.ink)
+            }
+            .padding(.leading, 11)
+            .padding(.trailing, 14)
+            .padding(.vertical, 9)
+            .background(theme.paper)
+            .clipShape(Capsule())
+            .overlay { Capsule().stroke(theme.hairline, lineWidth: 1) }
+            .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 
     /// The site keeps language and colour in the rail beside the map, because
@@ -300,15 +329,19 @@ struct MapScreen: View {
         }
     }
 
+    /// The site's toast: ink, not paper. It is the one thing on the map that is
+    /// neither a place nor a control, and inverting it is what says so.
     private func toastView(_ message: String) -> some View {
         Text(message)
-            .font(.mono(12))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(theme.paper)
-            .foregroundStyle(theme.ink)
-            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .font(.mono(11.5))
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 9)
+            .foregroundStyle(theme.paper)
+            .background(theme.ink)
+            .clipShape(Capsule())
             .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
+            .padding(.horizontal, 16)
             .padding(.top, 60)
             .transition(.opacity)
             .accessibilityAddTraits(.isStaticText)

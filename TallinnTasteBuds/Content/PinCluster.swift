@@ -89,4 +89,36 @@ enum PinCluster {
         guard !places.isEmpty else { return 59.437 }
         return places.reduce(0) { $0 + $1.lat } / Double(places.count)
     }
+
+    // MARK: - How big the dot is, and what it says
+
+    /// Past ten places the dot stops growing with every one of them and steps
+    /// instead, and the count stops being a number anybody counts: it says
+    /// "10+". The site's tiers, unchanged.
+    private static let tiers: [(over: Int, label: Int, diameter: Double)] = [
+        (over: 50, label: 50, diameter: 94),
+        (over: 30, label: 30, diameter: 84),
+        (over: 20, label: 20, diameter: 74),
+        (over: 10, label: 10, diameter: 64)
+    ]
+
+    /// Ten places is twice the radius of two, which is the whole of the rule
+    /// under the tiers: 24 and 4 are the only pair of round numbers that give
+    /// it — d(2) is 32, d(10) is 64, and 32 doubled is 64. The first tier picks
+    /// up at exactly the width ten left off at, so 10 and 10+ are the same
+    /// circle wearing different words, which is what they are.
+    ///
+    /// Against a 22 point pin at the small end and nearly four times one at the
+    /// big end, so a cluster is never mistaken for a place at any count.
+    static func dotDiameter(_ count: Int) -> Double {
+        tier(count)?.diameter ?? 24 + Double(count) * 4
+    }
+
+    static func shownCount(_ count: Int) -> String {
+        tier(count).map { "\($0.label)+" } ?? String(count)
+    }
+
+    private static func tier(_ count: Int) -> (over: Int, label: Int, diameter: Double)? {
+        tiers.first { count > $0.over }
+    }
 }

@@ -47,7 +47,7 @@ struct PinFace: View {
 
     @ViewBuilder
     private var face: some View {
-        if let image = mark.image {
+        if let image = mark.pin {
             image.resizable().aspectRatio(contentMode: .fill)
         } else {
             Circle().fill(tone)
@@ -86,21 +86,78 @@ struct PinFace: View {
 
 /// The count on a cluster: several places sharing one dot because at this zoom
 /// they would otherwise be a smear.
+///
+/// The site's reasoning, kept. It is the same mark every pin is, at the same
+/// full strength — the places it stands for are places — with the count written
+/// straight onto it in the style's own accent. It still never reads as a place:
+/// a pin wears the accent as a collar, a cluster is ringed in paper instead and
+/// wears the accent as the number, and it is bigger than any pin at every
+/// count.
 struct ClusterFace: View {
     let count: Int
 
+    @Environment(MarkImage.self) private var mark
     @Environment(\.theme) private var theme
 
+    private var diameter: CGFloat { CGFloat(PinCluster.dotDiameter(count)) }
+
+    /// Two places under one dot is barely a crowd — it is the pair of doors you
+    /// could not tell apart at this zoom — and it keeps the quiet paper rim.
+    /// Past two the rim takes the style's own colour, the same red the number
+    /// inside it is written in, so the dots worth pressing are the ones the map
+    /// says something with.
+    private var many: Bool { count > 2 }
+
     var body: some View {
-        Text("\(count)")
-            .font(.display(13, weight: .semibold))
-            .foregroundStyle(theme.paper)
-            .frame(width: 30, height: 30)
-            .background(Circle().fill(theme.accent))
-            .overlay { Circle().stroke(theme.paper, lineWidth: 2) }
+        face
+            .frame(width: diameter, height: diameter)
+            .clipShape(Circle())
+            .overlay { rim }
+            .overlay { number }
             .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
-            .frame(width: 44, height: 44)
+            .frame(width: max(diameter, 44), height: max(diameter, 44))
             .contentShape(Circle())
+    }
+
+    @ViewBuilder
+    private var face: some View {
+        if let image = mark.pin {
+            image.resizable().aspectRatio(contentMode: .fill)
+        } else {
+            Circle().fill(theme.paper)
+        }
+    }
+
+    /// A stroke sits centred on its path, so half of it is pushed back out to
+    /// sit outside the face rather than over it.
+    private var rim: some View {
+        let width: CGFloat = many ? 3 : 2.5
+        return Circle()
+            .stroke(many ? theme.accent : theme.paper, lineWidth: width)
+            .padding(-width / 2)
+    }
+
+    /// The count grows with the dot it sits in — a third of the width, so ten
+    /// places carry a 17 point number where two carry a 13 point one. A fixed
+    /// size was the whole reason the digits were hard to find: it read as a
+    /// caption on a picture rather than as the thing the picture is there to
+    /// count.
+    ///
+    /// The casing is the other half. Nothing is laid over the mark, so the
+    /// digits sit straight on a photograph that runs from near-black in the gap
+    /// of the mouth to near-white on the teeth, and the accent alone disappears
+    /// against the dark half of it. A halo of paper around the glyphs, the way
+    /// a map label has always cased itself, carries them across both: it leaves
+    /// the picture untouched everywhere the letters are not. Stacked shadows
+    /// rather than the site's ring of eight offset copies, which is the same
+    /// idea said in the language SwiftUI has for it.
+    private var number: some View {
+        Text(PinCluster.shownCount(count))
+            .font(.mono(diameter * 0.36))
+            .foregroundStyle(theme.accent)
+            .shadow(color: theme.paper, radius: diameter * 0.05)
+            .shadow(color: theme.paper, radius: diameter * 0.05)
+            .shadow(color: theme.paper, radius: diameter * 0.05)
     }
 }
 

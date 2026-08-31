@@ -19,19 +19,22 @@ for name in restaurants taxonomy ui deals radio; do
   mv "$tmp" "$SEED/$name.json"
 done
 
-# The pin face travels with the data: it is the one picture the app draws
-# before it has fetched anything, and every pin on the map wears it.
+# The two crops of the painting travel with the data, because they are the
+# pictures the app draws before it has fetched anything: the round one is worn
+# by every pin on the map, and the wide one is the logo in the header.
 MEDIA="$(cd "$(dirname "$0")/.." && pwd)/TallinnTasteBuds/Content/Media"
-tmp="$(mktemp)"
-echo "fetching $BASE/assets/logo/mark-round.webp"
-curl -fsSL "$BASE/assets/logo/mark-round.webp" -o "$tmp"
-# A WebP begins "RIFF....WEBP"; anything else is an error page in disguise.
-if head -c 4 "$tmp" | grep -q RIFF; then
-  mv "$tmp" "$MEDIA/mark-round.webp"
-else
-  echo "refusing to overwrite the mark with something that is not a WebP" >&2
-  rm -f "$tmp"
-  exit 1
-fi
+for crop in mark-round mark; do
+  tmp="$(mktemp)"
+  echo "fetching $BASE/assets/logo/$crop.webp"
+  curl -fsSL "$BASE/assets/logo/$crop.webp" -o "$tmp"
+  # A WebP begins "RIFF....WEBP"; anything else is an error page in disguise.
+  if head -c 4 "$tmp" | grep -q RIFF; then
+    mv "$tmp" "$MEDIA/$crop.webp"
+  else
+    echo "refusing to overwrite $crop with something that is not a WebP" >&2
+    rm -f "$tmp"
+    exit 1
+  fi
+done
 
 echo "seed updated in $SEED"

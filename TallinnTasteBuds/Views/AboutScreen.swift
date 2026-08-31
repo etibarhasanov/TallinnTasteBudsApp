@@ -4,6 +4,7 @@ import SwiftUI
 /// appearance live on the map itself, next to what they change.
 struct AboutScreen: View {
     @Environment(ContentStore.self) private var store
+    @Environment(MarkImage.self) private var marks
     @Environment(\.theme) private var theme
     @Environment(\.openURL) private var openURL
 
@@ -39,13 +40,21 @@ struct AboutScreen: View {
         }
     }
 
-    /// The painting the map is named for, pulled from the site so that
-    /// repainting it there repaints it here.
+    /// The painting the map is named for. Bundled so the screen is not a grey
+    /// rectangle on a plane, and replaced by the site's own copy when that
+    /// arrives, so repainting it there repaints it here.
+    @ViewBuilder
     private var mark: some View {
         VStack(spacing: 10) {
-            RemoteImage(url: ContentSource.markURL, contentMode: .fit)
-                .frame(maxWidth: 220, maxHeight: 170)
-                .clipShape(RoundedRectangle(cornerRadius: 2))
+            Group {
+                if let painting = marks.brand {
+                    painting.resizable().aspectRatio(contentMode: .fit)
+                } else {
+                    RemoteImage(url: ContentSource.markURL, contentMode: .fit)
+                }
+            }
+            .frame(maxWidth: 220, maxHeight: 170)
+            .clipShape(RoundedRectangle(cornerRadius: 2))
             Text(store.strings("wordmark"))
                 .font(.display(20, weight: .bold))
                 .foregroundStyle(theme.ink)

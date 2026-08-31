@@ -55,7 +55,8 @@ for (const lang of languages) {
 }
 // The app reads these by name; a rename on the site would show the key instead.
 const usedKeys = [
-  'wordmark', 'listTitle', 'listNew', 'listAlphabet', 'searchPlaceholder', 'searchNone',
+  'wordmark', 'tagline', 'eyebrow', 'listTitle', 'listNew', 'listAlphabet',
+  'searchPlaceholder', 'searchNone', 'filters', 'filtersButton', 'clusterLabel',
   'listCount', 'listCountOne', 'filterAll', 'filterDiscount', 'noResults', 'close',
   'closed', 'closedNote', 'address', 'phone', 'visited', 'mustOrder', 'notFilmed',
   'directions', 'call', 'website', 'photoOf', 'photoClose', 'reelPlay', 'videoPlay',
