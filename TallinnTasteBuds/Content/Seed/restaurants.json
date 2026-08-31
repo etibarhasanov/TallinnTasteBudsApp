@@ -118,7 +118,7 @@
       "caucasian"
     ],
     "blurb": {
-      "az": "Tallinndə ən autentik Azərbaycan mətbəxi. Kofta, dolma, hangal, piti, plov, lamb plov.",
+      "az": "Tallində ən autentik Azərbaycan mətbəxi. Kiftə, dolma, yarpaq xəngəli, piti, plov, quzu ətindən plov, düşbərə və sairə. Nuşi can!",
       "en": "The most authentic Azerbaijani cooking in Tallinn. Kofta, dolma, hangal, piti, plov, lamb plov.",
       "et": "Tallinna kõige autentsem aserbaidžaani köök. Kofta, dolma, hangal, piti, plov, lamb plov.",
       "fi": "Tallinnan aidoin azerbaidžanilainen keittiö. Kofta, dolma, hangal, piti, plov, lamb plov.",
@@ -137,7 +137,11 @@
       "Lamb plov"
     ],
     "reel": "",
-    "photos": [],
+    "photos": [
+      "01.webp",
+      "02.webp",
+      "03.webp"
+    ],
     "website": "https://badam.ee/",
     "phone": "+372 5821 4430",
     "added": "2026-08-28",
@@ -172,6 +176,43 @@
     "website": "",
     "phone": "+372 5633 3113",
     "added": "2026-08-24",
+    "closed": false
+  },
+  {
+    "id": "balta-chill",
+    "name": "Balta Chill",
+    "address": "Vana-Kalamaja 3, 10415 Tallinn",
+    "lat": 59.4416944,
+    "lng": 24.7382778,
+    "price": 1,
+    "types": [
+      "pub",
+      "hidden-gem",
+      "casual"
+    ],
+    "blurb": {
+      "az": "Vana-Kalamaja yaxınlığında gizli bir həyət, haqqında kiminsə sənə danışması lazımdır. Hər taxtada qraffiti, içəri də eyni cür. Bura sadəcə dincəlmək üçün yerdir, adın ikinci yarısı elə bunu deyir. Qapı açılmasa, döy. Bəlkə səni içəri buraxdılar.",
+      "en": "A hidden yard off Vana-Kalamaja that somebody has to tell you about. Graffiti on every board, and a room to match. It is a place made for chilling, which is the half of the name that says so. If the door does not open, knock. They might let you in.",
+      "et": "Peidetud hoov Vana-Kalamaja ääres, millest keegi peab sulle rääkima. Grafiti igal laual ja tuba sama nägu. See on koht lihtsalt olemiseks, nagu nime teine pool ütlebki. Kui uks lahti ei lähe, koputa. Võib-olla lastakse sind sisse.",
+      "fi": "Piilotettu piha Vana-Kalamajan kupeessa, josta jonkun täytyy kertoa sinulle. Grafitia joka laudassa, ja sisätila samaa maata. Tämä on paikka pelkkään oleiluun, niin kuin nimen toinen puoli sanoo. Jos ovi ei aukea, koputa. Sinut saatetaan päästää sisään.",
+      "pt": "Um pátio escondido ao pé da Vana-Kalamaja, daqueles que alguém te tem de contar. Graffiti em cada tábua, e a sala a condizer. É um sítio feito para descontrair, que é o que diz a segunda metade do nome. Se a porta não abrir, bate. Podem deixar-te entrar.",
+      "ru": "Спрятанный двор у Вана-Каламая, о котором кто-то должен тебе рассказать. Граффити на каждой доске, и комната такая же. Это место для того, чтобы просто посидеть, о чём вторая половина названия и говорит. Если дверь не открывается, постучи. Могут впустить.",
+      "es": "Un patio escondido junto a Vana-Kalamaja, de los que alguien te tiene que contar. Grafiti en cada tabla, y la sala a juego. Es un sitio hecho para estar tranquilo, que es lo que dice la segunda mitad del nombre. Si la puerta no abre, llama. Puede que te dejen entrar.",
+      "tr": "Vana-Kalamaja kıyısında, birinin sana söylemesi gereken gizli bir avlu. Her tahtada grafiti, içerisi de aynı. Burası sadece takılmak için bir yer, adın ikinci yarısı da bunu söylüyor. Kapı açılmazsa vur. Belki içeri alırlar.",
+      "uk": "Схований двір біля Вана-Каламая, про який хтось має тобі розповісти. Графіті на кожній дошці, і кімната така сама. Це місце, щоб просто посидіти, про що друга половина назви й каже. Якщо двері не відчиняються, постукай. Можуть впустити."
+    },
+    "mustOrder": [],
+    "reel": "",
+    "photos": [
+      "01.webp",
+      "02.webp",
+      "03.webp",
+      "04.webp",
+      "05.webp"
+    ],
+    "website": "",
+    "phone": "",
+    "added": "2026-08-29",
     "closed": false
   },
   {
@@ -247,7 +288,7 @@
     "address": "Suur-Karja 12, 10140 Tallinn",
     "lat": 59.4355717,
     "lng": 24.7462442,
-    "price": 2,
+    "price": 2.5,
     "types": [
       "bakery",
       "coffee",
@@ -306,7 +347,7 @@
     "phone": "+372 5832 3530",
     "added": "2026-08-23",
     "visited": "2025-05",
-    "closed": false
+    "closed": true
   },
   {
     "id": "burger-box",
@@ -409,9 +450,10 @@
     "address": "Reisijate 62-3, 10412 Tallinn",
     "lat": 59.441043,
     "lng": 24.7334466,
-    "price": 3,
+    "price": 2.5,
     "types": [
       "restaurant",
+      "bakery",
       "date",
       "casual"
     ],
@@ -430,7 +472,10 @@
       "Bread"
     ],
     "reel": "https://www.instagram.com/reel/DNqd6mYz9pq/",
-    "photos": [],
+    "photos": [
+      "01.webp",
+      "02.webp"
+    ],
     "website": "",
     "phone": "+372 5397 9111",
     "added": "2026-08-23",
@@ -980,6 +1025,46 @@
     "website": "",
     "phone": "+372 681 8333",
     "added": "2026-08-24",
+    "closed": false
+  },
+  {
+    "id": "izakaya-taro",
+    "name": "Izakaya Taro",
+    "address": "Müürivahe 31, 10140 Tallinn",
+    "lat": 59.4372248,
+    "lng": 24.7493633,
+    "price": 2.5,
+    "types": [
+      "restaurant",
+      "asian",
+      "casual"
+    ],
+    "blurb": {
+      "az": "Köhnə şəhərdə, Müürivahe küçəsində yapon üsulu kiçik boşqablar. Qızılbalıq çox gözəldir və masaya gələn bütün digər dadlar da eyni dərəcədə yaxşıdır.",
+      "en": "Japanese small plates on Müürivahe, in the Old Town. The salmon is lovely, and every other taste that came to the table was just as good.",
+      "et": "Jaapani väikesed road Müürivahel vanalinnas. Lõhe on maitsev ja kõik ülejäänud maitsed, mis lauda jõudsid, olid sama head.",
+      "fi": "Japanilaisia pieniä annoksia Müürivahella vanhassakaupungissa. Lohi on herkullista, ja kaikki muutkin maut, jotka pöytään tulivat, olivat yhtä hyviä.",
+      "pt": "Pratinhos japoneses na Müürivahe, na cidade velha. O salmão é ótimo, e todos os outros sabores que chegaram à mesa estavam tão bons quanto.",
+      "ru": "Японские маленькие тарелки на Мюйривахе, в Старом городе. Лосось хорош, и все остальные вкусы, что приходили на стол, ничуть не хуже.",
+      "es": "Platos pequeños japoneses en Müürivahe, en el casco antiguo. El salmón está buenísimo, y todos los demás sabores que llegaron a la mesa estaban igual de bien.",
+      "tr": "Eski şehirde, Müürivahe'de Japon usulü küçük tabaklar. Somon çok güzel ve masaya gelen diğer bütün tatlar da en az onun kadar iyi.",
+      "uk": "Японські маленькі тарілки на Мюйривахе, у Старому місті. Лосось смачний, і всі інші смаки, що приходили на стіл, були такі самі добрі."
+    },
+    "mustOrder": [
+      "Salmon Ponzu",
+      "Yodare Dori (Spicy Chicken)"
+    ],
+    "reel": "",
+    "photos": [
+      "01.webp",
+      "02.webp",
+      "03.webp",
+      "04.webp",
+      "05.webp"
+    ],
+    "website": "",
+    "phone": "+372 335 7477",
+    "added": "2026-08-29",
     "closed": false
   },
   {
@@ -1659,7 +1744,7 @@
     "address": "Tööstuse 47d, 10416 Tallinn",
     "lat": 59.4499521,
     "lng": 24.7235408,
-    "price": 3,
+    "price": 2.5,
     "types": [
       "coffee",
       "bakery",
@@ -1989,7 +2074,7 @@
     "address": "Laulupeo 1, 10121 Tallinn",
     "lat": 59.4302614,
     "lng": 24.7726871,
-    "price": 2,
+    "price": 2.5,
     "types": [
       "restaurant",
       "asian",

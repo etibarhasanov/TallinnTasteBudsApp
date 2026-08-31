@@ -29,10 +29,15 @@ struct PlaceRow: View {
                     }
                 }
 
-                Text(subtitle)
-                    .font(.mono(11))
-                    .foregroundStyle(theme.muted)
-                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    PriceGauge(price: place.price, dimmed: place.closed)
+                    if !detail.isEmpty {
+                        Text(detail)
+                            .font(.mono(11))
+                            .foregroundStyle(theme.muted)
+                            .lineLimit(1)
+                    }
+                }
 
                 if let deal = store.deal(for: place) {
                     Text(deal.offer(in: store.lang))
@@ -62,8 +67,8 @@ struct PlaceRow: View {
                 Rectangle()
                     .fill(theme.hairline)
                     .overlay {
-                        Text(priceBand)
-                            .font(.mono(13))
+                        Image(systemName: "fork.knife")
+                            .font(.system(size: 15))
                             .foregroundStyle(theme.muted)
                     }
             }
@@ -73,17 +78,13 @@ struct PlaceRow: View {
         .opacity(place.closed ? 0.5 : 1)
     }
 
-    /// "€€ · Coffee, Laptop friendly · 400 m"
-    private var subtitle: String {
-        var parts = [priceBand]
+    /// What follows the gauge: "Coffee, Laptop friendly · 400 m"
+    private var detail: String {
+        var parts: [String] = []
         let types = store.typeLabels(for: place)
         if !types.isEmpty { parts.append(types.prefix(2).joined(separator: ", ")) }
         if let distance { parts.append(Self.format(distance)) }
         return parts.joined(separator: " · ")
-    }
-
-    private var priceBand: String {
-        String(repeating: "€", count: max(1, min(4, place.price)))
     }
 
     static func format(_ metres: CLLocationDistance) -> String {

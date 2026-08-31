@@ -1,11 +1,14 @@
 import SwiftUI
 
-/// The app's two styles.
+/// The app's two styles, both sampled out of the painting the map is named for.
 ///
-/// Red is the site's own light palette, to the value, from `assets/styles.css`.
-/// The dark one is the app's: the site's dark style is a mint green, and this
-/// is pink, built on the same seven roles so that every screen keeps working
-/// without knowing which style it is drawing.
+/// The mark was measured rather than guessed at: its paper is a warm cream
+/// around #E7DCC1, the red in the gap of the mouth is #6F2326, the teeth carry
+/// an olive shadow near #928A70, and the inside of the mouth is a plum-black
+/// close to #130F17. Those four values are the whole system.
+///
+/// Paper is the painting from outside — its cream ground, its red. Mouth is
+/// the same painting from inside, and not a recolouring of Paper.
 struct Theme {
     let ink: Color
     let muted: Color
@@ -16,33 +19,41 @@ struct Theme {
     let accentLit: Color
     let here: Color
 
-    static let red = Theme(
-        ink: Color(hex: 0x27141A),
-        muted: Color(hex: 0x7D5754),
-        paper: Color(hex: 0xFFF0EA),
-        wash: Color(hex: 0xF7DDD4),
-        hairline: Color(hex: 0xF0CEC3),
-        accent: Color(hex: 0xA81E28),
-        accentLit: Color(hex: 0xC9323D),
-        here: Color(hex: 0x0B62C4)
+    /// Cream ground, oxblood accent, plum-black type.
+    ///
+    /// The accent is lifted a little off the painting's own #6F2326: at the
+    /// size a chip label is set, the value straight off the canvas reads brown
+    /// rather than red, and red is the half of it that matters.
+    static let paper = Theme(
+        ink: Color(hex: 0x241A22),
+        muted: Color(hex: 0x7E6F5F),
+        paper: Color(hex: 0xFAF4E6),
+        wash: Color(hex: 0xEFE6CE),
+        hairline: Color(hex: 0xDED0B2),
+        accent: Color(hex: 0x8E2630),
+        accentLit: Color(hex: 0xB03A42),
+        here: Color(hex: 0x17629E)
     )
 
-    /// Plum paper under a pink accent. `here` goes cyan for the same reason it
-    /// goes orange in the site's green: the dot showing where you are has to be
-    /// the one thing on the map that is not the accent colour.
-    static let pink = Theme(
-        ink: Color(hex: 0xF6E8EE),
-        muted: Color(hex: 0xBFA2AE),
-        paper: Color(hex: 0x2A1B22),
-        wash: Color(hex: 0x170E13),
-        hairline: Color(hex: 0x443039),
-        accent: Color(hex: 0xF59AC0),
-        accentLit: Color(hex: 0xFFBCD7),
+    /// The inside of the mouth: plum-black ground, cream type, and the red
+    /// carried up to where it can be read against the dark.
+    ///
+    /// `here` is cyan for the reason the site turns it orange against green —
+    /// the one dot on the map that is not a recommendation has to be the one
+    /// thing that is never the accent colour.
+    static let mouth = Theme(
+        ink: Color(hex: 0xEDE4CE),
+        muted: Color(hex: 0x9D9080),
+        paper: Color(hex: 0x241D26),
+        wash: Color(hex: 0x130F17),
+        hairline: Color(hex: 0x3A303C),
+        accent: Color(hex: 0xD9636B),
+        accentLit: Color(hex: 0xF08C93),
         here: Color(hex: 0x56C8E0)
     )
 
     static func of(_ scheme: ColorScheme) -> Theme {
-        scheme == .dark ? .pink : .red
+        scheme == .dark ? .mouth : .paper
     }
 }
 
@@ -50,22 +61,22 @@ struct Theme {
 /// that follows the phone looks identical to whichever of these the phone is
 /// already set to, which is a choice that cannot be seen.
 enum StylePreference: String, CaseIterable, Identifiable {
-    case red, pink
+    case paper, mouth
     var id: String { rawValue }
 
     var colorScheme: ColorScheme {
-        self == .pink ? .dark : .light
+        self == .mouth ? .dark : .light
     }
 
-    /// Named in the app's own strings rather than in `ui.json`. The site names
-    /// its dark style Green, and this one is not that.
+    /// Named in the app's own strings. These two are the app's styles, not the
+    /// site's, and the site's names for its own pair do not describe them.
     var labelKey: AppStrings.Key {
-        self == .pink ? .stylePink : .styleRed
+        self == .mouth ? .styleMouth : .stylePaper
     }
 }
 
 private struct ThemeKey: EnvironmentKey {
-    static let defaultValue = Theme.red
+    static let defaultValue = Theme.paper
 }
 
 extension EnvironmentValues {

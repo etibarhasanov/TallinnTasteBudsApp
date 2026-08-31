@@ -27,7 +27,13 @@ for (const place of places) {
   if (ids.has(place.id)) fail(`${where}: duplicate id`);
   ids.add(place.id);
   if (typeof place.lat !== 'number' || typeof place.lng !== 'number') fail(`${where}: lat/lng must be numbers`);
-  if (!Number.isInteger(place.price) || place.price < 1 || place.price > 4) fail(`${where}: price must be 1-4`);
+  // A band is 1 to 4 in steps of a half. The app decodes it as a Double and
+  // draws a half step as a half-lit sign, so a third of a band would be a
+  // silent rounding rather than a visible fault.
+  if (typeof place.price !== 'number' || place.price < 1 || place.price > 4
+      || (place.price * 2) % 1 !== 0) {
+    fail(`${where}: price must be 1-4 in steps of 0.5, got ${JSON.stringify(place.price)}`);
+  }
   if (place.blurb && typeof place.blurb !== 'object') fail(`${where}: blurb must be an object of language -> text`);
 }
 

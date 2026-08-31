@@ -13,8 +13,9 @@ struct Place: Identifiable, Hashable, Decodable {
     let address: String
     let lat: Double
     let lng: Double
-    /// Cost band 1...4, rendered as euro signs. Not a rating: the site has no ratings.
-    let price: Int
+    /// Cost band, 1 to 4 in steps of a half, rendered as up to four euro signs
+     /// where a half step lights half a sign. Not a rating: the site has none.
+    let price: Double
     /// Type ids that exist in `taxonomy.json`.
     let types: [String]
     /// The write-up, keyed by language code. The only per-place translated field.
@@ -70,7 +71,7 @@ struct Place: Identifiable, Hashable, Decodable {
         address = try c.decode(String.self, forKey: .address)
         lat = try c.decode(Double.self, forKey: .lat)
         lng = try c.decode(Double.self, forKey: .lng)
-        price = try c.decode(Int.self, forKey: .price)
+        price = try c.decode(Double.self, forKey: .price)
         types = try c.decodeIfPresent([String].self, forKey: .types) ?? []
         blurb = try c.decodeIfPresent([String: String].self, forKey: .blurb) ?? [:]
         mustOrder = try c.decodeIfPresent([String].self, forKey: .mustOrder) ?? []

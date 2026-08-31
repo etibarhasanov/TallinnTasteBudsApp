@@ -78,10 +78,12 @@ struct PlaceDetailView: View {
             Text(place.name)
                 .font(.display(26, weight: .bold))
                 .foregroundStyle(theme.ink)
-            Text(priceBand + " · " + store.typeLabels(for: place).joined(separator: " · "))
-                .font(.mono(12))
-                .foregroundStyle(theme.muted)
-                .accessibilityLabel(store.strings("priceOf", ["n": String(place.price)]))
+            HStack(spacing: 8) {
+                PriceGauge(price: place.price, dimmed: place.closed)
+                Text(store.typeLabels(for: place).joined(separator: " · "))
+                    .font(.mono(12))
+                    .foregroundStyle(theme.muted)
+            }
         }
     }
 
@@ -250,10 +252,6 @@ struct PlaceDetailView: View {
     }
 
     // MARK: - Helpers
-
-    private var priceBand: String {
-        String(repeating: "€", count: max(1, min(4, place.price)))
-    }
 
     private func telURL(_ phone: String) -> URL? {
         URL(string: "tel://" + phone.filter { $0.isNumber || $0 == "+" })

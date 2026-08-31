@@ -6,7 +6,7 @@ struct TallinnTasteBudsApp: App {
     @State private var favourites = Favourites()
     @State private var location = LocationProvider()
     @State private var radio = RadioPlayer()
-    @AppStorage("ttb.style") private var style: StylePreference = .red
+    @AppStorage("ttb.style") private var style: StylePreference = .paper
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
