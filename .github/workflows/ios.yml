@@ -3,6 +3,11 @@ name: build
 # Builds the app for the simulator on every push, so a change that does not
 # compile is caught here rather than the next time someone opens Xcode.
 
+# The screenshots below are pushed to the ci-screens branch, which needs
+# write access to the repository's contents.
+permissions:
+  contents: write
+
 on:
   push:
     branches: [main, 'claude/**']
@@ -64,11 +69,78 @@ jobs:
               fail=1
             fi
           }
-          # Background audio is what keeps the radio alive behind the lock
-          # screen; without it the app silently loses its one native trick.
-          check "background audio"        '"UIBackgroundModes" => \[' 
-          check "  the audio mode"        '"audio"'
           check "location purpose string" '"NSLocationWhenInUseUsageDescription"'
           check "display name"            '"CFBundleDisplayName" => "Tallinn Taste Buds"'
           check "encryption answer"       '"ITSAppUsesNonExemptEncryption"'
           exit $fail
+
+      # Nobody can look at a simulator from a cloud session, so the app is
+      # launched here on the screens worth seeing and each one photographed.
+      # LaunchScript.swift reads the arguments. The pictures are the run's
+      # "screens" artifact; nothing about them can fail the build except the
+      # simulator itself not starting.
+      - name: Photograph the screens
+        shell: bash
+        run: |
+          set -euo pipefail
+          app=build/Build/Products/Debug-iphonesimulator/TallinnTasteBuds.app
+          bundle=ee.tallinntastebuds.app
+          dev=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          d = json.load(sys.stdin)["devices"]
+          phones = [x for k, v in d.items() if "iOS" in k for x in v if x["name"].startswith("iPhone")]
+          plain = [x for x in phones if x["name"] in ("iPhone 16", "iPhone 15")]
+          print((plain or phones)[0]["udid"])')
+          xcrun simctl boot "$dev"
+          xcrun simctl bootstatus "$dev" -b
+          xcrun simctl status_bar "$dev" override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
+          xcrun simctl install "$dev" "$app"
+          xcrun simctl privacy "$dev" grant location "$bundle"
+          xcrun simctl location "$dev" set 59.4372,24.7450
+          mkdir -p screens
+          shot() {
+            local name="$1"; shift
+            xcrun simctl terminate "$dev" "$bundle" >/dev/null 2>&1 || true
+            xcrun simctl launch "$dev" "$bundle" "$@" >/dev/null
+            sleep 14
+            xcrun simctl io "$dev" screenshot "screens/$name.png" >/dev/null
+            echo "photographed $name"
+          }
+          shot 01-map
+          shot 02-map-pressed -ttbSelect badam
+          shot 03-place -ttbOpen place:badam
+          shot 04-lists -ttbTab 1
+          shot 05-list -ttbTab 1 -ttbOpen list:top-bars-hxzz7m
+          shot 06-list-map -ttbTab 1 -ttbOpen list:top-bars-hxzz7m -ttbListMap YES
+          shot 07-venue -ttbTab 1 -ttbOpen list:top-bars-hxzz7m,place:koht
+          shot 08-profile -ttbTab 1 -ttbOpen profile:tallinntastebuds
+          shot 09-saved -ttbTab 2 -saved-places '("badam","koht","pudel")'
+          shot 10-me -ttbTab 3
+          shot 11-sign-in -ttbTab 3 -ttbSheet signin
+          shot 12-editor -ttbTab 1 -ttbOpen list:top-bars-hxzz7m -ttbEdit top-bars-hxzz7m
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screens
+          path: screens
+          if-no-files-found: ignore
+
+      # The same pictures, shrunk, on a branch of their own, because a git
+      # fetch reaches a cloud session where an artifact download does not.
+      # One orphan commit, force-pushed over the last, so the branch never
+      # grows; it carries the screens of whichever branch pushed last.
+      - name: Publish the screens to the ci-screens branch
+        if: github.event_name == 'push' && startsWith(github.ref_name, 'claude/')
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=$(mktemp -d)
+          for f in screens/*.png; do
+            sips -Z 900 -s format jpeg -s formatOptions 70 "$f" --out "$out/$(basename "${f%.png}").jpg" >/dev/null
+          done
+          echo "${GITHUB_REF_NAME} @ ${GITHUB_SHA}" > "$out/FROM.txt"
+          cd "$out"
+          git init -q -b ci-screens
+          git add .
+          git -c user.name=github-actions -c user.email=41898282+github-actions[bot]@users.noreply.github.com commit -q -m "Screens of ${GITHUB_REF_NAME}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-screens

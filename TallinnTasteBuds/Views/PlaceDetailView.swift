@@ -1,343 +1,202 @@
-import MapKit
 import SwiftUI
 
-/// One place, the way the site's detail panel shows it: photos, the write-up in
-/// the reader's language, what to order, and the handful of things you would
-/// actually do next — directions, a phone call, the reel, the discount.
+/// A place on the map, opened: its photos, the write-up, what to order, and
+/// the ways to get there or get in touch.
 struct PlaceDetailView: View {
-    let place: Place
-
-    @Environment(ContentStore.self) private var store
-    @Environment(Favourites.self) private var favourites
-    @Environment(\.theme) private var theme
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.dismiss) private var dismiss
+    @Environment(ContentStore.self) private var content
+    @Environment(SavesStore.self) private var saves
+    @Environment(LocationProvider.self) private var location
+    @Environment(AccountStore.self) private var account
     @Environment(\.openURL) private var openURL
-
-    @State private var web: IdentifiedURL?
-    @State private var lightbox: Int?
+    let id: String
+    @State private var adding = false
+    @State private var signingIn = false
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    if !place.photos.isEmpty { photos }
-                    header
-                    if place.closed { closedNote }
-                    if let deal = store.deal(for: place) { discount(deal) }
-                    actions
-                    blurb
-                    if !place.mustOrder.isEmpty { mustOrder }
-                    facts
-                    if place.hasVideo { video }
-                    miniMap
+        if let place = content.place(id) {
+            page(place)
+        } else {
+            EmptyNote(title: content.t("appPlaceGone", "Not on the map any more"),
+                      text: content.t("appPlaceGoneSay", "This place has been taken off the map."),
+                      systemImage: "mappin.slash")
+        }
+    }
+
+    private func page(_ place: Place) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                photos(place)
+                VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(place.name).font(.title.bold()).foregroundStyle(Theme.ink)
+                        Text(facts(place)).font(.subheadline).foregroundStyle(Theme.muted)
+                    }
+                    if place.closed {
+                        Label(content.t("closedFlag", "Closed for good"), systemImage: "xmark.octagon")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Theme.accent)
+                    }
+                    if !place.types.isEmpty {
+                        FlowLayout {
+                            ForEach(place.types, id: \.self) { t in
+                                Tag(text: content.type(t)?.name(content.lang) ?? t)
+                            }
+                        }
+                    }
+                    if let blurb = content.blurb(place.id) {
+                        Text(blurb).font(.body).foregroundStyle(Theme.ink).lineSpacing(3)
+                    }
+                    if !place.mustOrder.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            SectionLabel(text: content.t("mustOrder", "Must order"))
+                            FlowLayout { ForEach(place.mustOrder, id: \.self) { Tag(text: $0) } }
+                        }
+                    }
+                    actions(place)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 32)
+                .padding(16)
             }
-            .background(theme.wash)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) { saveButton }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(store.strings("close")) { dismiss() }
+        }
+        .paperBackground()
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $adding) { AddToListSheet(place: place) }
+        .sheet(isPresented: $signingIn) {
+            SignInView(reason: content.t("appSignInToList", "Sign in to put this place on a list of your own"))
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                ShareLink(item: API.placeLink(place.id)) { Image(systemName: "square.and.arrow.up") }
+                Button {
+                    if account.signedIn { adding = true } else { signingIn = true }
+                } label: {
+                    Image(systemName: "text.badge.plus")
                 }
+                .accessibilityLabel(content.t("appAddToList", "Add to a list"))
+                Button { saves.toggle(place.id) } label: {
+                    Image(systemName: saves.isSaved(place.id) ? "heart.fill" : "heart")
+                }
+                .accessibilityLabel(content.t("savePlace", "Save this place"))
             }
         }
-        .safariSheet(url: $web)
-        .fullScreenCover(item: Binding(
-            get: { lightbox.map { PhotoIndex(value: $0) } },
-            set: { lightbox = $0?.value }
-        )) { start in
-            PhotoLightbox(place: place, index: start.value)
-                .environment(\.theme, theme)
-        }
     }
 
-    // MARK: - Pieces
-
-    private var photos: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(store.strings("photos").uppercased())
-                .font(.mono(10))
-                .foregroundStyle(theme.muted)
-            photoStrip
-        }
-    }
-
-    private var photoStrip: some View {
-        TabView {
-            ForEach(Array(place.photos.enumerated()), id: \.offset) { index, file in
-                RemoteImage(url: ContentSource.photoURL(placeID: place.id, file: file))
-                    .clipped()
-                    .onTapGesture { lightbox = index }
-                    .accessibilityLabel(store.strings("photoOf", [
-                        "n": String(index + 1), "total": String(place.photos.count)
-                    ]))
+    @ViewBuilder
+    private func photos(_ place: Place) -> some View {
+        if place.photoURLs.isEmpty {
+            Theme.wash.frame(height: 160).overlay(Mark(size: 72))
+        } else {
+            TabView {
+                ForEach(place.photoURLs, id: \.self) { url in Photo(url: url) }
             }
+            .tabViewStyle(.page(indexDisplayMode: place.photoURLs.count > 1 ? .always : .never))
+            .frame(height: 320)
         }
-        .tabViewStyle(.page)
-        .frame(height: 240)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .padding(.top, 8)
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(place.name)
-                .font(.display(26, weight: .bold))
-                .foregroundStyle(theme.ink)
+    private func facts(_ place: Place) -> String {
+        var parts: [String] = []
+        if !place.address.isEmpty { parts.append(place.address) }
+        if let p = place.priceText { parts.append(p) }
+        parts.append(Distance.text(location.distance(to: place.location)))
+        return parts.joined(separator: " · ")
+    }
+
+    private func actions(_ place: Place) -> some View {
+        VStack(spacing: 8) {
+            Button {
+                Directions.open(name: place.name, coordinate: place.coordinate)
+            } label: {
+                Label(content.t("directions", "Directions"), systemImage: "figure.walk")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+
             HStack(spacing: 8) {
-                PriceGauge(price: place.price, dimmed: place.closed)
-                DepthMark(place: place)
-            }
-            if !store.typeLabels(for: place).isEmpty {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(store.strings("types").uppercased())
-                        .font(.mono(10))
-                        .foregroundStyle(theme.muted)
-                    Text(store.typeLabels(for: place).joined(separator: " · "))
-                        .font(.running(14))
-                        .foregroundStyle(theme.ink)
+                if let url = URL(string: place.reel), !place.reel.isEmpty {
+                    Button { openURL(url) } label: {
+                        Label(content.t("markReel", "Reel"), systemImage: "play.rectangle").frame(maxWidth: .infinity)
+                    }
                 }
-                .padding(.top, 2)
+                if let url = URL(string: place.website), !place.website.isEmpty {
+                    Button { openURL(url) } label: {
+                        Label(content.t("website", "Website"), systemImage: "safari").frame(maxWidth: .infinity)
+                    }
+                }
+                if !place.phone.isEmpty, let url = URL(string: "tel:" + place.phone.filter { "+0123456789".contains($0) }) {
+                    Button { openURL(url) } label: {
+                        Label(content.t("call", "Call"), systemImage: "phone").frame(maxWidth: .infinity)
+                    }
+                }
             }
+            .buttonStyle(.bordered)
+            .labelStyle(.titleAndIcon)
         }
-    }
-
-    private var closedNote: some View {
-        Text(store.strings(place.closedNoteKey))
-            .font(.mono(12))
-            .foregroundStyle(theme.muted)
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(theme.hairline)
-            .clipShape(RoundedRectangle(cornerRadius: 4))
-    }
-
-    private func discount(_ deal: Deal) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(store.app(.discountOffer).uppercased())
-                .font(.mono(10))
-                .foregroundStyle(theme.muted)
-            Text(deal.offer(in: store.lang))
-                .font(.display(17))
-                .foregroundStyle(theme.ink)
-            Button(store.app(.discountOpen)) {
-                // Opened on the site rather than generated here: the code rotates
-                // on a clock the staff verifier shares, and two implementations of
-                // that would be one too many.
-                web = IdentifiedURL(url: ContentSource.dealURL(
-                    placeID: place.id,
-                    lang: store.lang,
-                    darkStyle: colorScheme == .dark
-                ))
-            }
-            .font(.display(14))
-            .foregroundStyle(theme.paper)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 9)
-            .background(theme.accent)
-            .clipShape(RoundedRectangle(cornerRadius: 4))
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.paper)
-        .overlay {
-            RoundedRectangle(cornerRadius: 4).stroke(theme.accent, lineWidth: 1)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 4))
-    }
-
-    private var actions: some View {
-        HStack(spacing: 10) {
-            action(icon: "arrow.triangle.turn.up.right.diamond", title: store.strings("directions")) {
-                openDirections()
-            }
-            if let phone = place.phone, let url = telURL(phone) {
-                action(icon: "phone", title: store.strings("call")) { openURL(url) }
-            }
-            if let site = place.website {
-                action(icon: "safari", title: store.strings("website")) { web = IdentifiedURL(url: site) }
-            }
-        }
-    }
-
-    private func action(icon: String, title: String, run: @escaping () -> Void) -> some View {
-        Button(action: run) {
-            VStack(spacing: 4) {
-                Image(systemName: icon).font(.system(size: 17))
-                Text(title).font(.mono(10)).lineLimit(1)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(theme.paper)
-            .foregroundStyle(theme.accent)
-            .clipShape(RoundedRectangle(cornerRadius: 4))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var blurb: some View {
-        Text(place.blurb(in: store.lang))
-            .font(.running(17))
-            .foregroundStyle(theme.ink)
-            .lineSpacing(4)
-            .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private var mustOrder: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(store.strings("mustOrder").uppercased())
-                .font(.mono(10))
-                .foregroundStyle(theme.muted)
-            ForEach(place.mustOrder, id: \.self) { dish in
-                Text("— " + dish)
-                    .font(.running(16))
-                    .foregroundStyle(theme.ink)
-            }
-        }
-    }
-
-    private var facts: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            fact(store.strings("address"), place.address)
-            if let phone = place.phone { fact(store.strings("phone"), phone) }
-            if let visited = place.visited { fact(store.strings("visited"), store.strings.monthYear(visited)) }
-            if place.reel == nil {
-                Text(store.strings("notFilmed"))
-                    .font(.mono(11))
-                    .foregroundStyle(theme.muted)
-            }
-        }
-        .padding(.top, 4)
-    }
-
-    private func fact(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label.uppercased()).font(.mono(10)).foregroundStyle(theme.muted)
-            Text(value).font(.running(15)).foregroundStyle(theme.ink)
-        }
-    }
-
-    private var video: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(store.strings(place.isTikTok ? "video" : "reel").uppercased())
-                .font(.mono(10))
-                .foregroundStyle(theme.muted)
-            videoButton
-        }
-    }
-
-    private var videoButton: some View {
-        Button {
-            if let reel = place.reel { web = IdentifiedURL(url: reel) }
-        } label: {
-            Label(
-                place.isTikTok ? store.strings("videoPlay") : store.strings("reelPlay"),
-                systemImage: "play.rectangle"
-            )
-            .font(.display(14))
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(theme.paper)
-            .foregroundStyle(theme.accent)
-            .clipShape(RoundedRectangle(cornerRadius: 4))
-        }
-        .buttonStyle(.plain)
-    }
-
-    /// A still of where it is. Tapping it hands over to Maps, which is the only
-    /// thing anyone wants from a map this small.
-    private var miniMap: some View {
-        Button {
-            openDirections()
-        } label: {
-            Map(initialPosition: .region(MKCoordinateRegion(
-                center: place.coordinate,
-                span: MKCoordinateSpan(latitudeDelta: 0.004, longitudeDelta: 0.004)
-            )), interactionModes: []) {
-                Marker(place.name, coordinate: place.coordinate)
-                    .tint(theme.accent)
-            }
-            .mapStyle(.standard(pointsOfInterest: .excludingAll))
-            .frame(height: 150)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .allowsHitTesting(false)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(store.strings("directions"))
-    }
-
-    private var saveButton: some View {
-        Button {
-            favourites.toggle(place)
-        } label: {
-            Image(systemName: favourites.contains(place) ? "bookmark.fill" : "bookmark")
-                .accessibilityLabel(favourites.contains(place) ? store.app(.saved) : store.app(.save))
-        }
-    }
-
-    // MARK: - Helpers
-
-    private func telURL(_ phone: String) -> URL? {
-        URL(string: "tel://" + phone.filter { $0.isNumber || $0 == "+" })
-    }
-
-    private func openDirections() {
-        let item = MKMapItem(placemark: MKPlacemark(coordinate: place.coordinate))
-        item.name = place.name
-        item.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeWalking])
+        .controlSize(.large)
+        .padding(.top, 6)
     }
 }
 
-private struct PhotoIndex: Identifiable {
-    let value: Int
-    var id: Int { value }
-}
-
-/// Full-screen photos, the site's lightbox.
-struct PhotoLightbox: View {
-    let place: Place
-    let index: Int
-
-    @Environment(ContentStore.self) private var store
-    @Environment(\.theme) private var theme
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.dismiss) private var dismiss
-    @State private var current: Int = 0
+/// A place a list named that is not on the map: a Google venue, or one its
+/// author typed in. It has no write-up from Tallinn Tastebuds, so this page
+/// says what the list's author said and what Google knows, and no more.
+struct VenueView: View {
+    @Environment(ContentStore.self) private var content
+    @Environment(\.openURL) private var openURL
+    let item: ListItem
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Color.black.ignoresSafeArea()
-            TabView(selection: $current) {
-                ForEach(Array(place.photos.enumerated()), id: \.offset) { offset, file in
-                    RemoteImage(url: ContentSource.photoURL(placeID: place.id, file: file), contentMode: .fit)
-                        .tag(offset)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                Text(item.name).font(.title.bold()).foregroundStyle(Theme.ink)
+                if !item.address.isEmpty {
+                    Text(item.address).font(.subheadline).foregroundStyle(Theme.muted)
+                }
+                Text(content.t("appNotOnMap", "Not on the Tallinn Tastebuds map"))
+                    .font(.footnote).foregroundStyle(Theme.muted)
+                if let rating = item.rating {
+                    Label {
+                        Text(String(format: "%.1f", rating) + (item.reviews.map { " · \($0) on Google" } ?? " on Google"))
+                    } icon: { Image(systemName: "star.fill") }
+                    .font(.subheadline).foregroundStyle(Theme.ink)
+                }
+                if let today = todayHours {
+                    Label(today, systemImage: "clock").font(.subheadline).foregroundStyle(Theme.ink)
+                }
+                HStack(spacing: 8) {
+                    if let c = item.coordinate {
+                        Button { Directions.open(name: item.name, coordinate: c) } label: {
+                            Label(content.t("directions", "Directions"), systemImage: "figure.walk").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    if let url = URL(string: item.website), !item.website.isEmpty {
+                        Button { openURL(url) } label: {
+                            Label(content.t("website", "Website"), systemImage: "safari").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                }
+                .controlSize(.large)
+                if let url = URL(string: item.mapsUrl), !item.mapsUrl.isEmpty {
+                    Button(content.t("venuesMaps", "Open in Google Maps")) { openURL(url) }
+                        .font(.subheadline)
                 }
             }
-            .tabViewStyle(.page)
-            .ignoresSafeArea()
-
-            Button { dismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(.title3)
-                    .padding(14)
-                    .background(.ultraThinMaterial, in: Circle())
-            }
-            .padding(20)
-            .accessibilityLabel(store.strings("photoClose"))
-
-            VStack {
-                Spacer()
-                Text(store.strings("photoOf", [
-                    "n": String(current + 1), "total": String(place.photos.count)
-                ]))
-                .font(.mono(11))
-                .foregroundStyle(.white.opacity(0.8))
-                .padding(.bottom, 30)
-            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .onAppear { current = index }
+        .paperBackground()
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// Today's opening hours, which the site keeps Sunday first and labels as
+    /// Google's — so does this.
+    private var todayHours: String? {
+        guard item.hours.count == 7 else { return nil }
+        let day = Calendar.current.component(.weekday, from: Date()) - 1
+        if let span = item.hours[day] {
+            return content.t("appTodayHours", "Today {span} (Google's hours)", ["span": span.replacingOccurrences(of: "-", with: "–")])
+        }
+        return content.t("venuesShutToday", "Closed today")
     }
 }

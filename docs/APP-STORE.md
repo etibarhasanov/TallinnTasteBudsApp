@@ -1,5 +1,7 @@
 # Putting Tallinn Taste Buds on the App Store
 
+> **Out of date.** This was written for the first version of the app, which had the radio and the discount pages and no lists. The rebuilt app has neither yet and reads lists and profiles from the website's API. It gets rewritten as part of the submission stage, before anything is sent to Apple — see *What is not in it yet* in the README.
+
 Written for someone who has never shipped an app. You will not write code. You
 will fill in forms, take some screenshots, and press a few buttons in Xcode.
 
