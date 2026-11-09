@@ -1,5 +1,7 @@
 # Privacy policy — a draft to check, not a finished document
 
+> **Out of date.** This was written for the first version of the app, which had the radio and the discount pages and no lists. The rebuilt app has neither yet and reads lists and profiles from the website's API. It gets rewritten as part of the submission stage, before anything is sent to Apple — see *What is not in it yet* in the README.
+
 App Store Connect will not accept a submission without a privacy policy at a
 public URL. This is a starting text for one. **Read every line and correct
 anything that is not true.** You are the one declaring it, and this was written

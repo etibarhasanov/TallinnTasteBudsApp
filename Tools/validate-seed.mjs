@@ -3,84 +3,69 @@
  * The app is lenient at runtime — a missing optional key is fine, and a place it
  * cannot decode is a place the reader never sees — so this is the place to be
  * strict instead, before a bad snapshot ships inside a build.
+ *
+ * The snapshot is four of the website's own files under seed-* names; see
+ * Tools/refresh-seed.sh for why.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-const seed = join(dirname(fileURLToPath(import.meta.url)), '..', 'TallinnTasteBuds', 'Content', 'Seed');
+const seed = join(dirname(fileURLToPath(import.meta.url)), '..', 'TallinnTasteBuds', 'Seed');
 const read = (name) => JSON.parse(readFileSync(join(seed, `${name}.json`), 'utf8'));
 
 const problems = [];
 const fail = (message) => problems.push(message);
 
-const places = read('restaurants');
-if (!Array.isArray(places) || places.length === 0) fail('restaurants.json is not a non-empty array');
+const places = read('seed-map');
+if (!Array.isArray(places) || places.length === 0) fail('seed-map.json is not a non-empty array');
 
 const ids = new Set();
 for (const place of places) {
   const where = place?.id ?? '(no id)';
   // These are exactly the fields Place.swift decodes without a default.
-  for (const key of ['id', 'name', 'address', 'lat', 'lng', 'price']) {
+  for (const key of ['id', 'name', 'lat', 'lng']) {
     if (place?.[key] === undefined) fail(`${where}: missing required field "${key}"`);
   }
   if (ids.has(place.id)) fail(`${where}: duplicate id`);
   ids.add(place.id);
   if (typeof place.lat !== 'number' || typeof place.lng !== 'number') fail(`${where}: lat/lng must be numbers`);
-  // A band is 1 to 4 in steps of a half. The app decodes it as a Double and
-  // draws a half step as a half-lit sign, so a third of a band would be a
-  // silent rounding rather than a visible fault.
-  if (typeof place.price !== 'number' || place.price < 1 || place.price > 4
-      || (place.price * 2) % 1 !== 0) {
-    fail(`${where}: price must be 1-4 in steps of 0.5, got ${JSON.stringify(place.price)}`);
-  }
-  if (place.blurb && typeof place.blurb !== 'object') fail(`${where}: blurb must be an object of language -> text`);
+  if (place.price != null && typeof place.price !== 'number') fail(`${where}: price must be a number`);
+  if (place.photos != null && !Array.isArray(place.photos)) fail(`${where}: photos must be an array`);
 }
 
-const taxonomy = read('taxonomy');
+const taxonomy = read('seed-taxonomy');
 const typeIds = new Set((taxonomy.types ?? []).map((t) => t.id));
-if (typeIds.size === 0) fail('taxonomy.json has no types');
-if (typeIds.has('discount')) fail('taxonomy.json claims the reserved "discount" id');
+if (typeIds.size === 0) fail('seed-taxonomy.json has no types');
 for (const place of places) {
   for (const type of place.types ?? []) {
     if (!typeIds.has(type)) fail(`${place.id}: unknown type "${type}"`);
   }
 }
 
-const ui = read('ui');
-const languages = Object.keys(ui);
-if (!languages.includes('en')) fail('ui.json has no English, which everything falls back to');
-for (const lang of languages) {
-  if (!ui[lang].langName) fail(`ui.json: "${lang}" has no langName for the picker`);
-}
-// The app reads these by name; a rename on the site would show the key instead.
+const index = read('seed-lang-index');
+if (!index.en) fail('seed-lang-index.json has no English, which everything falls back to');
+
+const en = read('seed-lang-en');
+if (typeof en.ui !== 'object' || typeof en.blurbs !== 'object') fail('seed-lang-en.json must have "ui" and "blurbs"');
+// The app reads these by name from the site's strings; a rename on the site
+// would show the English written into the app instead, which is a quiet
+// regression in ten other languages, so it is caught here.
 const usedKeys = [
-  'wordmark', 'tagline', 'eyebrow', 'listTitle', 'listNew', 'listAlphabet',
-  'searchPlaceholder', 'searchNone', 'filters', 'filtersButton', 'clusterLabel',
-  'listCount', 'listCountOne', 'filterAll', 'filterDiscount', 'noResults', 'close',
-  'closed', 'closedNote', 'address', 'phone', 'visited', 'mustOrder', 'notFilmed',
-  'directions', 'call', 'website', 'photoOf', 'photoClose', 'reelPlay', 'videoPlay',
-  'openPlace', 'randomPick', 'randomNone', 'locate', 'locateFail', 'locateAway',
-  'radioPlay', 'radioStop', 'radioFail', 'language', 'styleRed', 'styleGreen',
-  'styleLabel', 'loadError', 'instagramHandle', 'priceOf', 'months', 'monthYear'
+  'search', 'searchNone', 'filterAll', 'noResults', 'listOpen', 'listNearYou', 'listNearOldTown',
+  'mustOrder', 'directions', 'website', 'call', 'markReel', 'closedFlag', 'savePlace', 'listSaved',
+  'language', 'listsTitle', 'listsAllTitle', 'listsAllFor', 'listsAllSearchHint', 'listsEmpty',
+  'listsViewList', 'listsViewMap', 'listsKeptOne', 'listsKeptN', 'venuesMaps', 'venuesShutToday'
 ];
 for (const key of usedKeys) {
-  if (ui.en[key] === undefined) fail(`ui.json: English is missing "${key}", which the app reads`);
+  if (typeof en.ui?.[key] !== 'string') fail(`seed-lang-en.json: ui.${key} is missing`);
 }
 
-const deals = read('deals');
-if (!Array.isArray(deals)) fail('deals.json is not an array');
-for (const deal of deals) {
-  if (!deal.id) fail('deals.json: a deal without an id');
-  else if (!ids.has(deal.id)) fail(`deals.json: "${deal.id}" is not a place on the map`);
-}
-
-const radio = read('radio');
-if (!radio.default && !radio.byLanguage) fail('radio.json has neither a default nor per-language stations');
+if (!existsSync(join(seed, 'mark-round.webp'))) fail('mark-round.webp is missing from the seed');
 
 if (problems.length) {
-  console.error(`${problems.length} problem(s) in the bundled snapshot:\n`);
-  for (const problem of problems) console.error(`  - ${problem}`);
+  console.error(`The bundled snapshot has ${problems.length} problem(s):`);
+  for (const p of problems) console.error('  - ' + p);
   process.exit(1);
 }
-console.log(`snapshot looks good: ${places.length} places, ${typeIds.size} types, ${languages.length} languages`);
+console.log(`ok: ${places.length} places, ${typeIds.size} types, ${Object.keys(index).length} languages`);

@@ -1,91 +1,96 @@
-import CoreLocation
 import Foundation
+import CoreLocation
 
-/// One approved place, decoded straight from the website's `data/restaurants.json`.
+/// A place on the map, as `data/map.json` writes it: the website's own
+/// catalogue without the write-ups, which come per language from
+/// `data/lang/<code>.json` instead.
 ///
-/// The field names and their meanings are fixed by `data/schema.json` in the
-/// website repo. Anything optional there is optional here, and an empty string
-/// means the same thing as a missing key — the site treats them identically, so
-/// the decoder below folds them together.
+/// Decoding is lenient on purpose. A key the site adds tomorrow is ignored, a
+/// key it drops falls back to empty, and a place that cannot be read at all is
+/// skipped by `Place.decodeAll` rather than taking the other seventy-eight down
+/// with it.
 struct Place: Identifiable, Hashable, Decodable {
     let id: String
     let name: String
     let address: String
     let lat: Double
     let lng: Double
-    /// Cost band, 1 to 4 in steps of a half, rendered as up to four euro signs
-     /// where a half step lights half a sign. Not a rating: the site has none.
-    let price: Double
-    /// Type ids that exist in `taxonomy.json`.
+    let price: Double?
     let types: [String]
-    /// The write-up, keyed by language code. The only per-place translated field.
-    let blurb: [String: String]
     let mustOrder: [String]
-    /// Instagram or TikTok permalink, or nil when there is not one yet.
-    let reel: URL?
-    /// Photo filenames inside `photos/<id>/`.
+    let reel: String
     let photos: [String]
-    let website: URL?
-    let phone: String?
-    /// `YYYY-MM-DD`, the day the place was added to the map.
-    let added: String?
-    /// `YYYY-MM`, the month last eaten there.
-    let visited: String?
+    let website: String
+    let phone: String
     let closed: Bool
 
-    var coordinate: CLLocationCoordinate2D {
-        CLLocationCoordinate2D(latitude: lat, longitude: lng)
+    var coordinate: CLLocationCoordinate2D { .init(latitude: lat, longitude: lng) }
+    var location: CLLocation { .init(latitude: lat, longitude: lng) }
+
+    var photoURLs: [URL] { photos.map { API.photo(id, $0) } }
+
+    /// "€€", the band rounded to whole signs; nil when the site gives none.
+    var priceText: String? {
+        guard let price, price > 0 else { return nil }
+        return String(repeating: "€", count: max(1, min(4, Int(price.rounded()))))
     }
 
-    var hasVideo: Bool { reel != nil }
-
-    /// TikTok and Instagram get different wording on the site, so keep them apart.
-    var isTikTok: Bool { reel?.host?.contains("tiktok") == true }
-
-    /// The blurb in `lang`, falling back the same way the site does: the asked-for
-    /// language, then English, then whatever translation exists.
-    func blurb(in lang: String) -> String {
-        blurb[lang] ?? blurb["en"] ?? blurb.values.first ?? ""
-    }
-
-    /// Free-text haystack for the search field: name, street and dishes, which is
-    /// exactly what the site searches.
-    func matches(_ query: String, lang: String) -> Bool {
-        guard !query.isEmpty else { return true }
-        let needle = query.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil)
-        let haystack = ([name, address] + mustOrder + [blurb(in: lang)])
-            .joined(separator: " ")
-            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil)
-        return haystack.contains(needle)
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id, name, address, lat, lng, price, types, blurb, mustOrder
-        case reel, photos, website, phone, added, visited, closed
+    enum CodingKeys: String, CodingKey {
+        case id, name, address, lat, lng, price, types, mustOrder, reel, photos, website, phone, closed
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(String.self, forKey: .id)
         name = try c.decode(String.self, forKey: .name)
-        address = try c.decode(String.self, forKey: .address)
         lat = try c.decode(Double.self, forKey: .lat)
         lng = try c.decode(Double.self, forKey: .lng)
-        price = try c.decode(Double.self, forKey: .price)
-        types = try c.decodeIfPresent([String].self, forKey: .types) ?? []
-        blurb = try c.decodeIfPresent([String: String].self, forKey: .blurb) ?? [:]
-        mustOrder = try c.decodeIfPresent([String].self, forKey: .mustOrder) ?? []
-        photos = try c.decodeIfPresent([String].self, forKey: .photos) ?? []
-        closed = try c.decodeIfPresent(Bool.self, forKey: .closed) ?? false
-        phone = Self.nonEmpty(try c.decodeIfPresent(String.self, forKey: .phone))
-        added = Self.nonEmpty(try c.decodeIfPresent(String.self, forKey: .added))
-        visited = Self.nonEmpty(try c.decodeIfPresent(String.self, forKey: .visited))
-        reel = Self.nonEmpty(try c.decodeIfPresent(String.self, forKey: .reel)).flatMap(URL.init(string:))
-        website = Self.nonEmpty(try c.decodeIfPresent(String.self, forKey: .website)).flatMap(URL.init(string:))
+        address = (try? c.decodeIfPresent(String.self, forKey: .address)) ?? ""
+        price = try? c.decodeIfPresent(Double.self, forKey: .price)
+        types = (try? c.decodeIfPresent([String].self, forKey: .types)) ?? []
+        mustOrder = (try? c.decodeIfPresent([String].self, forKey: .mustOrder)) ?? []
+        reel = (try? c.decodeIfPresent(String.self, forKey: .reel)) ?? ""
+        photos = (try? c.decodeIfPresent([String].self, forKey: .photos)) ?? []
+        website = (try? c.decodeIfPresent(String.self, forKey: .website)) ?? ""
+        phone = (try? c.decodeIfPresent(String.self, forKey: .phone)) ?? ""
+        closed = (try? c.decodeIfPresent(Bool.self, forKey: .closed)) ?? false
     }
 
-    private static func nonEmpty(_ value: String?) -> String? {
-        guard let value, !value.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
-        return value
+    /// Every place that decodes; the ones that do not are dropped one by one.
+    static func decodeAll(_ data: Data) -> [Place]? {
+        guard let raw = try? JSONSerialization.jsonObject(with: data) as? [Any] else { return nil }
+        return raw.compactMap { item in
+            guard let one = try? JSONSerialization.data(withJSONObject: item) else { return nil }
+            return try? JSONDecoder().decode(Place.self, from: one)
+        }
+    }
+}
+
+/// One kind of place — Coffee, Bakery, Hidden gem — with its name in every
+/// language, from `data/taxonomy.json`.
+struct PlaceType: Identifiable, Hashable {
+    let id: String
+    let names: [String: String]
+    /// The site keeps some types off the chip row (Tea is searched for, not
+    /// pressed). The same rule holds here.
+    let chip: Bool
+    /// Extra words a search for this type should also match, slash-separated
+    /// on the site: "espresso/cappuccino/latte…".
+    let words: [String]
+
+    func name(_ lang: String) -> String { names[lang] ?? names["en"] ?? id }
+
+    static func decodeAll(_ data: Data) -> [PlaceType]? {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let types = root["types"] as? [[String: Any]] else { return nil }
+        return types.compactMap { t in
+            guard let id = t["id"] as? String else { return nil }
+            var names: [String: String] = [:]
+            for (key, value) in t where key.count == 2 {
+                if let s = value as? String { names[key] = s }
+            }
+            let words = (t["words"] as? String)?.split(separator: "/").map(String.init) ?? []
+            return PlaceType(id: id, names: names, chip: (t["chip"] as? Bool) ?? true, words: words)
+        }
     }
 }

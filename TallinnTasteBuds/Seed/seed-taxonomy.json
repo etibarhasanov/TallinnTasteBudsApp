@@ -10,19 +10,9 @@
       "pt": "Casual/sozinho",
       "es": "Informal/solo",
       "tr": "Rahat/tek başına",
-      "uk": "Неформально/наодинці"
-    },
-    {
-      "id": "restaurant",
-      "en": "Restaurant",
-      "et": "Restoran",
-      "fi": "Ravintola",
-      "az": "Restoran",
-      "ru": "Ресторан",
-      "pt": "Restaurante",
-      "es": "Restaurante",
-      "tr": "Restoran",
-      "uk": "Ресторан"
+      "uk": "Неформально/наодинці",
+      "fr": "Simple/Solo",
+      "de": "Locker/Solo"
     },
     {
       "id": "bakery",
@@ -34,19 +24,40 @@
       "pt": "Padaria",
       "es": "Panadería",
       "tr": "Fırın",
-      "uk": "Пекарня"
+      "uk": "Пекарня",
+      "fr": "Boulangerie",
+      "de": "Bäckerei"
     },
     {
       "id": "coffee",
-      "en": "Coffee/tea",
-      "et": "Kohv/tee",
-      "fi": "Kahvi/tee",
-      "az": "Kofe/çay",
-      "ru": "Кофе/чай",
-      "pt": "Café/chá",
-      "es": "Café/té",
-      "tr": "Kahve/çay",
-      "uk": "Кава/чай"
+      "en": "Coffee",
+      "et": "Kohv",
+      "fi": "Kahvi",
+      "az": "Kofe",
+      "ru": "Кофе",
+      "pt": "Café",
+      "es": "Café",
+      "tr": "Kahve",
+      "uk": "Кава",
+      "words": "espresso/cappuccino/latte/flatwhite/americano/macchiato/cortado/mocha/cafe/kohvik/kahvila/kafe/cafeteria/кофейня/капучино/латте/эспрессо/кав'ярня/սրճարան",
+      "fr": "Café",
+      "de": "Kaffee"
+    },
+    {
+      "id": "tea",
+      "chip": false,
+      "en": "Tea",
+      "et": "Tee",
+      "fi": "Tee",
+      "az": "Çay",
+      "ru": "Чай",
+      "pt": "Chá",
+      "es": "Té",
+      "tr": "Çay",
+      "uk": "Чай",
+      "words": "matcha/hojicha/genmaicha/sencha/oolong/teahouse/teemaja/teehuone/çayxana/çayevi/чайная/чайхана/թեյարան",
+      "fr": "Thé",
+      "de": "Tee"
     },
     {
       "id": "pub",
@@ -58,7 +69,9 @@
       "pt": "Cerveja/pub",
       "es": "Cerveza/pub",
       "tr": "Bira/pub",
-      "uk": "Пиво/паб"
+      "uk": "Пиво/паб",
+      "fr": "Bière/pub",
+      "de": "Bier/Pub"
     },
     {
       "id": "hidden-gem",
@@ -70,7 +83,9 @@
       "pt": "Joia escondida",
       "es": "Joya escondida",
       "tr": "Gizli cevher",
-      "uk": "Прихована перлина"
+      "uk": "Прихована перлина",
+      "fr": "Pépite cachée",
+      "de": "Geheimtipp"
     },
     {
       "id": "cheap-eats",
@@ -82,19 +97,9 @@
       "pt": "Barato",
       "es": "Barato",
       "tr": "Hesaplı",
-      "uk": "Недорого"
-    },
-    {
-      "id": "date",
-      "en": "Date night",
-      "et": "Kohting",
-      "fi": "Treffit",
-      "az": "Görüş",
-      "ru": "Свидание",
-      "pt": "Encontro",
-      "es": "Cita",
-      "tr": "Buluşma",
-      "uk": "Побачення"
+      "uk": "Недорого",
+      "fr": "Petits prix",
+      "de": "Günstig essen"
     },
     {
       "id": "laptop",
@@ -106,7 +111,23 @@
       "pt": "Bom para portátil",
       "es": "Bueno para portátil",
       "tr": "Laptopa uygun",
-      "uk": "З ноутбуком"
+      "uk": "З ноутбуком",
+      "fr": "Bon pour bosser",
+      "de": "Laptopfreundlich"
+    },
+    {
+      "id": "date",
+      "en": "Date night",
+      "et": "Kohting",
+      "fi": "Treffit",
+      "az": "Görüş",
+      "ru": "Свидание",
+      "pt": "Encontro",
+      "es": "Cita",
+      "tr": "Buluşma",
+      "uk": "Побачення",
+      "fr": "En amoureux",
+      "de": "Date-Abend"
     },
     {
       "id": "asian",
@@ -118,7 +139,9 @@
       "pt": "Asiático",
       "es": "Asiática",
       "tr": "Asya",
-      "uk": "Азійська"
+      "uk": "Азійська",
+      "fr": "Asiatique",
+      "de": "Asiatisch"
     },
     {
       "id": "vegan",
@@ -130,7 +153,9 @@
       "pt": "Vegano",
       "es": "Vegano",
       "tr": "Vegan",
-      "uk": "Веганське"
+      "uk": "Веганське",
+      "fr": "Vegan",
+      "de": "Vegan"
     },
     {
       "id": "fine-dining",
@@ -142,7 +167,9 @@
       "pt": "Alta gastronomia",
       "es": "Alta cocina",
       "tr": "Fine dining",
-      "uk": "Висока кухня"
+      "uk": "Висока кухня",
+      "fr": "Gastronomique",
+      "de": "Fine Dining"
     },
     {
       "id": "caucasian",
@@ -154,7 +181,23 @@
       "pt": "Cáucaso",
       "es": "Cáucaso",
       "tr": "Kafkasya",
-      "uk": "Кавказька"
+      "uk": "Кавказька",
+      "fr": "Caucase",
+      "de": "Kaukasus"
+    },
+    {
+      "id": "restaurant",
+      "en": "Restaurant",
+      "et": "Restoran",
+      "fi": "Ravintola",
+      "az": "Restoran",
+      "ru": "Ресторан",
+      "pt": "Restaurante",
+      "es": "Restaurante",
+      "tr": "Restoran",
+      "uk": "Ресторан",
+      "fr": "Restaurant",
+      "de": "Restaurant"
     }
   ]
 }

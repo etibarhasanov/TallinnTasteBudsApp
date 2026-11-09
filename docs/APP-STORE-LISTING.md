@@ -1,5 +1,7 @@
 # Listing copy — a draft in my voice, to be rewritten in yours
 
+> **Out of date.** This was written for the first version of the app, which had the radio and the discount pages and no lists. The rebuilt app has neither yet and reads lists and profiles from the website's API. It gets rewritten as part of the submission stage, before anything is sent to Apple — see *What is not in it yet* in the README.
+
 The App Store page is the map's voice, not an app's. The site's own line —
 *all the places in this map I have personally been and approved* — is the whole
 pitch, and it is better than anything a description could add. Keep the first

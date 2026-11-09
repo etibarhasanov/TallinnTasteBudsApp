@@ -1,96 +1,130 @@
 # Tallinn Tastebuds — iOS app
 
-The iPhone and iPad app for [Tallinn Tastebuds](https://tallinntastebuds.ee),
-built from the same content the website reads.
+The iPhone and iPad app for [Tallinn Tastebuds](https://tallinntastebuds.ee).
+SwiftUI, iOS 17 and later, Apple's own map, no third-party dependencies.
 
-SwiftUI, iOS 17 and later, no third-party dependencies.
+The app has no server of its own. It reads the same files and calls the same
+Functions the website does, so anything published on the website — a place,
+a translation, a list somebody made — is in the app the moment the site
+deploys, with nothing submitted to Apple.
 
 ---
 
-## The short answer to "will my website edits show up in the app?"
+## What it does
 
-Yes. That is the whole design.
+Four tabs.
 
-The website is a static site with no build step: everything it shows lives in
-five JSON files under `data/` in the
-[tallinntastebuds](https://github.com/etibarhasanov/tallinntastebuds) repo, and
-the page reads them at load time. This app reads **exactly those same files over
-the network**, from the same host.
+- **Map.** Every place on the map as the site's own mark on Apple's map, with
+  the site's search box and filter chips over it. Pressing a pin raises a card
+  (Open, Directions, Save); **Places** at the bottom opens the same places as
+  a list, nearest first.
+- **Lists.** Everybody's lists, the most opened first, searchable by list,
+  author or place — `/lists` on the website. A list opens as a numbered page
+  with what its author wrote about each place and what to order, or as pins on
+  a map wearing the list's own marker. The author's name opens their profile.
+  A place a list names that is not on the map — one of Google's — opens with
+  what the author and Google say about it, and is labelled as not on the map.
+  Signed in, your own lists and the ones you saved sit above everybody's,
+  with **New list** first.
+- **Saved.** The places this phone saved, newest first.
+- **Me.** Signing in or making an account, your profile, signing out and
+  deleting the account; the language; the way out to the website, Instagram
+  and the privacy page.
 
-```
-   etibarhasanov/tallinntastebuds  (git push)
-                 |
-                 v
-   Cloudflare Pages — tallinntastebuds.ee
-                 |
-        +--------+---------+
-        |                  |
-   data/*.json         data/*.json
-   photos/*            photos/*
-        |                  |
-        v                  v
-     website            iOS app
-```
+### Accounts and your own lists
 
-So: edit `data/restaurants.json`, push, wait for Cloudflare Pages to deploy, and
-the new place is on the map in the app — on the next launch, or the next time
-the app comes back to the foreground. Nothing is submitted to Apple, nothing is
-reviewed, no one has to update anything.
+An account is the website's account: a username and a password, checked by
+`/api/account`, with the session the site hands back as its HttpOnly cookie.
+`URLSession`'s shared cookie store keeps it across launches the way a browser
+does, so the server needed no change for the app to sign in, and anything
+done in the app is on the website at once and the other way round.
 
-The site serves `data/*` with `Cache-Control: must-revalidate`, so the app's
-conditional request gets the truth every time rather than a stale cached copy.
+Signed in, you can make a list, name it, give it a line, pick its pin from the
+same forty, make it private, put places on it from every place in Tallinn (the
+map's and Google's), say what is good about each and what to order, drag them
+into order, take them off, and delete it — from the list's **Edit**, or from
+any place page's add-to-list button. It works the way the website's editor
+does: putting a place on and taking one off are sent at once, because the
+server decides whether a place may go on; everything else waits for **Save**
+and goes as one write per field. The heart on somebody else's list saves it to
+your account; signed out, it asks you to sign in.
 
-### What updates by itself
+Signing in also folds the places the account saved on the website into
+**Saved**. Saves made in the app stay on the phone for now — see below.
 
-| Change on the website | Shows up in the app |
+Every place page has the photos, the write-up in the reader's language, the
+kinds of place, what to order, walking directions in Apple Maps, the website,
+the phone and the reel, and a share link that opens the same place on the site.
+
+### What is not in it yet
+
+In the order they are planned:
+
+1. **Saves that follow the account, and Google.** Saving a place from the app
+   to the account needs a way past the Turnstile check `/api/saves` asks a
+   browser for, which an app cannot show. Google sign-in needs the system's
+   sign-in sheet rather than a web view, and once a third-party sign-in is in
+   the app, App Review asks for **Sign in with Apple** beside it (a route and a
+   column on `users`). All three are server work on the website, which is why
+   the app signs in with a username and password only for now — App Review
+   does not ask for Apple's sign-in beside a site's own accounts.
+2. **Discounts, stories, and Ask** — the pass to show at the table, the
+   stories, and the chat.
+3. **Every string in eleven languages, App Store screenshots and the privacy
+   answers**, then submission.
+
+Splitwise, the flashcards, chess, the blog and the owner's pages stay on the
+website.
+
+---
+
+## Where everything comes from
+
+| What | From |
 | --- | --- |
-| Add, edit or remove a place in `data/restaurants.json` | Yes, next refresh |
-| Rewrite a blurb, add a translation | Yes, next refresh |
-| Add or replace photos in `photos/<id>/` | Yes, next refresh |
-| Add or retire a type in `data/taxonomy.json` | Yes — the filter chips follow |
-| Any interface wording in `data/ui.json` | Yes — the app ships no strings of its own |
-| **Add a whole new language** to `ui.json` | Yes — it appears in the language picker |
-| Start or stop a discount in `data/deals.json` | Yes, next refresh |
-| Change the radio station in `data/radio.json` | Yes, next refresh |
-| Mark a place `"closed": true` | Yes — greyed out, with the site's closed note |
+| The places | `data/map.json` |
+| Their write-ups and the interface text, per language | `data/lang/<code>.json` |
+| Which languages exist | `data/lang/index.json` |
+| The kinds of place and the chip row | `data/taxonomy.json` |
+| Photos | `/photos/<id>/<file>` |
+| Everybody's lists, a page at a time | `GET /api/lists?all=1[&q=…][&from=…]` |
+| One list, whole | `GET /api/lists?id=<id>` |
+| A profile | `GET /api/profile?name=<name>` |
+| Who is signed in, and the account's saves | `GET /api/account` |
+| Sign in, make an account, sign out, delete it | `POST /api/account` with `action` |
+| Your lists and the ones you saved | `GET /api/lists` (signed in) |
+| Make, edit, fill, order, save or delete a list | `POST /api/lists` with `action` |
+| Every place in Tallinn, to put one on a list | `GET /api/places?q=` |
+
+**Strings.** The app asks the site's `ui.json` for every string by key, so it is
+in the site's eleven languages wherever the site already says the thing. The
+few strings only the app needs — their keys start with `app` — carry their
+English in the code until they are added to `ui.json` on the website, at which
+point they translate themselves with no release. `Tools/validate-seed.mjs`
+fails the build if a key the app borrows from the site is renamed there.
+
+**Three layers, so it always draws something.** The files above are read from
+the network on launch and every time the app comes back to the foreground,
+kept on disk in Application Support, and bundled as a snapshot under
+`TallinnTasteBuds/Seed/` for a first launch with no signal.
+`Tools/refresh-seed.sh` pulls a fresh snapshot and a weekly workflow does it by
+itself. Lists and profiles are read live and not cached, the same choice the
+website makes: they change while their authors are writing them.
 
 ### What still needs an App Store release
 
-Anything that is a change to the *app* rather than to the *content*: new screens,
-a different layout, a new gesture, the app icon, the tab bar. That is the normal
-trade in exchange for an app that works offline, sorts by distance, keeps a saved
-list, and plays the radio behind the lock screen — none of which a web page on
-iOS can do.
-
-Adding a **new kind of field** to `restaurants.json` also needs a release, since
-the app has to be taught to draw it. Adding new *values* to fields that already
-exist never does.
-
-### Three layers, so it always draws something
-
-1. **The network.** Opening the app revalidates all five files against their
-   stored ETags — on a cold launch and on every return to the foreground. That
-   is the only time it fetches: there is no polling and no pull-to-refresh, so
-   the app is never quietly using the network behind you. An unchanged file
-   costs a 304 and no body.
-2. **The disk.** Whatever was last fetched, in Application Support. This is what
-   the first frame draws, so the app never shows a spinner where the map goes.
-3. **The bundle.** A snapshot committed under `TallinnTasteBuds/Content/Seed/`,
-   for a first launch on a phone with no signal. `Tools/refresh-seed.sh` pulls a
-   fresh one, and a weekly workflow does it automatically.
-
-The app is therefore useful on the plane and current in the city.
+A change to the app rather than the content: a new screen, a new layout, a
+new kind of field the app has to be taught to draw. New values in the fields it
+already reads never do.
 
 ---
 
 ## Building it
 
-**Never opened Xcode before?** Read
-[docs/RUN-ON-YOUR-PHONE.md](docs/RUN-ON-YOUR-PHONE.md) instead — it walks through
-running the app in the simulator and on your own iPhone without writing a line of
-code or paying Apple anything.
+Never opened Xcode? [docs/RUN-ON-YOUR-PHONE.md](docs/RUN-ON-YOUR-PHONE.md)
+walks through running it in the simulator and on your own iPhone.
 
-Requires Xcode 16 or later on macOS.
+Requires Xcode 16 or later.
 
 ```sh
 git clone https://github.com/etibarhasanov/TallinnTasteBudsApp
@@ -98,28 +132,19 @@ cd TallinnTasteBudsApp
 open TallinnTasteBuds.xcodeproj
 ```
 
-Pick a simulator and press Run. There is nothing to install first — no
-CocoaPods, no Swift packages, no API keys. The map is Apple's, so unlike the
-website there is no tile key to keep alive.
+Pick a simulator and press Run. Nothing to install, no keys. The project uses
+a synchronised folder, so a Swift file dropped anywhere under
+`TallinnTasteBuds/` is compiled without touching the project file.
 
-To run it against a preview deployment instead of production, add a launch
-argument in the scheme: `-ttb.contentBaseURL https://your-preview.pages.dev`.
-
-### Before it can go to the App Store
-
-1. Set `DEVELOPMENT_TEAM` in the target's signing settings to your team.
-2. `PRODUCT_BUNDLE_IDENTIFIER` is `ee.tallinntastebuds.app` — change it if you
-   registered a different one.
-3. Replace `TallinnTasteBuds/Assets.xcassets/AppIcon.appiconset/icon-1024.png`
-   if you want something other than the placeholder drawn from the site's
-   palette.
-
-On App Review: the app is not a wrapper around the website. It is a native map,
-list and detail UI over a public content feed, plus offline use, distance
-sorting, a saved list and background audio. The two web views it does open —
-the discount code and the Instagram or TikTok post — are deliberate: the
-discount code rotates on a clock the staff verification page shares, and one
-implementation of that is the right number.
+CI (`.github/workflows/ios.yml`) checks the snapshot and builds for the
+simulator on every push to a `claude/**` branch, then launches the app in the
+simulator on a dozen screens and photographs each one. The pictures are the
+run's `screens` artifact and, shrunk, the `ci-screens` branch (one commit,
+overwritten every run), which is how a session with no Mac looks at what it
+built. `App/LaunchScript.swift` reads the launch arguments that choose the
+screen; a reader never launches the app with any. Nothing in that pass signs
+in: an account made to be photographed would be a real account on the live
+site.
 
 ---
 
@@ -127,30 +152,24 @@ implementation of that is the right number.
 
 ```
 TallinnTasteBuds/
-  TallinnTasteBudsApp.swift     entry point; refreshes on launch and on foreground
-  Models/                       Place, Taxonomy, Deal, RadioStation — mirrors of data/schema.json
-  Content/
-    ContentSource.swift         the base URL, and every URL derived from it
-    ContentClient.swift         fetch with ETags, disk cache, bundled seed
-    ContentStore.swift          the app's state: content, language, filters, sort
-    Strings.swift               interface text, read from the site's ui.json
-    AppStrings.swift            the few words the app needs that the site has no equivalent for
-    Seed/                       the offline snapshot (refreshed weekly)
-  Services/                     location, saved places, radio
-  Views/                        map, list, detail, saved, about
+  App/TallinnTasteBudsApp.swift   entry point, the four tabs, refresh on foreground
+  Core/
+    API.swift                     the site's address and every request to it
+    Disk.swift                    the disk cache and the bundled snapshot
+    ContentStore.swift            places, kinds, languages, strings, search
+    SavesStore.swift              the places this phone saved
+    AccountStore.swift            who is signed in, their lists, every write to them
+    LocationProvider.swift        the blue dot and distances
+  Models/
+    Place.swift                   a place on the map; a kind of place
+    Lists.swift                   lists, list items, profiles, list pins
+  Views/                          one file per screen, plus Theme and Routes
+  Seed/                           the offline snapshot (refreshed weekly)
 Tools/
-  refresh-seed.sh               pull a current snapshot from the site
-  validate-seed.mjs             check the snapshot against what the decoders need
+  refresh-seed.sh                 pull a current snapshot from the site
+  validate-seed.mjs               check it against what the decoders need
 ```
 
-`ContentSource.productionBase` is the one line that decides where content comes
-from. Point it at a different host and the whole app follows.
-
-## Keeping it honest
-
-`Tools/validate-seed.mjs` runs in CI on every push. It checks the snapshot the
-way the website's own `tools/validate.mjs` checks its data: required fields
-present, ids unique, price bands in range, every `types` entry declared in the
-taxonomy, every deal pointing at a real place, and every `ui.json` key the app
-reads present in English. A rename on the website that the app has not been told
-about fails the build here rather than showing a bare key to a reader.
+`Theme.swift` carries the website's colours to the value. `Routes.swift` is
+the one list of screens any tab can open — a place, a list, a profile, a place
+off the map — so a link from anywhere goes anywhere.
