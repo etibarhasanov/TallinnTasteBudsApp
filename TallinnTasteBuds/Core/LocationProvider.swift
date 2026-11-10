@@ -4,10 +4,12 @@ import Observation
 
 /// Where the phone is, when the reader has said the app may know.
 ///
-/// Used for two things and kept on the phone for both: the blue dot on the
-/// map, and how far away each place is. Without permission everything still
-/// works and distances are measured from the Old Town, the way the website
-/// does it for a visitor who said no.
+/// Used for the blue dot on the map and for how far away each place is, both
+/// worked out on the phone. It leaves the phone for one thing: `RouteView`
+/// sends it to the site's `/api/route` when somebody asks for the way to a
+/// place, which is what the permission prompt and `docs/PRIVACY.md` say.
+/// Without permission everything else still works and distances are measured
+/// from the Old Town, the way the website does it for a visitor who said no.
 @MainActor
 @Observable
 final class LocationProvider: NSObject, CLLocationManagerDelegate {
