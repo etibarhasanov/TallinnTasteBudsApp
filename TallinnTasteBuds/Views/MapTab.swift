@@ -71,6 +71,9 @@ struct MapTab: View {
             }
         }
         .mapStyle(.standard(pointsOfInterest: .excludingAll))
+        // The blue dot is the app's tint; left to the accent it drew you
+        // in brick red, the colour of a pin, beside a blue route.
+        .tint(Theme.here)
         .mapControls {
             // MapKit's own locate button sits in the top corner, under the
             // search field, which is why nobody could find it; LocateButton
