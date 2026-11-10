@@ -5,9 +5,9 @@ gained accounts, lists, discounts and sign-in with Google and Apple. **Read
 every line and correct anything that is not true.** You are the one declaring
 it, and this is an account of the code rather than a lawyer's advice.
 
-It has three parts: where the policy lives, the text the app adds to it, and
-the facts behind each sentence, so that a change to the app can be checked
-against this page.
+It has three parts: where the policy lives, the section about the app that
+is on the website's page, and the facts behind each sentence, so that a
+change to the app can be checked against this page.
 
 ---
 
@@ -19,8 +19,8 @@ and it is the address to give App Store Connect as the privacy policy URL.
 
 An account in the app is the website's account, so most of that page is
 already the app's policy too: what an account keeps, who else handles it, how
-long, your rights. Three things on it are not true of the app, and two things
-the app does are not on it:
+long, your rights. Three things in the rest of it are not true of the app, and
+two things the app does are not in the rest of it:
 
 | The website's page says | In the app |
 |---|---|
@@ -30,14 +30,16 @@ the app does are not on it:
 | *(nothing)* | Your location is sent to the site when you ask for the way to a place |
 | *(nothing)* | Signing in with Apple |
 
-So the page needs a section about the app before the app is submitted. The
-text is below. Adding it is a change to `data/privacy.json` in the website's
-repository, in all eleven languages, with its date moved — it is not done
-here, because what a visitor reads on the site is the owner's to approve.
+So the page has a section about the app, **In the iPhone app**, added on
+2026-11-10 in all eleven languages (`data/privacy.json` in the website's
+repository). Its English is below. The two are one text kept in two places:
+when the app starts sending something else, change the facts at the foot of
+this file, this copy, and the website's section together, and move the
+date on the page.
 
 ---
 
-## The section to add to the website's page
+## The section on the website's page
 
 > ### In the iPhone app
 >
@@ -46,41 +48,36 @@ here, because what a visitor reads on the site is the owner's to approve.
 > this page says about accounts, about how long things are kept and about
 > your rights applies to the app too. A few things are different.
 >
-> **No analytics.** The app does not load Microsoft Clarity or anything like
-> it, shows no advertising and does not track you across other apps or sites.
+> The app loads no analytics: not Microsoft Clarity, and nothing like it. It
+> shows no advertising and does not track you across other apps or sites.
+> Its map is drawn by Apple rather than CARTO, so Apple receives your
+> device's internet address in order to send the map.
 >
-> **The map is Apple's.** The app draws its map with Apple Maps, so Apple
-> receives your device's internet address in order to send the map, as CARTO
-> does on this site.
+> The app asks whether it may use your location the first time it opens, and
+> works without it if you say no. Your location is used on your phone to
+> show where you are and how far each place is. When you ask for the way to
+> a place — on foot, by bus or by car — it is sent to this site with that
+> one request so the route can be worked out, and the site passes a rounded
+> position on to the routing service it uses: OpenStreetMap Germany for
+> walking and driving, and peatus.ee, Estonia's public journey planner, for
+> buses and trams. This site does not keep it and does not connect it to
+> your account. You can switch location off for the app in iPhone Settings
+> at any time.
 >
-> **Your location.** The app asks whether it may use your location the first
-> time it opens, and works without it if you say no. It is used on your
-> phone to show where you are and how far each place is. When you ask for the way
-> somewhere — on foot, by bus or by car — your position is sent to this site
-> with that one request, so the route can be worked out. To do that the site
-> passes a rounded position on to the routing service it uses: OpenStreetMap
-> Germany for walking and driving, and peatus.ee, Estonia's public journey
-> planner, for buses and trams. This site does not store it and does not
-> connect it to your account. You can switch location off for the app at any
-> time in iPhone Settings, and everything but the directions and the
-> distances still works.
+> You can use the app without an account. If you make one, it is a username
+> and either a password, Google or Apple. If you use Apple, the site keeps
+> the number Apple gives you for this app — never your email address or your
+> name, which the app does not ask Apple for.
 >
-> **Signing in.** You can use the app without an account. If you make one, it
-> is a username and either a password, Google or Apple. With Apple, the site
-> keeps the number Apple gives you for this app — never your email address or
-> your name, which the app does not ask Apple for. With Google it is the same
-> as on this site. The app keeps you signed in with the same cookie the site
-> uses, on your phone, for up to a year or until you sign out.
->
-> **What stays on your phone.** The places you save with the heart are kept
-> on your phone. Signing in brings the places your account saved on this site
-> into that list; a place you save in the app is not sent to your account.
-> Your language and colour are kept on your phone too. Deleting the app
+> The places you save with the heart in the app are kept on your phone.
+> Signing in brings the places your account saved on this site into that
+> list; a place you save in the app is not sent to your account. Your
+> language and colour are kept on your phone too, and deleting the app
 > removes all of it.
 >
-> **Deleting your account.** Me → Delete account in the app removes your
-> account, your saves, lists, profile and sign-in at once, exactly as the
-> button on this site's account page does.
+> Delete account, under Me in the app, removes your account, your saves,
+> lists, profile and sign-in at once, exactly as the button on this site's
+> account page does.
 
 ---
 
