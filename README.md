@@ -17,7 +17,13 @@ Four tabs.
 - **Map.** Every place on the map as the site's own mark on Apple's map, with
   the site's search box and filter chips over it. Pressing a pin raises a card
   (Open, Directions, Save); **Places** at the bottom opens the same places as
-  a list, nearest first.
+  a list, nearest first. The search box searches all of Tallinn, the way a
+  maps app does: suggestions drop under it as you type — the map's own
+  places, then everywhere in the city, which the website answers from
+  `/api/places?q=`, the same search its own pages use. Pressing a suggestion
+  goes to that place; the keyboard's Search draws every result at once, the
+  city's as plain dots beside the mark, and **Search this area** asks again
+  once the map is moved. Offline, the places the app carries still answer.
 - **Lists.** Everybody's lists, the most opened first, searchable by list,
   author or place — `/lists` on the website. A list opens as a numbered page
   with what its author wrote about each place and what to order, or as pins on

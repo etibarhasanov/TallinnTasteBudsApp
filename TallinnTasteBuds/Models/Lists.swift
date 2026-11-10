@@ -47,15 +47,29 @@ struct MyLists: Decodable {
     }
 }
 
-/// A place in the search a list's places are picked from: the map's own and
-/// Google's, from `/api/places?q=`.
+/// A place the city's search found: the map's own and Google's, from
+/// `/api/places?q=`. The list picker reads the first four fields; the map tab
+/// reads the rest, which the site added in November 2026 and an older answer
+/// simply lacks.
 struct CatalogueHit: Identifiable, Hashable, Decodable {
     let id: String
     let name: String
     let address: String
+    /// True for one of the places on the Tallinn Tastebuds map.
     let map: Bool
+    let lat: Double?
+    let lng: Double?
+    /// Google's own word for what the place is: "Pizza Restaurant".
+    let category: String
+    let rating: Double?
+    let reviews: Int?
 
-    enum CodingKeys: String, CodingKey { case id, name, address, map }
+    var coordinate: CLLocationCoordinate2D? {
+        guard let lat, let lng else { return nil }
+        return .init(latitude: lat, longitude: lng)
+    }
+
+    enum CodingKeys: String, CodingKey { case id, name, address, map, lat, lng, category, rating, reviews }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -63,6 +77,11 @@ struct CatalogueHit: Identifiable, Hashable, Decodable {
         name = (try? c.decodeIfPresent(String.self, forKey: .name)) ?? ""
         address = (try? c.decodeIfPresent(String.self, forKey: .address)) ?? ""
         map = (try? c.decodeIfPresent(Bool.self, forKey: .map)) ?? false
+        lat = try? c.decodeIfPresent(Double.self, forKey: .lat)
+        lng = try? c.decodeIfPresent(Double.self, forKey: .lng)
+        category = (try? c.decodeIfPresent(String.self, forKey: .category)) ?? ""
+        rating = try? c.decodeIfPresent(Double.self, forKey: .rating)
+        reviews = try? c.decodeIfPresent(Int.self, forKey: .reviews)
     }
 }
 
@@ -175,6 +194,29 @@ struct ListItem: Identifiable, Hashable, Decodable {
         mapsUrl = (try? c.decodeIfPresent(String.self, forKey: .mapsUrl)) ?? ""
         say = (try? c.decodeIfPresent(String.self, forKey: .say)) ?? ""
         mustOrder = (try? c.decodeIfPresent(String.self, forKey: .mustOrder)) ?? ""
+    }
+}
+
+extension ListItem {
+    /// A place the map's search found, as the page for a place that is not
+    /// on the map draws one: what the search knows and nothing an author said.
+    init(hit: CatalogueHit) {
+        place = hit.id
+        name = hit.name
+        address = hit.address
+        lat = hit.lat
+        lng = hit.lng
+        map = hit.map
+        google = !hit.map
+        types = []
+        rating = hit.rating
+        reviews = hit.reviews
+        phone = ""
+        website = ""
+        hours = []
+        mapsUrl = ""
+        say = ""
+        mustOrder = ""
     }
 }
 

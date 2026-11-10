@@ -54,4 +54,9 @@ enum LaunchScript {
     static var type: String? { UserDefaults.standard.string(forKey: "ttbType") }
     /// `-ttbSelect <id>` presses a pin on the map tab.
     static var select: String? { UserDefaults.standard.string(forKey: "ttbSelect") }
+    /// `-ttbQuery <words>` types into the map's search and presses Search, so
+    /// the results are drawn; with `-ttbTyping YES` it stays in the field
+    /// instead, with the suggestions under it.
+    static var query: String? { UserDefaults.standard.string(forKey: "ttbQuery") }
+    static var typing: Bool { UserDefaults.standard.bool(forKey: "ttbTyping") }
 }
