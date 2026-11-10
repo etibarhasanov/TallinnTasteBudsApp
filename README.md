@@ -150,7 +150,8 @@ In the order they are planned:
 2. **Ask**, the chat. Stories are not planned for the app.
 3. **App Store screenshots, the listing copy and the privacy page**, then
    submission. `docs/PRIVACY.md` says what the app does with what it knows
-   and has the section the website's privacy page needs about the app;
+   and carries the English of the section about the app on the website's
+   privacy page;
    `docs/APP-STORE.md` has the answers to Apple's privacy questions.
 
 Splitwise, the flashcards, chess, the blog and the owner's pages stay on the

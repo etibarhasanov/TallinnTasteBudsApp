@@ -53,9 +53,10 @@ to sound like you, it is your voice on the page and not mine.
 - **Marketing URL** — optional, same address.
 - **Privacy policy URL** — **required, no exceptions.** Give App Store Connect
   `https://tallinntastebuds.ee/privacy`, the website's own page, which the app
-  also opens from Me. It needs a section about the app first:
-  [`docs/PRIVACY.md`](PRIVACY.md) has the text and says why. Read it and
-  correct anything that is not true — it is your declaration, not mine.
+  also opens from Me. It has a section about the app, **In the iPhone app**;
+  [`docs/PRIVACY.md`](PRIVACY.md) has its English and the facts behind it.
+  Read it and correct anything that is not true — it is your declaration,
+  not mine.
 
 ### Screenshots
 
