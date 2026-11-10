@@ -140,6 +140,8 @@ jobs:
           shot 20-route-walk -ttbRoute badam -routeMode foot
           shot 21-route-bus -ttbRoute badam -routeMode bus
           shot 22-route-car -ttbRoute badam -routeMode car
+          shot 23-search-sushi -ttbQuery sushi
+          shot 24-search-beer-list -ttbQuery beer -ttbList YES
 
       - uses: actions/upload-artifact@v4
         with:

@@ -50,6 +50,10 @@ enum LaunchScript {
     #if DEBUG
     static var passPreview: Bool { UserDefaults.standard.bool(forKey: "ttbPassPreview") }
     #endif
+    /// `-ttbQuery <words>` types into the map's search; `-ttbList YES` opens
+    /// the results as a list.
+    static var query: String { UserDefaults.standard.string(forKey: "ttbQuery") ?? "" }
+    static var list: Bool { UserDefaults.standard.bool(forKey: "ttbList") }
     /// `-ttbType <chip id>` presses a filter chip on the map tab.
     static var type: String? { UserDefaults.standard.string(forKey: "ttbType") }
     /// `-ttbSelect <id>` presses a pin on the map tab.

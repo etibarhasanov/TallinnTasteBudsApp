@@ -153,6 +153,28 @@ struct ListItem: Identifiable, Hashable, Decodable {
         return .init(latitude: lat, longitude: lng)
     }
 
+    /// A row made here rather than read: a venue found by the search, drawn
+    /// with the same page a list's place off the map gets.
+    init(place: String, name: String, address: String, lat: Double?, lng: Double?, map: Bool,
+         types: [String], rating: Double?, reviews: Int?) {
+        self.place = place
+        self.name = name
+        self.address = address
+        self.lat = lat
+        self.lng = lng
+        self.map = map
+        self.google = !map
+        self.types = types
+        self.rating = rating
+        self.reviews = reviews
+        phone = ""
+        website = ""
+        hours = []
+        mapsUrl = ""
+        say = ""
+        mustOrder = ""
+    }
+
     enum CodingKeys: String, CodingKey {
         case place, name, address, lat, lng, map, google, types, rating, reviews, phone, website, hours, mapsUrl, say, mustOrder
     }

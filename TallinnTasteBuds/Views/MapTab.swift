@@ -3,16 +3,23 @@ import MapKit
 
 /// The first tab: every place on Apple's map, with the website's search and
 /// filter chips over it, and the places as a list a button away.
+///
+/// The search finds anywhere in Tallinn, as the website's does: the map's own
+/// places, and while something is typed, the venues behind them — the rest of
+/// the city — as small plain pins, so a search for a place nobody has written
+/// up yet still finds it. The map's own places keep the painting.
 struct MapTab: View {
     @Environment(ContentStore.self) private var content
     @Environment(SavesStore.self) private var saves
     @Environment(LocationProvider.self) private var location
 
     @State private var path = NavigationPath(LaunchScript.routes(tab: 0))
-    @State private var query = ""
+    @State private var query = LaunchScript.query
     @State private var type: String? = LaunchScript.type
     @State private var selected: String? = LaunchScript.select
     @State private var showingList = false
+    /// Set by a launch script, once the city has loaded and there is a list to show.
+    @State private var scriptedList = LaunchScript.list
     @State private var camera: MapCameraPosition = .region(MapTab.tallinn)
 
     static let tallinn = MKCoordinateRegion(
@@ -22,12 +29,27 @@ struct MapTab: View {
 
     private var visible: [Place] { content.filtered(query: query, type: type) }
 
+    /// The rest of the city the search finds, nearest first.
+    private var city: [Venue] {
+        content.venueMatches(query: query, type: type)
+            .sorted { location.distance(to: $0.location) < location.distance(to: $1.location) }
+    }
+
+    /// The venues drawn as pins: the nearest of them, since "restaurant" finds
+    /// hundreds and a map of hundreds of pins is a map of none. The list has
+    /// them all.
+    private static let cityPins = 80
+
+    /// A venue's pin is tagged apart from a place of the map's, because the
+    /// map's selection is one value for both.
+    static let venueTag = "venue:"
+
     var body: some View {
         NavigationStack(path: $path) {
             ZStack {
                 map
                 VStack(spacing: 10) {
-                    SearchField(text: $query, prompt: content.t("search", "Search places"))
+                    SearchField(text: $query, prompt: content.t("findPlaceholder", "Find anywhere in Tallinn"))
                         .padding(.horizontal, 16)
                     ChipRow(selected: $type)
                     Spacer()
@@ -43,11 +65,15 @@ struct MapTab: View {
             .toolbar(.hidden, for: .navigationBar)
             .withRoutes()
             .sheet(isPresented: $showingList) {
-                PlacesSheet(places: visible) { id in
+                PlacesSheet(places: visible, city: city) { route in
                     showingList = false
-                    path.append(Route.place(id))
+                    path.append(route)
                 }
                 .presentationDetents([.medium, .large])
+            }
+            .task(id: query) {
+                if !query.trimmingCharacters(in: .whitespaces).isEmpty { await content.loadVenues() }
+                if scriptedList { scriptedList = false; showingList = true }
             }
             .onAppear { location.start() }
             .onChange(of: query) { _, _ in deselectIfHidden() }
@@ -68,6 +94,13 @@ struct MapTab: View {
                 }
                 .annotationTitles(.hidden)
                 .tag(place.id)
+            }
+            ForEach(Array(city.prefix(Self.cityPins))) { venue in
+                Annotation(venue.name, coordinate: venue.coordinate, anchor: .center) {
+                    VenuePin(selected: selected == Self.venueTag + venue.id)
+                }
+                .annotationTitles(.hidden)
+                .tag(Self.venueTag + venue.id)
             }
         }
         .mapStyle(.standard(pointsOfInterest: .excludingAll))
@@ -90,9 +123,22 @@ struct MapTab: View {
                 .padding(.horizontal, 12)
                 .padding(.bottom, 12)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
+        } else if let id = selected, id.hasPrefix(Self.venueTag),
+                  let venue = content.venue(String(id.dropFirst(Self.venueTag.count))) {
+            VenueCard(venue: venue) { path.append(Route.venue(venue.asListItem)) }
+                .padding(.horizontal, 12)
+                .padding(.bottom, 12)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
         } else {
             HStack {
-                if visible.isEmpty {
+                if visible.isEmpty && city.isEmpty && content.venuesLoading && !query.isEmpty {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text(content.t("findLooking", "Looking everywhere…")).font(.subheadline)
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 10)
+                    .background(Theme.paper, in: Capsule())
+                } else if visible.isEmpty && city.isEmpty {
                     Text(content.t("noResults", "Nothing matches those filters yet."))
                         .font(.subheadline)
                         .padding(.horizontal, 14).padding(.vertical, 10)
@@ -101,7 +147,7 @@ struct MapTab: View {
                     Button {
                         showingList = true
                     } label: {
-                        Label("\(content.t("listOpen", "Places")) · \(visible.count)", systemImage: "list.bullet")
+                        Label("\(content.t("listOpen", "Places")) · \(visible.count + city.count)", systemImage: "list.bullet")
                             .font(.subheadline.weight(.semibold))
                             .padding(.horizontal, 16).padding(.vertical, 11)
                             .background(Theme.paper, in: Capsule())
@@ -115,7 +161,13 @@ struct MapTab: View {
     }
 
     private func deselectIfHidden() {
-        if let id = selected, !visible.contains(where: { $0.id == id }) { selected = nil }
+        guard let id = selected else { return }
+        if id.hasPrefix(Self.venueTag) {
+            let venueID = String(id.dropFirst(Self.venueTag.count))
+            if !city.prefix(Self.cityPins).contains(where: { $0.id == venueID }) { selected = nil }
+        } else if !visible.contains(where: { $0.id == id }) {
+            selected = nil
+        }
     }
 }
 
@@ -290,18 +342,39 @@ struct PlaceRow: View {
     }
 }
 
-/// Every place the map is showing, nearest first.
+/// Every place the map is showing, nearest first — and while something is
+/// typed, the rest of the city it found under them, in the website's two
+/// groups: On the map, and Everywhere in Tallinn.
 struct PlacesSheet: View {
     @Environment(ContentStore.self) private var content
     @Environment(LocationProvider.self) private var location
     let places: [Place]
-    let open: (String) -> Void
+    var city: [Venue] = []
+    let open: (Route) -> Void
 
     var body: some View {
         NavigationStack {
-            List(sorted) { place in
-                Button { open(place.id) } label: { PlaceRow(place: place, thumb: 56) }
-                    .listRowBackground(Theme.paper)
+            List {
+                if !places.isEmpty {
+                    Section {
+                        ForEach(sorted) { place in
+                            Button { open(.place(place.id)) } label: { PlaceRow(place: place, thumb: 56) }
+                                .listRowBackground(Theme.paper)
+                        }
+                    } header: {
+                        if !city.isEmpty { Text(content.t("findOnMap", "On the map")) }
+                    }
+                }
+                if !city.isEmpty {
+                    Section {
+                        ForEach(city) { venue in
+                            Button { open(.venue(venue.asListItem)) } label: { VenueRow(venue: venue) }
+                                .listRowBackground(Theme.paper)
+                        }
+                    } header: {
+                        Text(content.t("findInCity", "Everywhere in Tallinn"))
+                    }
+                }
             }
             .listStyle(.plain)
             .paperBackground()
@@ -321,5 +394,78 @@ struct PlacesSheet: View {
 
     private var sorted: [Place] {
         places.sorted { location.distance(to: $0.location) < location.distance(to: $1.location) }
+    }
+}
+
+/// A place off the map as a pin: small and plain, a fork and knife on paper,
+/// because the painting is for places that have been eaten at and written up.
+struct VenuePin: View {
+    var selected: Bool
+
+    var body: some View {
+        Image(systemName: "fork.knife")
+            .font(.system(size: selected ? 14 : 9, weight: .bold))
+            .foregroundStyle(selected ? .white : Theme.muted)
+            .frame(width: selected ? 34 : 20, height: selected ? 34 : 20)
+            .background(selected ? Theme.ink : Theme.paper, in: Circle())
+            .overlay(Circle().stroke(selected ? .white : Theme.muted.opacity(0.6), lineWidth: selected ? 2 : 1))
+            .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+            .animation(.snappy, value: selected)
+    }
+}
+
+/// A place off the map in a row: what it is, how dear, how far, its rating.
+struct VenueRow: View {
+    @Environment(ContentStore.self) private var content
+    @Environment(LocationProvider.self) private var location
+    let venue: Venue
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Theme.wash
+                .overlay(Image(systemName: "fork.knife").foregroundStyle(Theme.muted))
+                .frame(width: 56, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(venue.name).font(.headline).foregroundStyle(Theme.ink).lineLimit(2)
+                Text(content.venueLine(venue, from: location)).font(.subheadline).foregroundStyle(Theme.muted).lineLimit(1)
+                if !venue.address.isEmpty {
+                    Text(venue.address).font(.footnote).foregroundStyle(Theme.muted).lineLimit(1)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .contentShape(Rectangle())
+    }
+}
+
+/// The card that rises when a venue's pin is pressed.
+struct VenueCard: View {
+    @Environment(ContentStore.self) private var content
+    let venue: Venue
+    let open: () -> Void
+    @State private var route: RouteTarget?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Button(action: open) { VenueRow(venue: venue) }.buttonStyle(.plain)
+            HStack(spacing: 8) {
+                Button(action: open) {
+                    Text(content.t("appOpen", "Open")).frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                Button {
+                    route = RouteTarget(id: venue.id, name: venue.name, coordinate: venue.coordinate)
+                } label: {
+                    Text(content.t("directions", "Directions")).frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+            .controlSize(.large)
+        }
+        .padding(14)
+        .background(Theme.paper, in: RoundedRectangle(cornerRadius: 18))
+        .shadow(color: .black.opacity(0.18), radius: 14, y: 4)
+        .fullScreenCover(item: $route) { RouteView(target: $0) }
     }
 }

@@ -18,6 +18,17 @@ struct Language: Hashable {
 final class ContentStore {
     private(set) var places: [Place] = []
     private(set) var types: [PlaceType] = []
+    /// The rest of the city, from `/api/places`: fetched the first time
+    /// somebody types, not on the way in — somebody who never searches has no
+    /// use for three hundred kilobytes of it. Kept on disk after that.
+    private(set) var venues: [Venue] = []
+    private(set) var venuesLoading = false
+    /// What each of the map's own places cooks, lent by the roll.
+    private var kitchensOf: [String: [String]] = [:]
+    /// Cuisine id → its name in every language.
+    private var cuisines: [String: [String: String]] = [:]
+    /// Each venue's searchable words, folded once rather than per keystroke.
+    private var venueHay: [String: String] = [:]
     /// Every discount in `data/deals.json`, live or not.
     private(set) var deals: [Deal] = []
     /// Code → the language's own name, from `data/lang/index.json`.
@@ -178,10 +189,11 @@ final class ContentStore {
     // MARK: Search
 
     /// The places a search and a chip leave on the map. The search reads the
-    /// name, the address, the kinds of place in this language, what to order
-    /// and the write-up — the same fields the website's search reads.
+    /// name, the street, the kinds of place in every language, what it cooks,
+    /// what to order and the write-up. Every word typed has to land somewhere,
+    /// so "telliskivi kohvik" narrows rather than widens, as on the website.
     func filtered(query: String, type: String?) -> [Place] {
-        let q = Self.fold(query.trimmingCharacters(in: .whitespacesAndNewlines))
+        let words = Self.words(query)
         return places.filter { p in
             if p.closed { return false }
             if type == Self.discountChip {
@@ -189,14 +201,97 @@ final class ContentStore {
             } else if let type, !p.types.contains(type) {
                 return false
             }
-            guard !q.isEmpty else { return true }
+            guard !words.isEmpty else { return true }
             var hay = [p.name, p.address] + p.mustOrder
-            for id in p.types {
-                if let t = self.type(id) { hay.append(t.name(lang)); hay.append(t.name("en")); hay += t.words }
-            }
+            hay += kindWords(p.types, kitchens: kitchensOf[p.id] ?? [])
             if let b = blurbs[p.id] { hay.append(b) }
-            return hay.contains { Self.fold($0).contains(q) }
+            let folded = Self.fold(hay.joined(separator: " | "))
+            return words.allSatisfy { folded.contains($0) }
         }
+    }
+
+    /// Everywhere else in Tallinn that the words find: the venues that are not
+    /// on the map, matched on their name, street, kinds of place and cuisine in
+    /// all eleven languages, and the export's own category — so "õlu", "пиво"
+    /// and "beer" all reach the pubs and "sushi" the sushi bars. Nothing until
+    /// something is typed: the map is the map's places until somebody asks for
+    /// more. A type chip narrows these too; Discount leaves none.
+    func venueMatches(query: String, type: String?) -> [Venue] {
+        let words = Self.words(query)
+        guard !words.isEmpty, type != Self.discountChip else { return [] }
+        return venues.filter { v in
+            if let type, !v.types.contains(type) { return false }
+            guard let hay = venueHay[v.id] else { return false }
+            return words.allSatisfy { hay.contains($0) }
+        }
+    }
+
+    func venue(_ id: String) -> Venue? { venues.first { $0.id == id } }
+
+    /// "Sushi · €€ · 650 m · ★ 4.4": the most telling of its cuisine and
+    /// kinds in this language, its price, its distance and its rating.
+    func venueLine(_ v: Venue, from location: LocationProvider) -> String {
+        var parts: [String] = []
+        if let kitchen = v.kitchens.first, let name = cuisines[kitchen]?[lang] ?? cuisines[kitchen]?["en"] {
+            parts.append(name)
+        } else {
+            let general: Set<String> = ["restaurant", "casual", "hidden-gem", "cheap-eats", "date", "laptop"]
+            let ordered = v.types.sorted { (general.contains($0) ? 1 : 0) < (general.contains($1) ? 1 : 0) }
+            if let first = ordered.first, let t = type(first) { parts.append(t.name(lang)) }
+        }
+        if let price = v.price, price > 0 { parts.append(String(repeating: "€", count: max(1, min(4, Int(price.rounded()))))) }
+        parts.append(Distance.text(location.distance(to: v.location)))
+        if let rating = v.rating { parts.append("★ " + String(format: "%.1f", rating)) }
+        return parts.joined(separator: " · ")
+    }
+
+    /// Fetch the city once, from disk if it was fetched before and then from
+    /// the site. Safe to call on every keystroke.
+    func loadVenues() async {
+        guard venues.isEmpty, !venuesLoading else { return }
+        venuesLoading = true
+        defer { venuesLoading = false }
+        if cuisines.isEmpty, let data = Disk.read("cuisines.json") { cuisines = Cuisines.decode(data) }
+        if let data = Disk.read("venues.json"), let rows = Venue.decodeAll(data), !rows.isEmpty { adopt(rows) }
+        if let data = try? await API.data("data/cuisines.json") {
+            let parsed = Cuisines.decode(data)
+            if !parsed.isEmpty { cuisines = parsed; Disk.write(data, "cuisines.json") }
+        }
+        if let data = try? await API.data("api/places"), let rows = Venue.decodeAll(data), !rows.isEmpty {
+            Disk.write(data, "venues.json")
+            adopt(rows)
+        }
+    }
+
+    private func adopt(_ rows: [Venue]) {
+        var kitchens: [String: [String]] = [:]
+        for row in rows where row.map && !row.kitchens.isEmpty { kitchens[row.id] = row.kitchens }
+        kitchensOf = kitchens
+        let city = rows.filter { !$0.map }
+        var hay: [String: String] = [:]
+        for v in city {
+            let words = [v.name, v.address, v.category] + kindWords(v.types, kitchens: v.kitchens)
+            hay[v.id] = Self.fold(words.joined(separator: " | "))
+        }
+        venueHay = hay
+        venues = city
+    }
+
+    /// A place's kinds and cuisines, said in every language the site has.
+    private func kindWords(_ types: [String], kitchens: [String]) -> [String] {
+        var out: [String] = []
+        for id in types {
+            if let t = type(id) { out += Array(t.names.values); out += t.words }
+        }
+        for id in kitchens {
+            out.append(id)
+            if let names = cuisines[id] { out += Array(names.values) }
+        }
+        return out
+    }
+
+    private static func words(_ query: String) -> [String] {
+        fold(query).split(whereSeparator: { $0.isWhitespace }).map(String.init)
     }
 
     /// Lowercased with the accents taken off, so "pohja" finds Põhja Konn.

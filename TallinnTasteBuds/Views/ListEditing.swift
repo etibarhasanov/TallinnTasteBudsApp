@@ -350,7 +350,7 @@ struct PlacePicker: View {
                         HStack(spacing: 12) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(hit.name).font(.headline).foregroundStyle(Theme.ink)
-                                Text([hit.address, hit.map ? content.t("appOnMap", "on the map") : "Google"]
+                                Text([hit.address, hit.map ? content.t("appOnMap", "on the map") : ""]
                                         .filter { !$0.isEmpty }.joined(separator: " · "))
                                     .font(.footnote).foregroundStyle(Theme.muted).lineLimit(1)
                             }
