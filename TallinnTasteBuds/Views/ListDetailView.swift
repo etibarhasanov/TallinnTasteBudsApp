@@ -278,6 +278,9 @@ private struct ListMap: View {
                 }
             }
             .mapStyle(.standard(pointsOfInterest: .excludingAll))
+            // The blue dot is the app's tint; left to the accent it drew you
+            // in brick red, the colour of a pin, beside a blue route.
+            .tint(Theme.here)
 
             VStack(alignment: .trailing, spacing: 12) {
                 LocateButton(camera: $camera).padding(.trailing, 14)
