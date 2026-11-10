@@ -31,6 +31,11 @@ struct MapTab: View {
                         .padding(.horizontal, 16)
                     ChipRow(selected: $type)
                     Spacer()
+                    HStack {
+                        Spacer()
+                        LocateButton(camera: $camera)
+                    }
+                    .padding(.horizontal, 14)
                     bottom
                 }
                 .padding(.top, 8)
@@ -67,7 +72,9 @@ struct MapTab: View {
         }
         .mapStyle(.standard(pointsOfInterest: .excludingAll))
         .mapControls {
-            MapUserLocationButton()
+            // MapKit's own locate button sits in the top corner, under the
+            // search field, which is why nobody could find it; LocateButton
+            // stands at the bottom right instead, the website's corner.
             MapCompass()
         }
         .animation(.snappy, value: selected)
@@ -196,6 +203,7 @@ struct PlaceCard: View {
     @Environment(SavesStore.self) private var saves
     let place: Place
     let open: () -> Void
+    @State private var route: RouteTarget?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -207,7 +215,7 @@ struct PlaceCard: View {
                 }
                 .buttonStyle(.borderedProminent)
                 Button {
-                    Directions.open(name: place.name, coordinate: place.coordinate)
+                    route = RouteTarget(id: place.id, name: place.name, coordinate: place.coordinate)
                 } label: {
                     Text(content.t("directions", "Directions")).frame(maxWidth: .infinity)
                 }
@@ -226,6 +234,7 @@ struct PlaceCard: View {
         .padding(14)
         .background(Theme.paper, in: RoundedRectangle(cornerRadius: 18))
         .shadow(color: .black.opacity(0.18), radius: 14, y: 4)
+        .fullScreenCover(item: $route) { RouteView(target: $0) }
     }
 }
 

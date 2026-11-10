@@ -16,6 +16,8 @@ struct ListDetailView: View {
     @State private var failed = false
     @State private var gone = false
     @State private var showMap = LaunchScript.listMap
+    /// The place pressed on the page, which the map opens on.
+    @State private var focus: String? = LaunchScript.listFocus
 
     var body: some View {
         Group {
@@ -29,9 +31,16 @@ struct ListDetailView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     if showMap {
-                        ListMap(list: list)
+                        ListMap(list: list, focus: focus)
                     } else {
-                        ListPage(list: list, keepsNow: keeps)
+                        // Pressing a place on the page goes to the map, on
+                        // that place, rather than off the list: a list is
+                        // read to decide where to go, and where it is is the
+                        // next question. Its card on the map opens the place.
+                        ListPage(list: list, keepsNow: keeps) { item in
+                            focus = item.id
+                            withAnimation(.snappy) { showMap = true }
+                        }
                     }
                 }
                 .toolbar {
@@ -113,6 +122,8 @@ private struct ListPage: View {
     let list: ListDetail
     /// The count after a save pressed here, before the list is read again.
     var keepsNow: Int?
+    /// A place pressed: show it on the list's map.
+    let pick: (ListItem) -> Void
 
     var body: some View {
         ScrollView {
@@ -141,10 +152,18 @@ private struct ListPage: View {
                 }
                 ForEach(Array(list.items.enumerated()), id: \.element.id) { index, item in
                     Divider().overlay(Theme.hairline)
-                    NavigationLink(value: route(for: item)) {
-                        ListItemRow(number: index + 1, item: item)
+                    if item.coordinate != nil {
+                        Button { pick(item) } label: {
+                            ListItemRow(number: index + 1, item: item)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        // Nowhere to put it on a map: straight to its page.
+                        NavigationLink(value: route(for: item)) {
+                            ListItemRow(number: index + 1, item: item)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
             }
             .padding(.bottom, 24)
@@ -224,9 +243,14 @@ struct ListItemRow: View {
 private struct ListMap: View {
     @Environment(ContentStore.self) private var content
     let list: ListDetail
+    /// The place to open on, pressed on the list's page; nil frames them all.
+    var focus: String?
 
     @State private var selected: String?
     @State private var camera: MapCameraPosition = .automatic
+    /// False until the selection made on the way in has gone by, so that one
+    /// does not move the map: opening on the whole list frames them all.
+    @State private var settled = false
 
     private struct Pinned: Identifiable {
         let number: Int
@@ -254,20 +278,44 @@ private struct ListMap: View {
                 }
             }
             .mapStyle(.standard(pointsOfInterest: .excludingAll))
-            .mapControls { MapUserLocationButton() }
 
-            if let id = selected, let found = placed.first(where: { $0.id == id }) {
-                NavigationLink(value: route(for: found.item)) {
-                    ListItemRow(number: found.number, item: found.item)
-                        .padding(.vertical, 4)
-                        .background(Theme.paper, in: RoundedRectangle(cornerRadius: 18))
-                        .shadow(color: .black.opacity(0.18), radius: 14, y: 4)
-                }
-                .buttonStyle(.plain)
-                .padding(12)
+            VStack(alignment: .trailing, spacing: 12) {
+                LocateButton(camera: $camera).padding(.trailing, 14)
+                card
             }
         }
-        .onAppear { if selected == nil { selected = placed.first?.id } }
+        .onAppear {
+            if let focus, let pin = placed.first(where: { $0.id == focus }) {
+                selected = pin.id
+                camera = .region(MKCoordinateRegion(center: pin.coordinate, latitudinalMeters: 700, longitudinalMeters: 700))
+            } else if selected == nil {
+                selected = placed.first?.id
+            }
+        }
+        .onChange(of: selected) { _, id in
+            // Pressing a pin brings it to the middle, the way the list's
+            // press does, so the card and the pin are seen together.
+            guard settled else { settled = true; return }
+            guard let id, let pin = placed.first(where: { $0.id == id }) else { return }
+            withAnimation(.easeInOut) {
+                camera = .region(MKCoordinateRegion(center: pin.coordinate, latitudinalMeters: 900, longitudinalMeters: 900))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var card: some View {
+        if let id = selected, let found = placed.first(where: { $0.id == id }) {
+            NavigationLink(value: route(for: found.item)) {
+                ListItemRow(number: found.number, item: found.item)
+                    .padding(.vertical, 4)
+                    .background(Theme.paper, in: RoundedRectangle(cornerRadius: 18))
+                    .shadow(color: .black.opacity(0.18), radius: 14, y: 4)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 12)
+        }
     }
 
     private func route(for item: ListItem) -> Route {

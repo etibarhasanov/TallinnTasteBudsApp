@@ -11,6 +11,7 @@ struct PlaceDetailView: View {
     let id: String
     @State private var adding = false
     @State private var signingIn = false
+    @State private var route: RouteTarget?
 
     var body: some View {
         if let place = content.place(id) {
@@ -63,6 +64,7 @@ struct PlaceDetailView: View {
         .paperBackground()
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $adding) { AddToListSheet(place: place) }
+        .fullScreenCover(item: $route) { RouteView(target: $0) }
         .sheet(isPresented: $signingIn) {
             SignInView(reason: content.t("appSignInToList", "Sign in to put this place on a list of your own"))
         }
@@ -107,7 +109,7 @@ struct PlaceDetailView: View {
     private func actions(_ place: Place) -> some View {
         VStack(spacing: 8) {
             Button {
-                Directions.open(name: place.name, coordinate: place.coordinate)
+                route = RouteTarget(id: place.id, name: place.name, coordinate: place.coordinate)
             } label: {
                 Label(content.t("directions", "Directions"), systemImage: "figure.walk")
                     .frame(maxWidth: .infinity)
@@ -146,6 +148,7 @@ struct VenueView: View {
     @Environment(ContentStore.self) private var content
     @Environment(\.openURL) private var openURL
     let item: ListItem
+    @State private var route: RouteTarget?
 
     var body: some View {
         ScrollView {
@@ -167,7 +170,7 @@ struct VenueView: View {
                 }
                 HStack(spacing: 8) {
                     if let c = item.coordinate {
-                        Button { Directions.open(name: item.name, coordinate: c) } label: {
+                        Button { route = RouteTarget(id: item.id, name: item.name, coordinate: c) } label: {
                             Label(content.t("directions", "Directions"), systemImage: "figure.walk").frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
@@ -188,6 +191,7 @@ struct VenueView: View {
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .fullScreenCover(item: $route) { RouteView(target: $0) }
         .paperBackground()
         .navigationBarTitleDisplayMode(.inline)
     }

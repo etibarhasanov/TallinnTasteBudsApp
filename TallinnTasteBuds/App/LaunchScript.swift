@@ -27,6 +27,12 @@ enum LaunchScript {
         }
     }
 
+    /// `-ttbRoute <place id>` opens the way to that place over the first
+    /// screen; `-routeMode bus` chooses the bus, as a press of Bus would.
+    static var route: String? { UserDefaults.standard.string(forKey: "ttbRoute") }
+    /// `-ttbListFocus <place id>` opens a list's map on that place, as a press
+    /// on the list's page does.
+    static var listFocus: String? { UserDefaults.standard.string(forKey: "ttbListFocus") }
     /// `-ttbListMap YES` shows a list as its map rather than its page.
     static var listMap: Bool { UserDefaults.standard.bool(forKey: "ttbListMap") }
     /// `-ttbSheet signin` opens the sign-in sheet over the first screen.

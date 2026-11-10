@@ -135,6 +135,11 @@ jobs:
           shot 15-pass-signed-out -ttbPass pudel
           shot 16-pass -ttbPass pudel -ttbPassPreview YES
           shot 17-discounts -ttbTab 3 -ttbOpen screen:discounts
+          shot 18-locate-button -ttbSelect badam
+          shot 19-list-on-a-place -ttbTab 1 -ttbOpen list:top-bars-hxzz7m -ttbListMap YES -ttbListFocus koht
+          shot 20-route-walk -ttbRoute badam -routeMode foot
+          shot 21-route-bus -ttbRoute badam -routeMode bus
+          shot 22-route-car -ttbRoute badam -routeMode car
 
       - uses: actions/upload-artifact@v4
         with:

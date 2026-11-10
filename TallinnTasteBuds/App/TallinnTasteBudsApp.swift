@@ -48,6 +48,7 @@ struct RootView: View {
     @State private var tab = LaunchScript.tab
     @State private var signingIn = LaunchScript.sheet == "signin"
     @State private var scriptedPass = LaunchScript.pass
+    @State private var scriptedRoute: RouteTarget?
 
     var body: some View {
         TabView(selection: $tab) {
@@ -65,6 +66,12 @@ struct RootView: View {
                 .tag(3)
         }
         .sheet(isPresented: $signingIn) { SignInView() }
+        .fullScreenCover(item: $scriptedRoute) { RouteView(target: $0) }
+        .onAppear {
+            if let id = LaunchScript.route, let place = content.place(id) {
+                scriptedRoute = RouteTarget(id: place.id, name: place.name, coordinate: place.coordinate)
+            }
+        }
         .fullScreenCover(isPresented: Binding(get: { scriptedPass != nil }, set: { if !$0 { scriptedPass = nil } })) {
             if let id = scriptedPass, let deal = content.deals.first(where: { $0.id == id }) {
                 PassView(deal: deal)

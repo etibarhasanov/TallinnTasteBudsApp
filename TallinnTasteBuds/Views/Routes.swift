@@ -26,12 +26,3 @@ extension View {
         }
     }
 }
-
-/// Walking directions in Apple Maps.
-enum Directions {
-    static func open(name: String, coordinate: CLLocationCoordinate2D) {
-        let item = MKMapItem(placemark: MKPlacemark(coordinate: coordinate))
-        item.name = name
-        item.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeWalking])
-    }
-}
