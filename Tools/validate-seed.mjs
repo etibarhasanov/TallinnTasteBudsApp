@@ -7,7 +7,7 @@
  * The snapshot is four of the website's own files under seed-* names; see
  * Tools/refresh-seed.sh for why.
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -77,6 +77,44 @@ for (const key of ['passGet', 'passHeading', 'passUntil', 'passRollUntil', 'pass
                    'dealRollSignIn', 'dealMembers', 'dealRollMembers', 'dealRollHint', 'filterDiscount',
                    'verifyNotYetNote', 'verifyEndedNote']) {
   if (typeof en.ui?.[key] !== 'string') fail(`seed-lang-en.json: ui.${key} is missing`);
+}
+
+// The app's own strings. Every key the Swift asks for under the `app` prefix
+// has no entry in the site's ui.json, so its translations are the bundled
+// ones or nothing: a key missing here is a sentence left in English in ten
+// languages, which is how the tab bar came to read "Map" in Azerbaijani.
+{
+  const own = read('app-strings');
+  const views = join(seed, '..');
+  const swift = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) walk(join(dir, entry.name));
+      else if (entry.name.endsWith('.swift')) swift.push(readFileSync(join(dir, entry.name), 'utf8'));
+    }
+  };
+  walk(views);
+  // The key, then the English written beside it, across a line break or not.
+  const asked = new Map();
+  for (const source of swift) {
+    for (const m of source.matchAll(/\bt\(\s*"(app[A-Za-z0-9]+)",\s*"((?:[^"\\]|\\.)*)"/g)) asked.set(m[1], m[2]);
+  }
+  // A domain name reads the same in every language.
+  asked.delete('appWebsite');
+  if (asked.size === 0) fail('found no app strings in the Swift, so the check below checks nothing');
+  const holes = (text) => (text.match(/\{[a-z]+\}/g) ?? []).sort().join(',');
+  for (const code of Object.keys(index)) {
+    if (code === 'en') continue;
+    const strings = own[code];
+    if (!strings) { fail(`app-strings.json: no "${code}", a language the site speaks`); continue; }
+    for (const [key, english] of asked) {
+      if (typeof strings[key] !== 'string' || !strings[key].trim()) fail(`app-strings.json: ${code}.${key} is missing`);
+      else if (holes(strings[key]) !== holes(english)) fail(`app-strings.json: ${code}.${key} does not carry the same {placeholders} as the English`);
+    }
+    for (const key of Object.keys(strings)) {
+      if (!asked.has(key)) fail(`app-strings.json: ${code}.${key} is not a string the app asks for`);
+    }
+  }
 }
 
 if (!existsSync(join(seed, 'mark-round.webp'))) fail('mark-round.webp is missing from the seed');

@@ -34,8 +34,9 @@ Four tabs.
   with **New list** first.
 - **Saved.** The places this phone saved, newest first.
 - **Me.** Signing in or making an account, your profile, signing out and
-  deleting the account; the language; the way out to the website, Instagram
-  and the privacy page.
+  deleting the account; the language; the colour — the website's four
+  styles, Red, Green, Blue and Plum; the way out to the website, Instagram and
+  the privacy page.
 
 ### Discounts
 
@@ -74,8 +75,31 @@ next code in front of the guest, and a drawn rate is drawn again.
 An account is the website's account: a username and a password, checked by
 `/api/account`, with the session the site hands back as its HttpOnly cookie.
 `URLSession`'s shared cookie store keeps it across launches the way a browser
-does, so the server needed no change for the app to sign in, and anything
-done in the app is on the website at once and the other way round.
+does, and anything done in the app is on the website at once and the other way
+round.
+
+**Continue with Google** and **Continue with Apple** end in that same cookie.
+`Core/SocialSignIn.swift` says how each gets there:
+
+- **Google** is the website's own round trip, opened in the system's sign-in
+  sheet (`ASWebAuthenticationSession`) because Google will not sign anybody in
+  inside a web view. The app starts it at `/api/google?app=<challenge>`; the
+  site ends it at `tallinntastebuds://signin?ticket=…` rather than with a
+  cookie, which would have been the sheet's and not the app's; and
+  `POST /api/account` with `action: ticket` and the verifier the challenge was
+  made from swaps the ticket for the session.
+- **Apple** is the system's sheet, which hands back a token Apple signed for
+  this app. `POST /api/apple` checks it against Apple's keys and answers as a
+  sign-in does. Nothing is asked for but who this is: no name, no email.
+
+Both need the website to have those two doors, so the buttons are drawn only
+where `GET /api/account` answers `appGoogle` and `appApple`; against a site
+without them the sheet is the two fields it always was. Sign in with Apple
+also needs its capability on the App ID, which a paid developer team has and
+a free personal one cannot: `Config/TallinnTasteBuds.entitlements` is signed
+into the Release build only, so a Debug build still installs from Xcode with
+an ordinary Apple ID — and on such a build the Apple button answers that the
+sign-in did not finish.
 
 Signed in, you can make a list, name it, give it a line, pick its pin from the
 same forty, make it private, put places on it from every place in Tallinn (the
@@ -120,17 +144,11 @@ the phone and the reel, and a share link that opens the same place on the site.
 
 In the order they are planned:
 
-1. **Saves that follow the account, and Google.** Saving a place from the app
-   to the account needs a way past the Turnstile check `/api/saves` asks a
-   browser for, which an app cannot show. Google sign-in needs the system's
-   sign-in sheet rather than a web view, and once a third-party sign-in is in
-   the app, App Review asks for **Sign in with Apple** beside it (a route and a
-   column on `users`). All three are server work on the website, which is why
-   the app signs in with a username and password only for now — App Review
-   does not ask for Apple's sign-in beside a site's own accounts.
+1. **Saves that follow the account.** Saving a place from the app to the
+   account needs a way past the Turnstile check `/api/saves` asks a browser
+   for, which an app cannot show. That is server work on the website.
 2. **Ask**, the chat. Stories are not planned for the app.
-3. **Every string in eleven languages, App Store screenshots and the privacy
-   answers**, then submission.
+3. **App Store screenshots and the privacy answers**, then submission.
 
 Splitwise, the flashcards, chess, the blog and the owner's pages stay on the
 website.
@@ -151,6 +169,8 @@ website.
 | A profile | `GET /api/profile?name=<name>` |
 | Who is signed in, and the account's saves | `GET /api/account` |
 | Sign in, make an account, sign out, delete it | `POST /api/account` with `action` |
+| Sign in through Google | `GET /api/google?app=<challenge>`, then `POST /api/account` with `action: ticket` |
+| Sign in through Apple | `POST /api/apple` |
 | Your lists and the ones you saved | `GET /api/lists` (signed in) |
 | Make, edit, fill, order, save or delete a list | `POST /api/lists` with `action` |
 | Every place in Tallinn, to put one on a list | `GET /api/places?q=` |
@@ -160,10 +180,12 @@ website.
 
 **Strings.** The app asks the site's `ui.json` for every string by key, so it is
 in the site's eleven languages wherever the site already says the thing. The
-few strings only the app needs — their keys start with `app` — carry their
-English in the code until they are added to `ui.json` on the website, at which
-point they translate themselves with no release. `Tools/validate-seed.mjs`
-fails the build if a key the app borrows from the site is renamed there.
+few strings only the app needs — the tab names, the list editor's hints; their
+keys start with `app` — carry their English in the code and their other ten
+languages in `Seed/app-strings.json`. The site is asked first, so a key that
+is later added to `ui.json` on the website is read from there with no release.
+`Tools/validate-seed.mjs` fails the build if a key the app borrows from the
+site is renamed there, or if an `app` string is missing in any language.
 
 **Three layers, so it always draws something.** The files above are read from
 the network on launch and every time the app comes back to the foreground,
@@ -222,6 +244,7 @@ TallinnTasteBuds/
     PassCode.swift                the hourly discount code, the website's to the letter
     SavesStore.swift              the places this phone saved
     AccountStore.swift            who is signed in, their lists, every write to them
+    SocialSignIn.swift            the Google round trip and Apple's sheet
     LocationProvider.swift        the blue dot and distances
   Models/
     Place.swift                   a place on the map; a kind of place
@@ -235,6 +258,9 @@ Tools/
   PassCodeCheck.swift             hold PassCode.swift to the website's codes
 ```
 
-`Theme.swift` carries the website's colours to the value. `Routes.swift` is
+`Theme.swift` carries the website's four styles to the value, and every
+colour is read through the one in use, so choosing another under Me redraws
+the app — the map and the system's own controls go dark with the two night
+styles. `Routes.swift` is
 the one list of screens any tab can open — a place, a list, a profile, a place
 off the map — so a link from anywhere goes anywhere.

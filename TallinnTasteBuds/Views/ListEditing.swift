@@ -20,8 +20,8 @@ struct NewListView: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField(content.t("appListName", "Name it — “Top ten burgers”"), text: $title)
-                    TextField(content.t("appListIntro", "A line under the title (optional)"), text: $intro, axis: .vertical)
+                    TextField(content.t("listsRename", "Name of the list"), text: $title)
+                    TextField(content.t("listsIntro", "A line about the list"), text: $intro, axis: .vertical)
                 } footer: {
                     if let problem { Text(problem).foregroundStyle(Theme.accent) }
                 }
@@ -32,7 +32,7 @@ struct NewListView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button(content.t("close", "Close")) { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(content.t("appMake", "Make it")) { Task { await go() } }
+                    Button(content.t("listsCreate", "Make the list")) { Task { await go() } }
                         .disabled(working || title.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
@@ -111,24 +111,24 @@ struct ListEditor: View {
         NavigationStack {
             List {
                 Section {
-                    TextField(content.t("appListName", "Name it — “Top ten burgers”"), text: $title)
+                    TextField(content.t("listsRename", "Name of the list"), text: $title)
                         .font(.headline)
-                    TextField(content.t("appListIntro", "A line under the title (optional)"), text: $intro, axis: .vertical)
+                    TextField(content.t("listsIntro", "A line about the list"), text: $intro, axis: .vertical)
                 }
                 Section {
                     PinPicker(selected: $pin)
                 } header: {
-                    Text(content.t("appPin", "Pin"))
+                    Text(content.t("listsPin", "The pin"))
                 }
                 Section {
-                    Picker(content.t("appWhoCanOpen", "Who can open it"), selection: $isPublic) {
-                        Text(content.t("appShared", "Anyone with the link")).tag(true)
-                        Text(content.t("appPrivate", "Only you")).tag(false)
+                    Picker(content.t("listsWho", "Who can open it"), selection: $isPublic) {
+                        Text(content.t("listsWhoPublic", "Public")).tag(true)
+                        Text(content.t("listsWhoPrivate", "Private")).tag(false)
                     }
                     .pickerStyle(.inline)
                     .labelsHidden()
                 } header: {
-                    Text(content.t("appWhoCanOpen", "Who can open it"))
+                    Text(content.t("listsWho", "Who can open it"))
                 }
 
                 Section {
@@ -142,9 +142,9 @@ struct ListEditor: View {
                                     Text(content.t("appNotOnMapShort", "Not on the map")).font(.caption).foregroundStyle(Theme.muted)
                                 }
                             }
-                            TextField(content.t("appSayWhy", "What is good about it?"), text: $item.say, axis: .vertical)
+                            TextField(content.t("listsSay", "What is good about it"), text: $item.say, axis: .vertical)
                                 .font(.subheadline)
-                            TextField(content.t("appWhatToOrder", "What to order (optional)"), text: $item.mustOrder)
+                            TextField(content.t("listsMustOrder", "What to order"), text: $item.mustOrder)
                                 .font(.footnote)
                         }
                         .padding(.vertical, 4)
@@ -163,7 +163,7 @@ struct ListEditor: View {
                         Button {
                             picking = true
                         } label: {
-                            Label(items.isEmpty ? content.t("appAddFirst", "Add the first place") : content.t("appAddAnother", "Add another place"),
+                            Label(items.isEmpty ? content.t("appAddFirst", "Add the first place") : content.t("listsAddMore", "Add another place"),
                                   systemImage: "plus.circle.fill")
                         }
                     }
@@ -174,7 +174,7 @@ struct ListEditor: View {
                 }
 
                 Section {
-                    Button(content.t("appDeleteList", "Delete this list"), role: .destructive) { confirmDelete = true }
+                    Button(content.t("listsDelete", "Delete the list"), role: .destructive) { confirmDelete = true }
                 }
             }
             .environment(\.editMode, .constant(.active))
@@ -188,12 +188,12 @@ struct ListEditor: View {
                         Task { await save() }
                     } label: {
                         HStack {
-                            if working { ProgressView().tint(.white) }
+                            if working { ProgressView().tint(Theme.onAccent) }
                             Text(changed ? content.t("listsSave", "Save") : content.t("listsSaveDone", "Saved")).fontWeight(.semibold)
                         }
                         .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.prominent)
                     .controlSize(.large)
                     .disabled(!changed || working)
                 }
@@ -212,9 +212,9 @@ struct ListEditor: View {
                     addedOrder.append(hit.id)
                 }
             }
-            .confirmationDialog(content.t("appDeleteListAsk", "Delete “{title}”? There is no undo.", ["title": original.title]),
+            .confirmationDialog(content.t("listsDeleteSure", "Delete “{title}”? This cannot be undone.", ["title": original.title]),
                                 isPresented: $confirmDelete, titleVisibility: .visible) {
-                Button(content.t("appDeleteList", "Delete this list"), role: .destructive) {
+                Button(content.t("listsDelete", "Delete the list"), role: .destructive) {
                     Task {
                         do {
                             try await account.deleteList(original.id)
@@ -367,10 +367,10 @@ struct PlacePicker: View {
             .paperBackground()
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                         prompt: content.t("listsSearchPlaces", "Search every place in Tallinn"))
-            .navigationTitle(content.t("appAddPlaces", "Add places"))
+            .navigationTitle(content.t("listsAddPlace", "Add a place"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button(content.t("appDone", "Done")) { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button(content.t("editDone", "Done")) { dismiss() } }
             }
             .task(id: query) {
                 let q = query.trimmingCharacters(in: .whitespaces)
@@ -445,7 +445,7 @@ struct AddToListSheet: View {
             .navigationTitle(content.t("appAddTo", "Add {name} to a list", ["name": place.name]))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button(content.t("appDone", "Done")) { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button(content.t("editDone", "Done")) { dismiss() } }
             }
             .sheet(isPresented: $making) {
                 NewListView(firstPlace: place.id) { _ in dismiss() }

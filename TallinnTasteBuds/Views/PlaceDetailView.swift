@@ -114,7 +114,7 @@ struct PlaceDetailView: View {
                 Label(content.t("directions", "Directions"), systemImage: "figure.walk")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.prominent)
 
             HStack(spacing: 8) {
                 if let url = URL(string: place.reel), !place.reel.isEmpty {
@@ -173,7 +173,7 @@ struct VenueView: View {
                         Button { route = RouteTarget(id: item.id, name: item.name, coordinate: c) } label: {
                             Label(content.t("directions", "Directions"), systemImage: "figure.walk").frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.prominent)
                     }
                     if let url = URL(string: item.website), !item.website.isEmpty {
                         Button { openURL(url) } label: {

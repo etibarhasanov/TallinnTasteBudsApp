@@ -26,6 +26,25 @@ struct MeTab: View {
                 }
                 .listRowBackground(Theme.card)
 
+                Section {
+                    HStack(spacing: 12) {
+                        Text(content.t("styleLabel", "Colour")).foregroundStyle(Theme.ink)
+                        Spacer()
+                        ForEach(Style.allCases) { style in
+                            Button { StyleStore.shared.choose(style) } label: {
+                                Swatch(style: style, selected: style == StyleStore.shared.style)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(content.t(style.nameKey.0, style.nameKey.1))
+                            .accessibilityAddTraits(style == StyleStore.shared.style ? .isSelected : [])
+                        }
+                    }
+                } footer: {
+                    let name = StyleStore.shared.style.nameKey
+                    Text(content.t(name.0, name.1))
+                }
+                .listRowBackground(Theme.card)
+
                 if !content.liveDeals.isEmpty {
                     Section {
                         NavigationLink(value: Route.discounts) {
@@ -45,7 +64,7 @@ struct MeTab: View {
                     }
                     link(content.t("appWebsite", "tallinntastebuds.ee"), "globe", API.base)
                     link("Instagram", "camera", URL(string: "https://www.instagram.com/tallinntastebuds")!)
-                    link(content.t("appPrivacy", "Privacy"), "hand.raised", API.url("privacy"))
+                    link(content.t("privacyLink", "Privacy"), "hand.raised", API.url("privacy"))
                 }
                 .listRowBackground(Theme.card)
 
@@ -115,6 +134,25 @@ struct MeTab: View {
     }
 }
 
+/// One of the four styles as the website draws its swatch: the style's own
+/// ground with its accent in the middle, and a ring when it is the one in use.
+struct Swatch: View {
+    let style: Style
+    let selected: Bool
+
+    var body: some View {
+        let palette = style.palette
+        Circle()
+            .fill(palette.paper)
+            .overlay(Circle().fill(palette.accent).padding(7))
+            .overlay(Circle().stroke(selected ? Theme.ink : Theme.hairline, lineWidth: selected ? 2.5 : 1))
+            .frame(width: 32, height: 32)
+            // A finger is wider than the swatch.
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+    }
+}
+
 /// Deleting the account, which App Review asks every app that makes accounts
 /// to offer. The site asks for the password once more before it does it.
 struct DeleteAccountView: View {
@@ -137,7 +175,7 @@ struct DeleteAccountView: View {
                         .textContentType(.password)
                 } footer: {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(content.t("appDeleteNoPassword", "An account made with Google and no password: type your username instead."))
+                        Text(content.t("appDeleteNoPassword", "An account made with Google or Apple and no password: type your username instead."))
                         if let problem { Text(problem).foregroundStyle(Theme.accent) }
                     }
                 }

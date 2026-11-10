@@ -142,6 +142,19 @@ jobs:
           shot 22-route-car -ttbRoute badam -routeMode car
           shot 23-search-suggestions -ttbQuery pizza -ttbTyping YES
           shot 24-search-results -ttbQuery pizza
+          # The app's own strings in another language, and the three styles
+          # that are not the one every picture above is drawn in. `-lang` and
+          # `-style` are the keys the app keeps those two choices under.
+          shot 25-map-az -lang az
+          shot 26-me-az -ttbTab 3 -lang az
+          shot 27-editor-az -ttbTab 1 -ttbOpen list:top-bars-hxzz7m -ttbEdit top-bars-hxzz7m -lang az
+          shot 28-me-plum -ttbTab 3 -style plum
+          shot 29-map-green -ttbSelect badam -style green
+          shot 30-lists-blue -ttbTab 1 -style blue
+          shot 31-place-plum -ttbOpen place:badam -style plum
+          shot 32-pass-green -ttbPass pudel -ttbPassPreview YES -style green
+          shot 33-sign-in-doors -ttbTab 3 -ttbSheet signin -ttbDoors YES
+          shot 34-sign-in-doors-plum -ttbTab 3 -ttbSheet signin -ttbDoors YES -style plum
 
       - uses: actions/upload-artifact@v4
         with:

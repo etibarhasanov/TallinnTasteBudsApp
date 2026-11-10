@@ -29,6 +29,9 @@ final class ContentStore {
 
     private(set) var lang: String
     private var english: [String: String] = [:]
+    /// The strings only the app says — the tab names, the list editor's
+    /// hints — in every language the site speaks, from `Seed/app-strings.json`.
+    private var own: [String: [String: String]] = [:]
 
     private static let langKey = "lang"
 
@@ -64,10 +67,12 @@ final class ContentStore {
     /// A string from the site's `ui.json`, in this language, falling back to
     /// English and then to the text written here. The site's keys are used
     /// wherever the site already says the thing, so the app is in eleven
-    /// languages for free; strings only the app needs carry their English here
-    /// until they are added to `ui.json`.
+    /// languages for free. Strings only the app needs — every key that starts
+    /// `app` — carry their English here and their ten translations in
+    /// `Seed/app-strings.json`; a key the site later takes into `ui.json`
+    /// is read from there instead, since the site is asked first.
     func t(_ key: String, _ fallback: String, _ args: [String: String] = [:]) -> String {
-        var text = ui[key] ?? english[key] ?? fallback
+        var text = ui[key] ?? own[lang]?[key] ?? english[key] ?? fallback
         for (name, value) in args { text = text.replacingOccurrences(of: "{\(name)}", with: value) }
         return text
     }
@@ -86,6 +91,10 @@ final class ContentStore {
         }
         if let data = Disk.read("lang-index.json") ?? Disk.seed("seed-lang-index") {
             applyIndex(data)
+        }
+        if let data = Disk.seed("app-strings"),
+           let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: [String: String]] {
+            own = parsed
         }
         if let data = Disk.seed("seed-lang-en"), let parsed = Self.parseLang(data) {
             english = parsed.ui

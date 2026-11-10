@@ -67,8 +67,8 @@ struct ListDetailView: View {
                     SignInView(reason: content.t("listsKeepIn", "Sign in to save this list"))
                 }
             } else if gone {
-                EmptyNote(title: content.t("appListGone", "This list is gone"),
-                          text: content.t("appListGoneSay", "Its author deleted it or made it private."),
+                EmptyNote(title: content.t("listsGoneTitle", "Not here"),
+                          text: content.t("listsErrGone", "This list is not here. It may have been deleted, or the link may be private."),
                           systemImage: "list.bullet.clipboard")
             } else if failed {
                 VStack(spacing: 10) {
@@ -175,7 +175,7 @@ private struct ListPage: View {
         let keeps = keepsNow ?? list.keeps
         if keeps == 1 { parts.append(content.t("listsKeptOne", "saved by 1 person")) }
         if keeps > 1 { parts.append(content.t("listsKeptN", "saved by {n} people", ["n": "\(keeps)"])) }
-        if !list.isPublic { parts.append(content.t("appPrivate", "Only you")) }
+        if !list.isPublic { parts.append(content.t("listsWhoPrivate", "Private")) }
         return parts.joined(separator: " · ")
     }
 
@@ -343,7 +343,7 @@ struct NumberedPin: View {
             .overlay(alignment: .topTrailing) {
                 Text("\(number)")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.onAccent)
                     .frame(minWidth: 17, minHeight: 17)
                     .background(Theme.accent, in: Circle())
                     .offset(x: 6, y: -6)

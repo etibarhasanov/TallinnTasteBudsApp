@@ -64,7 +64,7 @@ struct ListsTab: View {
     /// you saved, the same way.
     private var yours: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SectionLabel(text: content.t("appYourLists", "Your lists"))
+            SectionLabel(text: content.t("listsYours", "Your lists"))
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     Button { making = true } label: {

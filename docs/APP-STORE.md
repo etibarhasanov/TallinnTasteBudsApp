@@ -110,7 +110,12 @@ declared in the app itself and is not an entitlement.
 
 1. Open `TallinnTasteBuds.xcodeproj`.
 2. Project → target **TallinnTasteBuds** → **Signing & Capabilities**. Team
-   should now be your paid team, not "(Personal Team)". Pick it.
+   should now be your paid team, not "(Personal Team)". Pick it. The Release
+   build asks for **Sign in with Apple** (`Config/TallinnTasteBuds.entitlements`);
+   with automatic signing Xcode adds the capability to the App ID by itself.
+   If you changed the bundle identifier from `ee.tallinntastebuds.app`, tell
+   the website the new one — `APPLE_APP_ID` in its settings — or Apple's
+   token is refused as made for another app.
 3. In the toolbar, set the destination to **Any iOS Device (arm64)**. Archive
    is greyed out against a simulator.
 4. Menu **Product → Archive**. Takes a few minutes.

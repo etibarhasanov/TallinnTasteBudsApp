@@ -168,7 +168,7 @@ struct RouteView: View {
                                     .font(.footnote.weight(.semibold))
                                     .padding(.horizontal, 12).padding(.vertical, 7)
                                     .background(i == trip ? Theme.accent : Theme.wash, in: Capsule())
-                                    .foregroundStyle(i == trip ? .white : Theme.ink)
+                                    .foregroundStyle(i == trip ? Theme.onAccent : Theme.ink)
                             }
                             .buttonStyle(.plain)
                         }

@@ -251,7 +251,7 @@ struct MapTab: View {
                             .font(.subheadline.weight(.semibold))
                             .padding(.horizontal, 16).padding(.vertical, 11)
                             .background(Theme.accent, in: Capsule())
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Theme.onAccent)
                             .shadow(color: .black.opacity(0.15), radius: 8, y: 3)
                     }
                 }
@@ -475,7 +475,7 @@ struct CityCard: View {
                     } label: {
                         Text(content.t("directions", "Directions")).frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.prominent)
                 }
                 Button(action: open) {
                     Text(content.t("appOpen", "Open")).frame(maxWidth: .infinity)
@@ -555,7 +555,7 @@ struct ChipRow: View {
                 .font(.subheadline)
                 .padding(.horizontal, 13).padding(.vertical, 8)
                 .background(on ? Theme.accent : Theme.paper, in: Capsule())
-                .foregroundStyle(on ? .white : Theme.ink)
+                .foregroundStyle(on ? Theme.onAccent : Theme.ink)
                 .shadow(color: .black.opacity(0.1), radius: 6, y: 2)
         }
         .buttonStyle(.plain)
@@ -593,7 +593,7 @@ struct PlaceCard: View {
                 Button(action: open) {
                     Text(content.t("appOpen", "Open")).frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.prominent)
                 Button {
                     route = RouteTarget(id: place.id, name: place.name, coordinate: place.coordinate)
                 } label: {

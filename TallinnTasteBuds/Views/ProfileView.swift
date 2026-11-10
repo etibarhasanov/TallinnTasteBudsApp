@@ -16,7 +16,7 @@ struct ProfileView: View {
             if let profile {
                 page(profile)
             } else if gone {
-                EmptyNote(title: content.t("appProfileGone", "Nobody by that name"),
+                EmptyNote(title: content.t("profileErrGone", "Nobody here by that name."),
                           text: content.t("appProfileGoneSay", "This account does not exist any more."),
                           systemImage: "person.crop.circle.badge.questionmark")
             } else if failed {
@@ -75,7 +75,7 @@ struct ProfileView: View {
 
                 let rows = p.rows.filter { !$0.url.isEmpty || !$0.note.isEmpty }
                 if !rows.isEmpty {
-                    SectionLabel(text: content.t("appLinks", "Links")).padding(.top, 6)
+                    SectionLabel(text: content.t("editTabLinks", "Links")).padding(.top, 6)
                     ForEach(rows, id: \.self) { row in
                         if let url = URL(string: row.url), !row.url.isEmpty {
                             Button { openURL(url) } label: {
