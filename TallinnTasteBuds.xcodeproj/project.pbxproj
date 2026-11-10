@@ -189,7 +189,7 @@
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Tallinn Taste Buds";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used to centre the map on you and to sort places by how near they are. It never leaves the phone.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location shows where you are on the map and how far each place is. It is sent to tallinntastebuds.ee only when you ask for the way to a place, and is not stored.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
@@ -221,7 +221,7 @@
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Tallinn Taste Buds";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location is used to centre the map on you and to sort places by how near they are. It never leaves the phone.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Your location shows where you are on the map and how far each place is. It is sent to tallinntastebuds.ee only when you ask for the way to a place, and is not stored.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;

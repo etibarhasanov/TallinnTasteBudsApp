@@ -148,7 +148,10 @@ In the order they are planned:
    account needs a way past the Turnstile check `/api/saves` asks a browser
    for, which an app cannot show. That is server work on the website.
 2. **Ask**, the chat. Stories are not planned for the app.
-3. **App Store screenshots and the privacy answers**, then submission.
+3. **App Store screenshots, the listing copy and the privacy page**, then
+   submission. `docs/PRIVACY.md` says what the app does with what it knows
+   and has the section the website's privacy page needs about the app;
+   `docs/APP-STORE.md` has the answers to Apple's privacy questions.
 
 Splitwise, the flashcards, chess, the blog and the owner's pages stay on the
 website.

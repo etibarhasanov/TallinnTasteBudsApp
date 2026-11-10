@@ -51,9 +51,10 @@ to sound like you, it is your voice on the page and not mine.
 
 - **Support URL** — required. `https://tallinntastebuds.ee/` is acceptable.
 - **Marketing URL** — optional, same address.
-- **Privacy policy URL** — **required, no exceptions.** There is a draft at
-  [`docs/PRIVACY.md`](PRIVACY.md). Publish it on the website as
-  `privacy.html` and give App Store Connect that address. Read it first and
+- **Privacy policy URL** — **required, no exceptions.** Give App Store Connect
+  `https://tallinntastebuds.ee/privacy`, the website's own page, which the app
+  also opens from Me. It needs a section about the app first:
+  [`docs/PRIVACY.md`](PRIVACY.md) has the text and says why. Read it and
   correct anything that is not true — it is your declaration, not mine.
 
 ### Screenshots
@@ -154,18 +155,37 @@ no seven-day expiry. Check the things this project cannot check for you:
 
 Back on the app's **Distribution** page, attach the build and complete:
 
-**App Privacy** — a questionnaire, and it is a legal declaration. For this app
+**App Privacy** — a questionnaire, and it is a legal declaration. The app has
+accounts now, so the answer is no longer "Data Not Collected". Going by what
+the code sends — the last part of [`docs/PRIVACY.md`](PRIVACY.md) is the list —
 the honest answers are:
 
-- Location is used *on the device* to centre the map and sort by distance, and
-  is never sent anywhere. Under Apple's definition, data that never leaves the
-  phone is not "collected".
-- Saved places live only on the phone.
-- There are no accounts, no advertising and no analytics in the app.
+- **Identifiers → User ID.** Collected, linked to the user, for App
+  Functionality. This is the username, and the number Google or Apple gives
+  the site for somebody who signs in that way. No email, name or phone number
+  is asked for or kept.
+- **User Content → Other User Content.** Collected, linked to the user, for
+  App Functionality: the lists somebody makes and what they write on them.
+- **Location → Precise Location.** The careful answer is collected, not
+  linked to the user, for App Functionality. The position is sent only when
+  somebody asks for the way to a place, is not stored by the site and is not
+  tied to an account — which under Apple's definition may not count as
+  collected at all — but a rounded copy goes on to a routing service, and
+  declaring it costs nothing.
+- **Search History.** Not collected: what is typed into the search is
+  answered and not kept.
+- **Tracking:** none. Nothing is used for advertising or shared with a data
+  broker, and there is no analytics or advertising SDK in the app.
+- Saved places, the language and the colour stay on the phone and are not
+  "collected".
 
-That points at **Data Not Collected**. Read each question yourself before
-answering — you are signing it, and the website's own analytics do not apply
-here because they run on the website, not in the app.
+Read each question yourself before answering — you are signing it. The
+website's own analytics do not apply here: they run on the website's pages,
+and the app shows none of them.
+
+**Account deletion** — Apple requires an app that makes accounts to delete
+them from inside the app. Me → Delete account does, and the review notes
+should say where it is.
 
 **Age rating** — a second questionnaire. Answer honestly. The one that gives
 people pause: the app links to Instagram and TikTok posts and shows discounts
@@ -214,8 +234,10 @@ seconds approves it in ten seconds. Something like:
 
 > A hand-picked map of places to eat in Tallinn. All content is loaded from
 > tallinntastebuds.ee, so the app stays current without an update. Location is
-> optional and used only to centre the map. No account is needed; nothing is
-> required to test every feature.
+> optional: it shows where you are and, when you ask for directions, is sent
+> to our site to work out the route. No account is needed to browse. Making
+> lists and showing a discount need one — a username and a password, Google
+> or Apple — and Me → Delete account removes it.
 
 ---
 
