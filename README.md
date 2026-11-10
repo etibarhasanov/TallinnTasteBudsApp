@@ -84,6 +84,28 @@ your account; signed out, it asks you to sign in.
 Signing in also folds the places the account saved on the website into
 **Saved**. Saves made in the app stay on the phone for now — see below.
 
+**The round button at the bottom right of every map** is where you are: one
+press centres the map on the blue dot, a second turns the map with the phone so
+the dot's beam points the way you are facing, a third lets go. MapKit's own
+button is not used: it sits in the top corner, under the search field.
+
+**On a list, pressing a place goes to the list's map, on that place**, with its
+card at the bottom; the card opens the place. A list is read to decide where to
+go, and where it is is the next question. A place with no point to put on a map
+opens its page directly.
+
+### Directions
+
+**Directions** opens the way there on our own map, as the website does it: the
+website's `/api/route`, with **Walk · Bus · Car** at the foot. Walking and
+driving are the OpenStreetMap routing service; the bus is peatus.ee, the
+national journey planner with every operator's timetable in Tallinn. A bus
+journey is drawn with its walks dotted in the dot's blue and each ride solid in
+its line's own colour, and the bar says which line, when and from which stop
+("T4 at 13:33 from Hobujaama · 16 min in all"), with the other departures under
+it to press. The mode pressed last is remembered. Apple Maps is a small link at
+the foot, in the same mode, for turn-by-turn; nothing leaves for Google.
+
 Every place page has the photos, the write-up in the reader's language, the
 kinds of place, what to order, walking directions in Apple Maps, the website,
 the phone and the reel, and a share link that opens the same place on the site.
@@ -128,6 +150,7 @@ website.
 | Every place in Tallinn, to put one on a list | `GET /api/places?q=` |
 | The discounts | `data/deals.json` |
 | Whether this session may show a pass, and its drawn rate | `GET /api/pass?r=<place>` |
+| The way there on foot, by bus or by car | `GET /api/route?from=…&to=…&mode=foot\|bus\|car` |
 
 **Strings.** The app asks the site's `ui.json` for every string by key, so it is
 in the site's eleven languages wherever the site already says the thing. The
