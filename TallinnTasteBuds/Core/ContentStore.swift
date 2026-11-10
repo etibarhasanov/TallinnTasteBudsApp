@@ -18,6 +18,8 @@ struct Language: Hashable {
 final class ContentStore {
     private(set) var places: [Place] = []
     private(set) var types: [PlaceType] = []
+    /// Every discount in `data/deals.json`, live or not.
+    private(set) var deals: [Deal] = []
     /// Code → the language's own name, from `data/lang/index.json`.
     private(set) var languages: [Language] = [Language(code: "en", name: "English")]
     private(set) var ui: [String: String] = [:]
@@ -46,6 +48,16 @@ final class ContentStore {
 
     func type(_ id: String) -> PlaceType? { types.first { $0.id == id } }
 
+    /// The discount the map shows for a place, if it has one switched on.
+    func deal(_ placeID: String) -> Deal? { deals.first { $0.id == placeID && $0.shown } }
+
+    /// Every discount switched on, the map's places and Google's alike.
+    var liveDeals: [Deal] { deals.filter(\.shown) }
+
+    /// The chip id that stands for "has a discount" — not a kind of place,
+    /// which is why the website's validator refuses a taxonomy entry by it.
+    static let discountChip = "discount"
+
     /// The chip row: every kind of place the site puts on it, in its order.
     var chips: [PlaceType] { types.filter { $0.chip } }
 
@@ -68,6 +80,9 @@ final class ContentStore {
         }
         if let data = Disk.read("taxonomy.json") ?? Disk.seed("seed-taxonomy"), let t = PlaceType.decodeAll(data) {
             types = t
+        }
+        if let data = Disk.read("deals.json") ?? Disk.seed("seed-deals"), let d = Deal.decodeAll(data) {
+            deals = d
         }
         if let data = Disk.read("lang-index.json") ?? Disk.seed("seed-lang-index") {
             applyIndex(data)
@@ -103,7 +118,9 @@ final class ContentStore {
             async let mapData = API.data("data/map.json")
             async let taxData = API.data("data/taxonomy.json")
             async let indexData = API.data("data/lang/index.json")
-            let (m, t, i) = try await (mapData, taxData, indexData)
+            async let dealData = API.data("data/deals.json")
+            let (m, t, i, d) = try await (mapData, taxData, indexData, dealData)
+            if let parsed = Deal.decodeAll(d) { deals = parsed; Disk.write(d, "deals.json") }
             if let p = Place.decodeAll(m), !p.isEmpty { places = p; Disk.write(m, "map.json") }
             if let ty = PlaceType.decodeAll(t), !ty.isEmpty { types = ty; Disk.write(t, "taxonomy.json") }
             applyIndex(i)
@@ -167,7 +184,11 @@ final class ContentStore {
         let q = Self.fold(query.trimmingCharacters(in: .whitespacesAndNewlines))
         return places.filter { p in
             if p.closed { return false }
-            if let type, !p.types.contains(type) { return false }
+            if type == Self.discountChip {
+                if self.deal(p.id) == nil { return false }
+            } else if let type, !p.types.contains(type) {
+                return false
+            }
             guard !q.isEmpty else { return true }
             var hay = [p.name, p.address] + p.mustOrder
             for id in p.types {

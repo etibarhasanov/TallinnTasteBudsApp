@@ -26,6 +26,19 @@ struct MeTab: View {
                 }
                 .listRowBackground(Theme.card)
 
+                if !content.liveDeals.isEmpty {
+                    Section {
+                        NavigationLink(value: Route.discounts) {
+                            HStack {
+                                Label(content.t("appDiscounts", "Discounts"), systemImage: "tag")
+                                Spacer()
+                                Text("\(content.liveDeals.count)").foregroundStyle(Theme.muted)
+                            }
+                        }
+                    }
+                    .listRowBackground(Theme.card)
+                }
+
                 Section {
                     NavigationLink(value: Route.profile("tallinntastebuds")) {
                         Label(content.t("appAbout", "About Tallinn Tastebuds"), systemImage: "info.circle")

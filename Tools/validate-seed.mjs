@@ -61,6 +61,24 @@ for (const key of usedKeys) {
   if (typeof en.ui?.[key] !== 'string') fail(`seed-lang-en.json: ui.${key} is missing`);
 }
 
+// The discounts: Deal.swift needs an id and a key, and a pass made from a key
+// the website's verify page would refuse is a guest turned away at the till.
+const deals = read('seed-deals');
+if (!Array.isArray(deals)) fail('seed-deals.json is not an array');
+for (const d of deals ?? []) {
+  const where = `deal ${d?.id ?? '(no id)'}`;
+  if (typeof d?.id !== 'string' || typeof d?.key !== 'string') fail(`${where}: needs an id and a key`);
+  else if (!/^[0-9A-HJKMNP-TV-Z]{16,64}$/.test(d.key)) fail(`${where}: key is not 16-64 characters of the code alphabet`);
+  if (d?.live && !d?.offer?.en) fail(`${where}: a live deal needs an English offer`);
+  if (d?.roll && !String(d?.offer?.en ?? '').includes('{rate}')) fail(`${where}: a rolled deal writes {rate} in its offer`);
+}
+for (const key of ['passGet', 'passHeading', 'passUntil', 'passRollUntil', 'passSignIn', 'passRollSignIn',
+                   'passUnavailable', 'passScanMe', 'passTerms', 'passTitle', 'passNotLive', 'dealSignIn',
+                   'dealRollSignIn', 'dealMembers', 'dealRollMembers', 'dealRollHint', 'filterDiscount',
+                   'verifyNotYetNote', 'verifyEndedNote']) {
+  if (typeof en.ui?.[key] !== 'string') fail(`seed-lang-en.json: ui.${key} is missing`);
+}
+
 if (!existsSync(join(seed, 'mark-round.webp'))) fail('mark-round.webp is missing from the seed');
 
 if (problems.length) {
@@ -68,4 +86,4 @@ if (problems.length) {
   for (const p of problems) console.error('  - ' + p);
   process.exit(1);
 }
-console.log(`ok: ${places.length} places, ${typeIds.size} types, ${Object.keys(index).length} languages`);
+console.log(`ok: ${places.length} places, ${typeIds.size} types, ${Object.keys(index).length} languages, ${deals.length} deals`);

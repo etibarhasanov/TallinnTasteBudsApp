@@ -30,6 +30,18 @@ jobs:
       - name: Validate the bundled snapshot
         run: node Tools/validate-seed.mjs
 
+      # The discount pass's code must be the website's to the letter, or a
+      # waiter's scan comes back red. PassCode.swift is compiled on its own
+      # beside a check that holds it to codes the website's algorithm made.
+      - name: Check the pass code against the website's
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp=$(mktemp -d)
+          cp Tools/PassCodeCheck.swift "$tmp/main.swift"
+          xcrun swiftc -sdk "$(xcrun --show-sdk-path --sdk macosx)" TallinnTasteBuds/Core/PassCode.swift "$tmp/main.swift" -o "$tmp/check"
+          "$tmp/check"
+
       - name: Show the selected Xcode
         run: xcodebuild -version
 
@@ -118,6 +130,11 @@ jobs:
           shot 10-me -ttbTab 3
           shot 11-sign-in -ttbTab 3 -ttbSheet signin
           shot 12-editor -ttbTab 1 -ttbOpen list:top-bars-hxzz7m -ttbEdit top-bars-hxzz7m
+          shot 13-discount-chip -ttbSelect badam -ttbType discount
+          shot 14-place-discount -ttbOpen place:magussoolane
+          shot 15-pass-signed-out -ttbPass pudel
+          shot 16-pass -ttbPass pudel -ttbPassPreview YES
+          shot 17-discounts -ttbTab 3 -ttbOpen screen:discounts
 
       - uses: actions/upload-artifact@v4
         with:

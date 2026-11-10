@@ -8,6 +8,7 @@ enum Route: Hashable {
     case list(String)
     case profile(String)
     case venue(ListItem)
+    case discounts
 }
 
 extension View {
@@ -20,6 +21,7 @@ extension View {
             case .list(let id): ListDetailView(id: id)
             case .profile(let name): ProfileView(name: name)
             case .venue(let item): VenueView(item: item)
+            case .discounts: DiscountsView()
             }
         }
     }

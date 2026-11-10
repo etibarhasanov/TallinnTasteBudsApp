@@ -31,6 +31,38 @@ Four tabs.
   deleting the account; the language; the way out to the website, Instagram
   and the privacy page.
 
+### Discounts
+
+A place with a discount switched on in the website's `data/deals.json` wears
+the offer as a pill beside its name (**−15%**, taken from the offer line the
+way the website takes it), the map grows a **Discount** chip first after
+**All**, and the place's page carries the offer above **Must order** with its
+button. Me lists every discount, including the ones at places that are not
+on the map.
+
+The offer is for everybody to read; the pass is for members, as on the
+website. **Show QR** opens the pass full-screen in the accent colour, with the
+screen turned up to full brightness and kept awake: the QR, the same five
+letters in large type, and a countdown to the end of the hour with a dot
+beating beside it, so staff can tell a live pass from a screenshot.
+
+It is the website's `deal.html` drawn natively, and it makes the same code:
+
+1. `GET /api/pass?r=<place>` with the session. `401` is the sign-in card; a
+   failure is "not available right now", never a code. A deal with a `roll`
+   gets its `draw` back, and the rate is the run counted up at that number.
+2. `HMAC-SHA256(key, "<place>:<hour>[:<rate>]")`, the first four bytes read
+   five letters at a time in the alphabet without I, L, O and U —
+   `Core/PassCode.swift`.
+3. The QR is `https://tallinntastebuds.ee/verify.html?r=…&h=…&c=…[&p=…]`, so
+   a waiter's ordinary camera opens the website's own verify page, which
+   fills green. The staff page works unchanged as the fallback.
+
+CI compiles `PassCode.swift` on its own beside `Tools/PassCodeCheck.swift` and
+holds it to codes made by the website's algorithm, because a code one letter
+off is a guest turned away at the till. When the hour turns the pass makes the
+next code in front of the guest, and a drawn rate is drawn again.
+
 ### Accounts and your own lists
 
 An account is the website's account: a username and a password, checked by
@@ -68,8 +100,7 @@ In the order they are planned:
    column on `users`). All three are server work on the website, which is why
    the app signs in with a username and password only for now — App Review
    does not ask for Apple's sign-in beside a site's own accounts.
-2. **Discounts, stories, and Ask** — the pass to show at the table, the
-   stories, and the chat.
+2. **Ask**, the chat. Stories are not planned for the app.
 3. **Every string in eleven languages, App Store screenshots and the privacy
    answers**, then submission.
 
@@ -95,6 +126,8 @@ website.
 | Your lists and the ones you saved | `GET /api/lists` (signed in) |
 | Make, edit, fill, order, save or delete a list | `POST /api/lists` with `action` |
 | Every place in Tallinn, to put one on a list | `GET /api/places?q=` |
+| The discounts | `data/deals.json` |
+| Whether this session may show a pass, and its drawn rate | `GET /api/pass?r=<place>` |
 
 **Strings.** The app asks the site's `ui.json` for every string by key, so it is
 in the site's eleven languages wherever the site already says the thing. The
@@ -157,17 +190,20 @@ TallinnTasteBuds/
     API.swift                     the site's address and every request to it
     Disk.swift                    the disk cache and the bundled snapshot
     ContentStore.swift            places, kinds, languages, strings, search
+    PassCode.swift                the hourly discount code, the website's to the letter
     SavesStore.swift              the places this phone saved
     AccountStore.swift            who is signed in, their lists, every write to them
     LocationProvider.swift        the blue dot and distances
   Models/
     Place.swift                   a place on the map; a kind of place
     Lists.swift                   lists, list items, profiles, list pins
+    Deal.swift                    a discount: its offer, its run of rates, its dates
   Views/                          one file per screen, plus Theme and Routes
   Seed/                           the offline snapshot (refreshed weekly)
 Tools/
   refresh-seed.sh                 pull a current snapshot from the site
   validate-seed.mjs               check it against what the decoders need
+  PassCodeCheck.swift             hold PassCode.swift to the website's codes
 ```
 
 `Theme.swift` carries the website's colours to the value. `Routes.swift` is

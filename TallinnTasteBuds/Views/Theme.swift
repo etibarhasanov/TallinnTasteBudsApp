@@ -156,3 +156,18 @@ struct EmptyNote: View {
         .foregroundStyle(Theme.muted)
     }
 }
+
+/// "−15%", outlined in the accent, beside a place that gives members a
+/// discount — so the offer is part of choosing, not only of opening.
+struct DealPill: View {
+    let text: String
+    var body: some View {
+        Text(text)
+            .font(.caption.weight(.bold))
+            .foregroundStyle(Theme.accent)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .overlay(Capsule().stroke(Theme.accent, lineWidth: 1.2))
+            .fixedSize()
+    }
+}
