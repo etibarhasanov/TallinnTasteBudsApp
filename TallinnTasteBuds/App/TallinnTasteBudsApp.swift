@@ -21,10 +21,6 @@ struct TallinnTasteBudsApp: App {
                 .environment(saves)
                 .environment(location)
                 .environment(account)
-                .tint(Theme.accent)
-                // The site is drawn on paper and so is the app, in one look
-                // for now; a dark style is a separate piece of work.
-                .preferredColorScheme(.light)
                 .task {
                     await content.refresh()
                     await account.refresh(saves: saves)
@@ -65,6 +61,11 @@ struct RootView: View {
                 .tabItem { Label(content.t("appTabMe", "Me"), systemImage: "person.crop.circle") }
                 .tag(3)
         }
+        // The style chosen under Me: its accent on every control, and the
+        // system's own dark drawing for the two night styles, so the map,
+        // the bars and the keyboard go dark with the page.
+        .tint(Theme.accent)
+        .preferredColorScheme(Theme.dark ? .dark : .light)
         .sheet(isPresented: $signingIn) { SignInView() }
         .fullScreenCover(item: $scriptedRoute) { RouteView(target: $0) }
         .onAppear {

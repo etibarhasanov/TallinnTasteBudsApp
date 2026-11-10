@@ -88,6 +88,12 @@ You do **not** need to pay Apple $99 for this. Your normal Apple ID is enough.
    has used, like `com.yourname.tallinntastebuds`. That is the only text you will
    ever have to type.
 
+A free Personal Team cannot use **Sign in with Apple**, so a build run this
+way shows the button and answers that the sign-in did not finish. Google and
+a username and password work as they do anywhere. Apple's button works in a
+build signed by a paid team — the one that goes to TestFlight and the App
+Store; see `docs/APP-STORE.md`.
+
 ### 4c. Prepare the phone
 
 1. Plug the iPhone into the Mac. Unlock it and tap **Trust** if asked.

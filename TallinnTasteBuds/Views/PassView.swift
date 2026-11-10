@@ -27,7 +27,7 @@ struct DealBlock: View {
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.prominent)
             .controlSize(.large)
         }
         .padding(14)
@@ -95,7 +95,7 @@ struct PassView: View {
                     Text(deal.name).font(.largeTitle.bold()).multilineTextAlignment(.center)
                     stateView
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.onAccent)
                 .padding(.horizontal, 24)
                 .padding(.top, 40)
                 .padding(.bottom, 24)
@@ -106,8 +106,8 @@ struct PassView: View {
             Button { dismiss() } label: {
                 Image(systemName: "xmark").font(.headline)
                     .frame(width: 40, height: 40)
-                    .background(.white.opacity(0.2), in: Circle())
-                    .foregroundStyle(.white)
+                    .background(Theme.onAccent.opacity(0.2), in: Circle())
+                    .foregroundStyle(Theme.onAccent)
             }
             .padding(16)
             .accessibilityLabel(content.t("close", "Close"))
@@ -138,14 +138,14 @@ struct PassView: View {
         case .open:
             switch admission {
             case .asking:
-                ProgressView().tint(.white).padding(40)
+                ProgressView().tint(Theme.onAccent).padding(40)
             case .signIn:
                 message(content.t(deal.rates == nil ? "passSignIn" : "passRollSignIn",
                                   "Sign in to show this at the till. The discount is for members."))
                 Button { signingIn = true } label: {
                     Text(content.t("accountSignIn", "Sign in")).fontWeight(.semibold)
                         .frame(maxWidth: 260).padding(.vertical, 12)
-                        .background(.white, in: Capsule()).foregroundStyle(Theme.accent)
+                        .background(Theme.onAccent, in: Capsule()).foregroundStyle(Theme.accent)
                 }
             case .unavailable:
                 message(content.t("passUnavailable", "The draw is not available right now. Try again in a moment."))
@@ -242,7 +242,7 @@ private struct Countdown: View {
         let beat = Int(now.timeIntervalSince1970) % 2 == 0
         VStack(spacing: 4) {
             HStack(spacing: 10) {
-                Circle().fill(.white).frame(width: 12, height: 12)
+                Circle().fill(Theme.onAccent).frame(width: 12, height: 12)
                     .opacity(beat ? 1 : 0.25)
                     .animation(.easeInOut(duration: 0.5), value: beat)
                 Text(String(format: "%02d:%02d", left / 60, left % 60))

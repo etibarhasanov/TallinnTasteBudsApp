@@ -50,6 +50,12 @@ enum LaunchScript {
     #if DEBUG
     static var passPreview: Bool { UserDefaults.standard.bool(forKey: "ttbPassPreview") }
     #endif
+    /// `-ttbDoors YES` draws the Apple and Google buttons on the sign-in sheet
+    /// whatever the site says it offers, so they can be photographed. Debug
+    /// builds only; pressing one still asks the site, which answers as it does.
+    #if DEBUG
+    static var doors: Bool { UserDefaults.standard.bool(forKey: "ttbDoors") }
+    #endif
     /// `-ttbType <chip id>` presses a filter chip on the map tab.
     static var type: String? { UserDefaults.standard.string(forKey: "ttbType") }
     /// `-ttbSelect <id>` presses a pin on the map tab.

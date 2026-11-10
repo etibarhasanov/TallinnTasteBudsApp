@@ -9,11 +9,11 @@ import Observation
 /// across launches the way a browser would, so the app needs no token of its
 /// own and the server needed no change to let it in.
 ///
-/// Google sign-in is not offered here yet. It needs the system's sign-in
-/// sheet rather than a web view, and once a third-party sign-in is offered
-/// App Review asks for Sign in with Apple beside it; both are server work.
-/// Somebody who made their account with Google can set a password for it on
-/// the website and sign in with that.
+/// Google and Apple are the other two ways in, and end in the same cookie:
+/// `SocialSignIn` says how. The buttons are drawn only where the site says it
+/// can answer them (`appGoogle` and `appApple` on `GET /api/account`), so an
+/// app that reaches a copy of the site without those routes shows the two
+/// fields and nothing that leads nowhere.
 @MainActor
 @Observable
 final class AccountStore {
@@ -24,6 +24,15 @@ final class AccountStore {
     private(set) var mine: [ListSummary] = []
     private(set) var kept: [ListSummary] = []
 
+    /// Whether the site can finish a Google or an Apple sign-in for an app.
+    #if DEBUG
+    private(set) var googleOffered = LaunchScript.doors
+    private(set) var appleOffered = LaunchScript.doors
+    #else
+    private(set) var googleOffered = false
+    private(set) var appleOffered = false
+    #endif
+
     var signedIn: Bool { user != nil }
 
     /// Ask the site who this cookie belongs to, and fetch their lists.
@@ -32,6 +41,11 @@ final class AccountStore {
             let data = try await API.data("api/account")
             let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
             user = object["user"] as? String
+            googleOffered = object["appGoogle"] as? Bool ?? false
+            appleOffered = object["appApple"] as? Bool ?? false
+            #if DEBUG
+            if LaunchScript.doors { googleOffered = true; appleOffered = true }
+            #endif
             if let saved = object["saved"] as? [String] { saves.adopt(saved) }
             checked = true
             await refreshLists()
@@ -60,6 +74,32 @@ final class AccountStore {
         user = answer["user"] as? String
         if let saved = answer["saved"] as? [String] { saves.adopt(saved) }
         await refreshLists()
+    }
+
+    /// Sign in through Google, making the account if this Google account has
+    /// never been here. Throws `SocialSignIn.Cancelled` for a closed sheet.
+    func enterWithGoogle(saves: SavesStore) async throws {
+        let trip = try await SocialSignIn.shared.google()
+        let answer = try await API.post("api/account", [
+            "action": "ticket",
+            "ticket": trip.ticket,
+            "verifier": trip.verifier
+        ])
+        adopt(answer, saves: saves)
+        await refreshLists()
+    }
+
+    /// The same through Apple.
+    func enterWithApple(saves: SavesStore) async throws {
+        let proof = try await SocialSignIn.shared.apple()
+        let answer = try await API.post("api/apple", ["token": proof.token, "nonce": proof.nonce])
+        adopt(answer, saves: saves)
+        await refreshLists()
+    }
+
+    private func adopt(_ answer: [String: Any], saves: SavesStore) {
+        user = answer["user"] as? String
+        if let saved = answer["saved"] as? [String] { saves.adopt(saved) }
     }
 
     func signOut() async {
@@ -127,13 +167,15 @@ extension ContentStore {
         case "password": return t("accountErrPassword", "Password must be at least 8 characters.")
         case "taken": return t("accountErrTaken", "That username is taken.")
         case "no-match": return t("accountErrNoMatch", "Wrong username or password.")
+        case "google", "ticket": return t("accountErrGoogle", "Google sign-in did not finish. Try again.")
+        case "apple": return t("appErrApple", "Apple sign-in did not finish. Try again.")
         case "slow-down": return t("accountErrSlow", "Too many tries. Wait a few minutes.")
         case "current": return t("accountErrCurrent", "That is not the password you use now.")
         case "confirm": return t("accountErrDeleteConfirm", "Type your username exactly as it is.")
         case "signed-out": return t("accountErrSignedOut", "You have been signed out. Sign in again.")
-        case "title": return t("appErrTitle", "A list needs a name.")
-        case "too-many": return t("appErrTooMany", "That is as many as one account can have.")
-        case "full": return t("appErrFull", "A list holds fifty places at most.")
+        case "title": return t("listsErrTitle", "A list needs a name.")
+        case "too-many": return t("listsErrTooMany", "That is as many lists as one account can hold.")
+        case "full": return t("listsErrFull", "That is as many places as one list can hold.")
         default: return t("accountErrGeneric", "Something went wrong. Try again.")
         }
     }
