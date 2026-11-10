@@ -30,6 +30,7 @@ fetch data/map.json         seed-map
 fetch data/taxonomy.json    seed-taxonomy
 fetch data/lang/en.json     seed-lang-en
 fetch data/lang/index.json  seed-lang-index
+fetch data/deals.json       seed-deals
 
 # The round crop of the painting is what every place on the map wears as its
 # pin, so it travels with the data.

@@ -46,6 +46,9 @@ struct PlaceDetailView: View {
                     if let blurb = content.blurb(place.id) {
                         Text(blurb).font(.body).foregroundStyle(Theme.ink).lineSpacing(3)
                     }
+                    if let deal = content.deal(place.id) {
+                        DealBlock(deal: deal)
+                    }
                     if !place.mustOrder.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             SectionLabel(text: content.t("mustOrder", "Must order"))

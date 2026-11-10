@@ -47,6 +47,7 @@ struct RootView: View {
     @Environment(ContentStore.self) private var content
     @State private var tab = LaunchScript.tab
     @State private var signingIn = LaunchScript.sheet == "signin"
+    @State private var scriptedPass = LaunchScript.pass
 
     var body: some View {
         TabView(selection: $tab) {
@@ -64,5 +65,10 @@ struct RootView: View {
                 .tag(3)
         }
         .sheet(isPresented: $signingIn) { SignInView() }
+        .fullScreenCover(isPresented: Binding(get: { scriptedPass != nil }, set: { if !$0 { scriptedPass = nil } })) {
+            if let id = scriptedPass, let deal = content.deals.first(where: { $0.id == id }) {
+                PassView(deal: deal)
+            }
+        }
     }
 }

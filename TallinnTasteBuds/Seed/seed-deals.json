@@ -1,0 +1,135 @@
+[
+  {
+    "id": "magussoolane",
+    "name": "Magussoolane",
+    "live": true,
+    "key": "CXMXRR04BX83FF38VZTX3CAJTMTF7C5Z",
+    "offer": {
+      "en": "15% off your order",
+      "et": "15% soodustust tellimuselt",
+      "ru": "Скидка 15% на заказ",
+      "fi": "15% alennus tilauksesta",
+      "az": "Sifarişinizə 15% endirim",
+      "pt": "15% de desconto no seu pedido",
+      "es": "15% de descuento en tu pedido",
+      "tr": "Siparişinizde %15 indirim",
+      "uk": "Знижка 15% на замовлення",
+      "fr": "15 % sur ta commande",
+      "de": "15 % auf deine Bestellung"
+    }
+  },
+  {
+    "id": "pudel",
+    "name": "Pudel",
+    "live": true,
+    "key": "RH0WBQ494H7T37VGCF1W98CZ2A00FNJT",
+    "offer": {
+      "en": "10% off your order",
+      "et": "10% soodustust tellimuselt",
+      "ru": "Скидка 10% на заказ",
+      "fi": "10% alennus tilauksesta",
+      "az": "Sifarişinizə 10% endirim",
+      "pt": "10% de desconto no seu pedido",
+      "es": "10% de descuento en tu pedido",
+      "tr": "Siparişinizde %10 indirim",
+      "uk": "Знижка 10% на замовлення",
+      "fr": "10 % sur ta commande",
+      "de": "10 % auf deine Bestellung"
+    }
+  },
+  {
+    "id": "nullijook",
+    "name": "Nullijook",
+    "live": true,
+    "key": "4DBEFZP3QMW5HNMKATRD0CZ9A6W8V36R",
+    "offer": {
+      "en": "10% off your order",
+      "et": "10% soodustust tellimuselt",
+      "ru": "Скидка 10% на заказ",
+      "fi": "10% alennus tilauksesta",
+      "az": "Sifarişinizə 10% endirim",
+      "pt": "10% de desconto no seu pedido",
+      "es": "10% de descuento en tu pedido",
+      "tr": "Siparişinizde %10 indirim",
+      "uk": "Знижка 10% на замовлення",
+      "fr": "10 % sur ta commande",
+      "de": "10 % auf deine Bestellung"
+    }
+  },
+  {
+    "id": "q-pizza-jaam",
+    "name": "Q Pizza Jaam",
+    "live": true,
+    "key": "ABJ1MXZ0RCGBSE2DFWF8QPC5TFAC71BR",
+    "offer": {
+      "en": "15% off your order",
+      "et": "15% soodustust tellimuselt",
+      "ru": "Скидка 15% на заказ",
+      "fi": "15% alennus tilauksesta",
+      "az": "Sifarişinizə 15% endirim",
+      "pt": "15% de desconto no seu pedido",
+      "es": "15% de descuento en tu pedido",
+      "tr": "Siparişinizde %15 indirim",
+      "uk": "Знижка 15% на замовлення",
+      "fr": "15 % sur ta commande",
+      "de": "15 % auf deine Bestellung"
+    }
+  },
+  {
+    "id": "badam",
+    "name": "Badam",
+    "live": true,
+    "key": "0YH3ZFHQM3VG3S6GP8VESFCYVA324YG4",
+    "offer": {
+      "en": "15% off your order",
+      "et": "15% soodustust tellimuselt",
+      "ru": "Скидка 15% на заказ",
+      "fi": "15% alennus tilauksesta",
+      "az": "Sifarişinizə 15% endirim",
+      "pt": "15% de desconto no seu pedido",
+      "es": "15% de descuento en tu pedido",
+      "tr": "Siparişinizde %15 indirim",
+      "uk": "Знижка 15% на замовлення",
+      "fr": "15 % sur ta commande",
+      "de": "15 % auf deine Bestellung"
+    }
+  },
+  {
+    "id": "morii-tea-house",
+    "name": "Morii Tea House",
+    "live": true,
+    "key": "0JG2SJCDPS41JEWR27HQN68WQNZHANAN",
+    "offer": {
+      "en": "15% off your order",
+      "et": "15% soodustust tellimuselt",
+      "ru": "Скидка 15% на заказ",
+      "fi": "15% alennus tilauksesta",
+      "az": "Sifarişinizə 15% endirim",
+      "pt": "15% de desconto no seu pedido",
+      "es": "15% de descuento en tu pedido",
+      "tr": "Siparişinizde %15 indirim",
+      "uk": "Знижка 15% на замовлення",
+      "fr": "15 % sur ta commande",
+      "de": "15 % auf deine Bestellung"
+    }
+  },
+  {
+    "id": "ChIJjT6uOdiVkkYRwHK_f2mL67M",
+    "name": "Faxinin marketi",
+    "live": true,
+    "key": "XJFKHV3BHPSN74MP1QGYKN6CX8KFJ2EF",
+    "offer": {
+      "en": "20% off your order",
+      "et": "20% soodustust tellimuselt",
+      "ru": "Скидка 20% на заказ",
+      "fi": "20% alennus tilauksesta",
+      "az": "Sifarişinizə 20% endirim",
+      "pt": "20% de desconto no seu pedido",
+      "es": "20% de descuento en tu pedido",
+      "tr": "Siparişinizde %20 indirim",
+      "uk": "Знижка 20% на замовлення",
+      "fr": "20 % sur ta commande",
+      "de": "20 % auf deine Bestellung"
+    }
+  }
+]

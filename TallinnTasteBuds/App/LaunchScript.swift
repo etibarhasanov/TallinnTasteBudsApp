@@ -21,6 +21,7 @@ enum LaunchScript {
             case "place": return .place(bits[1])
             case "list": return .list(bits[1])
             case "profile": return .profile(bits[1])
+            case "screen" where bits[1] == "discounts": return .discounts
             default: return nil
             }
         }
@@ -34,6 +35,17 @@ enum LaunchScript {
     /// editor can be photographed on a public list. Nothing is sent unless
     /// Save is pressed, and a script never presses it.
     static var edit: String? { UserDefaults.standard.string(forKey: "ttbEdit") }
+    /// `-ttbPass <place id>` opens that place's discount pass over the first
+    /// screen. Signed out, which a script always is, it shows the sign-in card.
+    static var pass: String? { UserDefaults.standard.string(forKey: "ttbPass") }
+    /// `-ttbPassPreview YES` draws the pass without asking the site, so the QR
+    /// can be photographed by a script that has no account. Debug builds
+    /// only: a release build has no such door past the member check.
+    #if DEBUG
+    static var passPreview: Bool { UserDefaults.standard.bool(forKey: "ttbPassPreview") }
+    #endif
+    /// `-ttbType <chip id>` presses a filter chip on the map tab.
+    static var type: String? { UserDefaults.standard.string(forKey: "ttbType") }
     /// `-ttbSelect <id>` presses a pin on the map tab.
     static var select: String? { UserDefaults.standard.string(forKey: "ttbSelect") }
 }

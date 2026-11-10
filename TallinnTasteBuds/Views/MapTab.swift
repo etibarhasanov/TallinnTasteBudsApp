@@ -10,7 +10,7 @@ struct MapTab: View {
 
     @State private var path = NavigationPath(LaunchScript.routes(tab: 0))
     @State private var query = ""
-    @State private var type: String?
+    @State private var type: String? = LaunchScript.type
     @State private var selected: String? = LaunchScript.select
     @State private var showingList = false
     @State private var camera: MapCameraPosition = .region(MapTab.tallinn)
@@ -143,6 +143,14 @@ struct ChipRow: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 chip(content.t("filterAll", "All"), on: selected == nil) { selected = nil }
+                // First after All, and only while some place has a discount
+                // switched on — the website's rule for the same chip.
+                if !content.liveDeals.isEmpty {
+                    let id = ContentStore.discountChip
+                    chip(content.t("filterDiscount", "Discount"), on: selected == id) {
+                        selected = (selected == id) ? nil : id
+                    }
+                }
                 ForEach(content.chips) { t in
                     chip(t.name(content.lang), on: selected == t.id) {
                         selected = (selected == t.id) ? nil : t.id
@@ -241,7 +249,12 @@ struct PlaceRow: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(place.name).font(.headline).foregroundStyle(Theme.ink).lineLimit(2)
+                HStack(spacing: 6) {
+                    Text(place.name).font(.headline).foregroundStyle(Theme.ink).lineLimit(2)
+                    if let deal = content.deal(place.id) {
+                        DealPill(text: deal.badge(content.lang) ?? content.t("filterDiscount", "Discount"))
+                    }
+                }
                 Text(subtitle).font(.subheadline).foregroundStyle(Theme.muted).lineLimit(1)
                 if !place.address.isEmpty {
                     Text(place.address).font(.footnote).foregroundStyle(Theme.muted).lineLimit(1)
