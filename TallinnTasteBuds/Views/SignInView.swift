@@ -120,6 +120,9 @@ struct SignInView: View {
             }
             .onChange(of: creating) { _, _ in problem = nil }
         }
+        // Said here as well as at the root: this sheet is opened from many
+        // screens, and its Close must be the style's accent from all of them.
+        .tint(Theme.accent)
     }
 
     /// One of the two buttons: its mark, then its words, centred as a pair.

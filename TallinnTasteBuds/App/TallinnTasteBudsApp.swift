@@ -61,11 +61,6 @@ struct RootView: View {
                 .tabItem { Label(content.t("appTabMe", "Me"), systemImage: "person.crop.circle") }
                 .tag(3)
         }
-        // The style chosen under Me: its accent on every control, and the
-        // system's own dark drawing for the two night styles, so the map,
-        // the bars and the keyboard go dark with the page.
-        .tint(Theme.accent)
-        .preferredColorScheme(Theme.dark ? .dark : .light)
         .sheet(isPresented: $signingIn) { SignInView() }
         .fullScreenCover(item: $scriptedRoute) { RouteView(target: $0) }
         .onAppear {
@@ -78,5 +73,12 @@ struct RootView: View {
                 PassView(deal: deal)
             }
         }
+        // The style chosen under Me: its accent on every control, and the
+        // system's own dark drawing for the two night styles, so the map,
+        // the bars and the keyboard go dark with the page. Last, so the
+        // sheets above are inside it: a sheet outside the tint is drawn in
+        // the asset catalogue's accent, which is one style's and not this one.
+        .tint(Theme.accent)
+        .preferredColorScheme(Theme.dark ? .dark : .light)
     }
 }
