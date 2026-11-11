@@ -1,0 +1,78 @@
+name: debug-hang
+
+# Temporary: reproduces a search that froze on a phone and samples the app's
+# main thread while it is stuck. Removed once the cause is fixed.
+permissions:
+  contents: write
+
+on:
+  push:
+    branches: ['claude/exciting-darwin-fmzifm']
+
+jobs:
+  hang:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild build -project TallinnTasteBuds.xcodeproj -scheme TallinnTasteBuds \
+            -destination 'generic/platform=iOS Simulator' -configuration Debug \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO | tail -3
+      - name: Search and sample
+        shell: bash
+        run: |
+          set -uo pipefail
+          app=build/Build/Products/Debug-iphonesimulator/TallinnTasteBuds.app
+          bundle=ee.tallinntastebuds.app
+          dev=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          d = json.load(sys.stdin)["devices"]
+          phones = [x for k, v in d.items() if "iOS" in k for x in v if x["name"].startswith("iPhone")]
+          plain = [x for x in phones if x["name"] in ("iPhone 16", "iPhone 15")]
+          print((plain or phones)[0]["udid"])')
+          xcrun simctl boot "$dev"
+          xcrun simctl bootstatus "$dev" -b
+          xcrun simctl install "$dev" "$app"
+          xcrun simctl privacy "$dev" grant location "$bundle"
+          xcrun simctl location "$dev" set 59.4372,24.7450
+          mkdir -p shots
+          run() {
+            local name="$1"; shift
+            echo "=================== $name: $*"
+            xcrun simctl terminate "$dev" "$bundle" >/dev/null 2>&1 || true
+            xcrun simctl launch "$dev" "$bundle" "$@"
+            sleep 16
+            xcrun simctl io "$dev" screenshot "shots/$name.png" >/dev/null || true
+            pid=$(pgrep -f "TallinnTasteBuds.app/TallinnTasteBuds" | head -1 || true)
+            echo "pid=$pid"
+            if [ -n "$pid" ]; then
+              ps -o %cpu=,rss= -p "$pid" | sed 's/^/cpu,rss: /'
+              sample "$pid" 3 -file "shots/$name.sample.txt" >/dev/null 2>&1 || true
+              # The main thread's heaviest path, which is where a hang lives.
+              awk '/Call graph:/{p=1} p' "shots/$name.sample.txt" | head -90
+              echo "--- sort by top of stack"
+              awk '/Sort by top of stack/{p=1} p' "shots/$name.sample.txt" | head -25
+            else
+              echo "NOT RUNNING - crashed?"
+              ls ~/Library/Logs/DiagnosticReports 2>/dev/null | tail -5
+            fi
+          }
+          run pizza-results -ttbQuery pizza
+          run pasta-results -ttbQuery pasta
+          run pasta-typing -ttbQuery pasta -ttbTyping YES
+          run pasta-az -ttbQuery pasta -lang az
+      - name: Publish the shots
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd shots
+          for f in *.png; do sips -s format jpeg -s formatOptions 70 -Z 900 "$f" --out "${f%.png}.jpg" >/dev/null; rm "$f"; done
+          git init -q -b ci-debug
+          git add -A
+          git -c user.name=github-actions -c user.email=41898282+github-actions[bot]@users.noreply.github.com commit -q -m "Hang debug of ${GITHUB_SHA}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-debug
