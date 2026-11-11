@@ -180,6 +180,7 @@ website.
 | Your lists and the ones you saved | `GET /api/lists` (signed in) |
 | Make, edit, fill, order, save or delete a list | `POST /api/lists` with `action` |
 | Every place in Tallinn, to put one on a list | `GET /api/places?q=` |
+| A place that search does not have — a museum, a shop — looked up on Google Maps and kept on the site | `GET /api/lookup`, `POST /api/lookup` |
 | The discounts | `data/deals.json` |
 | Whether this session may show a pass, and its drawn rate | `GET /api/pass?r=<place>` |
 | The way there on foot, by bus or by car | `GET /api/route?from=…&to=…&mode=foot\|bus\|car` |

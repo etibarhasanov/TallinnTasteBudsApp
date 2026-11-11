@@ -85,6 +85,31 @@ struct CatalogueHit: Identifiable, Hashable, Decodable {
     }
 }
 
+/// What `POST /api/lookup` says when Google Maps is asked for a place the
+/// site's own search does not have — a museum, a shop, a café that opened
+/// last month. The places come back in the search's own shape, already kept
+/// on the site, so one can go on a list like any other. `why` is the route's
+/// word when it could not ask: "spent", "failed", "no-key".
+struct LookupAnswer: Decodable {
+    let ok: Bool
+    let why: String
+    let places: [CatalogueHit]
+
+    enum CodingKeys: String, CodingKey { case ok, why, places }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        ok = (try? c.decodeIfPresent(Bool.self, forKey: .ok)) ?? false
+        why = (try? c.decodeIfPresent(String.self, forKey: .why)) ?? ""
+        places = (try? c.decodeIfPresent([CatalogueHit].self, forKey: .places)) ?? []
+    }
+}
+
+/// `GET /api/lookup`: whether the site can ask Google Maps at all.
+struct LookupReady: Decodable {
+    let ready: Bool
+}
+
 /// One page of everybody's lists. `next` is the cursor for the page after it,
 /// empty or absent on the last one.
 struct ListsPage: Decodable {

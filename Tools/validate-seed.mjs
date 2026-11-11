@@ -55,7 +55,8 @@ const usedKeys = [
   'search', 'searchNone', 'filterAll', 'noResults', 'listOpen', 'listNearYou', 'listNearOldTown',
   'mustOrder', 'directions', 'website', 'call', 'markReel', 'closedFlag', 'savePlace', 'listSaved',
   'language', 'listsTitle', 'listsAllTitle', 'listsAllFor', 'listsAllSearchHint', 'listsEmpty',
-  'listsViewList', 'listsViewMap', 'listsKeptOne', 'listsKeptN', 'venuesMaps', 'venuesShutToday'
+  'listsViewList', 'listsViewMap', 'listsKeptOne', 'listsKeptN', 'venuesMaps', 'venuesShutToday',
+  'findGoogleAsk', 'findGoogleAsking', 'findGoogleNone', 'findGoogleResting'
 ];
 for (const key of usedKeys) {
   if (typeof en.ui?.[key] !== 'string') fail(`seed-lang-en.json: ui.${key} is missing`);
