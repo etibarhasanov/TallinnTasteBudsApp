@@ -315,6 +315,13 @@ struct PinPicker: View {
 /// Searching every place in Tallinn — the map's and Google's — to put one on
 /// a list. A place goes on the moment it is pressed, and the server says
 /// whether it may.
+///
+/// The site's own search is a city of places to eat and drink, so a museum or
+/// a café that opened last month is not in it. Under the results there is the
+/// website's own second door: look for what was typed on Google Maps. It is a
+/// press and never a search that fires by itself, because each one is a call
+/// against the site's daily budget; the site keeps what Google answers, so
+/// the place then goes on the list like any other.
 struct PlacePicker: View {
     @Environment(ContentStore.self) private var content
     @Environment(AccountStore.self) private var account
@@ -328,6 +335,18 @@ struct PlacePicker: View {
     @State private var hits: [CatalogueHit] = []
     @State private var done: Set<String> = []
     @State private var problem: String?
+    /// The words `hits` are the answer to, so the Google door is offered
+    /// under an answer and not under the one before it.
+    @State private var searched = ""
+    /// Whether the site can ask Google Maps at all: asked once, and false
+    /// until it says so.
+    @State private var canLook = false
+    /// Where asking Google Maps about the words in the field stands.
+    @State private var looked: Looked?
+
+    enum Looked: Equatable { case asking, found, nothing, resting }
+
+    private var typed: String { query.trimmingCharacters(in: .whitespaces) }
 
     var body: some View {
         NavigationStack {
@@ -335,7 +354,7 @@ struct PlacePicker: View {
                 if let problem {
                     Text(problem).foregroundStyle(Theme.accent).listRowBackground(Theme.paper)
                 }
-                if hits.isEmpty {
+                if hits.isEmpty && looked != .asking && looked != .nothing {
                     Text(query.count < 2 ? content.t("listsSearchPlaces", "Search every place in Tallinn")
                                          : content.t("searchNone", "Nothing matches “{q}”.", ["q": query]))
                         .foregroundStyle(Theme.muted)
@@ -362,6 +381,7 @@ struct PlacePicker: View {
                     }
                     .listRowBackground(Theme.paper)
                 }
+                googleDoor.listRowBackground(Theme.paper)
             }
             .listStyle(.plain)
             .paperBackground()
@@ -373,13 +393,66 @@ struct PlacePicker: View {
                 ToolbarItem(placement: .confirmationAction) { Button(content.t("editDone", "Done")) { dismiss() } }
             }
             .task(id: query) {
-                let q = query.trimmingCharacters(in: .whitespaces)
-                guard q.count >= 2 else { hits = []; return }
+                let q = typed
+                looked = nil
+                guard q.count >= 2 else { hits = []; searched = ""; return }
                 try? await Task.sleep(for: .milliseconds(300))
                 if Task.isCancelled { return }
-                if let found = try? await API.get([CatalogueHit].self, "api/places", ["q": q]) { hits = found }
+                if let found = try? await API.get([CatalogueHit].self, "api/places", ["q": q]), !Task.isCancelled {
+                    hits = found
+                    searched = q
+                }
+            }
+            .task {
+                canLook = (try? await API.get(LookupReady.self, "api/lookup"))?.ready ?? false
             }
         }
+    }
+
+    /// The row under the results: the offer to look on Google Maps, and what
+    /// came of it.
+    @ViewBuilder
+    private var googleDoor: some View {
+        switch looked {
+        case .asking:
+            HStack(spacing: 10) {
+                ProgressView()
+                Text(content.t("findGoogleAsking", "Asking Google Maps…")).foregroundStyle(Theme.muted)
+            }
+        case .nothing:
+            Text(content.t("findGoogleNone", "Google Maps has nothing in Tallinn for “{q}” either.", ["q": typed]))
+                .foregroundStyle(Theme.muted)
+        case .resting:
+            Text(content.t("findGoogleResting", "Looking on Google is resting for today. Try again tomorrow."))
+                .foregroundStyle(Theme.muted)
+        case .found:
+            EmptyView()
+        case nil:
+            if canLook, typed.count >= 2, searched == typed {
+                Button {
+                    Task { await lookUp(typed) }
+                } label: {
+                    Label(content.t("findGoogleAsk", "Look for “{q}” on Google Maps", ["q": typed]), systemImage: "magnifyingglass")
+                        .foregroundStyle(Theme.accent)
+                }
+            }
+        }
+    }
+
+    private func lookUp(_ q: String) async {
+        looked = .asking
+        let answer = try? await API.post(LookupAnswer.self, "api/lookup", ["q": q])
+        // The field has moved on while Google was thinking.
+        guard typed == q else { return }
+        guard let answer, answer.ok else {
+            if answer?.why == "no-key" { canLook = false; looked = nil } else { looked = .resting }
+            return
+        }
+        // Google's answers first, since they are what was asked for, and
+        // none of them twice.
+        let fresh = Set(answer.places.map(\.id))
+        hits = answer.places + hits.filter { !fresh.contains($0.id) }
+        looked = answer.places.isEmpty ? .nothing : .found
     }
 
     private func add(_ hit: CatalogueHit) async {

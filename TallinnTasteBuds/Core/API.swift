@@ -77,17 +77,30 @@ enum API {
     /// what went wrong, which the screens turn into the site's own sentence.
     @discardableResult
     static func post(_ path: String, _ body: [String: Any]) async throws -> [String: Any] {
+        let (data, status) = try await send(path, body)
+        let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+        if !(200..<300).contains(status) {
+            throw Refusal(code: object["error"] as? String ?? "status-\(status)", status: status)
+        }
+        return object
+    }
+
+    /// The same POST for a route whose answer has a shape worth decoding —
+    /// `/api/lookup`, which answers places rather than a word.
+    static func post<T: Decodable>(_ type: T.Type, _ path: String, _ body: [String: Any]) async throws -> T {
+        let (data, status) = try await send(path, body)
+        if !(200..<300).contains(status) { throw Failure.status(status) }
+        return try decoder.decode(T.self, from: data)
+    }
+
+    private static func send(_ path: String, _ body: [String: Any]) async throws -> (Data, Int) {
         var request = URLRequest(url: url(path))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, response) = try await session.data(for: request)
-        let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
-        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-            throw Refusal(code: object["error"] as? String ?? "status-\(http.statusCode)", status: http.statusCode)
-        }
-        return object
+        return (data, (response as? HTTPURLResponse)?.statusCode ?? 200)
     }
 
     /// A photo of a place on the map: `/photos/<id>/<file>`.
