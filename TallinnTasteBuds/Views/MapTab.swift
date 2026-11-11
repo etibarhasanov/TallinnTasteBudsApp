@@ -8,11 +8,16 @@ import MapKit
 /// suggestions drop under the field: the places on this map first, then
 /// everywhere in Tallinn, which the website answers from `/api/places?q=` —
 /// the same search its own pages use, so a word finds the same places here
-/// and there. Press a suggestion and the map goes to that one place. Press
-/// Search and every result is drawn at once, the map's own as the mark and
-/// the rest of the city as plain dots; move the map and Search this area
-/// asks again for the part on screen. Empty the field and the map is the one
-/// that opens. Offline, the places the app carries still answer.
+/// and there. The site's answer goes on the map the moment it arrives, the
+/// map's own as the mark and the rest of the city as plain dots, whether or
+/// not Search was pressed: it used to wait for Search, so a word typed and
+/// the keyboard put away showed only the places the app carries, and Search
+/// pressed before the site had answered drew nothing more either — the same
+/// word searched the app one time and the city the next. Press a suggestion
+/// and the map goes to that place. Press Search and every result is framed
+/// at once; move the map and Search this area asks again for the part on
+/// screen. Empty the field and the map is the one that opens. Offline, the
+/// places the app carries still answer.
 struct MapTab: View {
     @Environment(ContentStore.self) private var content
     @Environment(SavesStore.self) private var saves
@@ -30,9 +35,12 @@ struct MapTab: View {
     @State private var found: [CatalogueHit] = []
     @State private var asking = false
     @State private var unreachable = false
-    /// The city's places drawn on the map: one after a suggestion is pressed,
-    /// all of them after Search.
+    /// The city's places drawn on the map: everything the site last
+    /// answered, or the one a press in the list brought back.
     @State private var drawn: [CatalogueHit] = []
+    /// Search was pressed while the site was still being asked, so the
+    /// answer is framed when it comes rather than the map before it.
+    @State private var framing = false
     /// What the map shows, where it stood when the results were drawn, and
     /// whether it has been moved since — which is when Search this area shows.
     @State private var region: MKCoordinateRegion?
@@ -111,6 +119,7 @@ struct MapTab: View {
                     unreachable = false
                     moved = false
                 }
+                framing = false
                 deselectIfHidden()
             }
             .onChange(of: type) { _, _ in deselectIfHidden() }
@@ -122,8 +131,10 @@ struct MapTab: View {
                 asking = true
                 try? await Task.sleep(for: .milliseconds(300))
                 if Task.isCancelled { return }
-                await ask(q, in: nil)
-                if LaunchScript.query != nil && !LaunchScript.typing { showAll() }
+                guard await ask(q, in: nil) else { return }
+                drawn = city
+                deselectIfHidden()
+                if framing || (LaunchScript.query != nil && !LaunchScript.typing) { showAll() }
             }
         }
     }
@@ -283,8 +294,10 @@ struct MapTab: View {
 
     /// The site's answer for these words, over the whole city or the part of
     /// it in `box`. A failure leaves the last answer standing and says so; a
-    /// search the next letter cancelled says nothing.
-    private func ask(_ q: String, in box: MKCoordinateRegion?) async {
+    /// search the next letter cancelled says nothing. True when the answer
+    /// in `found` is the one for these words.
+    @discardableResult
+    private func ask(_ q: String, in box: MKCoordinateRegion?) async -> Bool {
         var params = ["q": q, "limit": "40"]
         if let box {
             let south = box.center.latitude - box.span.latitudeDelta / 2
@@ -295,14 +308,17 @@ struct MapTab: View {
         }
         do {
             let hits = try await API.get([CatalogueHit].self, "api/places", params)
-            if Task.isCancelled { return }
+            if Task.isCancelled { return false }
             found = hits
             unreachable = false
+            asking = false
+            return true
         } catch {
-            if Task.isCancelled { return }
+            if Task.isCancelled { return false }
             unreachable = true
+            asking = false
+            return false
         }
-        asking = false
     }
 
     // MARK: What a press does
@@ -324,10 +340,13 @@ struct MapTab: View {
         fly(to: point)
     }
 
-    /// Search: every result on the map at once, framed.
+    /// Search: every result on the map at once, framed. Pressed before the
+    /// site has answered, it frames what the app carries now and again when
+    /// the answer lands.
     private func showAll() {
         typing = false
         selected = nil
+        framing = asking
         drawn = city
         let points = visible.map(\.coordinate) + drawn.compactMap(\.coordinate)
         guard let first = points.first else { return }
@@ -348,8 +367,7 @@ struct MapTab: View {
         moved = false
         settled = box
         Task {
-            await ask(typed, in: box)
-            drawn = city
+            if await ask(typed, in: box) { drawn = city }
         }
     }
 
