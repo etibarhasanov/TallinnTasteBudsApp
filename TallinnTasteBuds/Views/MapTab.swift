@@ -492,7 +492,11 @@ struct CityCard: View {
 }
 
 /// The search box over the map: the site's own placeholder, a clear button,
-/// and the keyboard's Search key.
+/// and the keyboard's Search key. The clear button puts the keyboard away
+/// with the word: pressing it says the search is over, and a keyboard left
+/// standing over half the map with nothing in the field is in the way of the
+/// map somebody cleared it to see. Backspacing to empty keeps it, since that
+/// is somebody about to type the next word.
 struct SearchField: View {
     @Binding var text: String
     let prompt: String
@@ -509,7 +513,10 @@ struct SearchField: View {
                 .focused(focus)
                 .onSubmit(submit)
             if !text.isEmpty {
-                Button { text = "" } label: {
+                Button {
+                    text = ""
+                    focus.wrappedValue = false
+                } label: {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.muted)
                 }
             }
