@@ -32,8 +32,9 @@ three things the app does are not in the rest of it:
 | *(nothing)* | Signing in with Apple |
 
 So the page has a section about the app, **In the iPhone app**, added on
-2026-11-10 in all eleven languages (`data/privacy.json` in the website's
-repository). Its English is below. The two are one text kept in two places:
+2026-11-10 and moved on 2026-11-17 for walks and rides, in all eleven
+languages (`data/privacy.json` in the website's repository). Its English is
+below. The two are one text kept in two places:
 when the app starts sending something else, change the facts at the foot of
 this file, this copy, and the website's section together, and move the
 date on the page.
@@ -44,10 +45,11 @@ date on the page.
 
 > ### In the iPhone app
 >
-> The Tallinn Taste Buds app reads the same map, lists and accounts as this
-> site, and an account made in one is the same account in the other. What
-> this page says about accounts, about how long things are kept and about
-> your rights applies to the app too. A few things are different.
+> The Tallinn Taste Buds app for iPhone reads the same map, lists and
+> accounts as this site, and an account made in one is the same account in
+> the other. What this page says about accounts, about how long things are
+> kept and about your rights applies to the app too. A few things are
+> different.
 >
 > The app loads no analytics: not Microsoft Clarity, and nothing like it. It
 > shows no advertising and does not track you across other apps or sites.
@@ -57,18 +59,22 @@ date on the page.
 > The app asks whether it may use your location the first time it opens, and
 > works without it if you say no. Your location is used on your phone to
 > show where you are and how far each place is. When you ask for the way to
-> a place — on foot, by bus or by car — it is sent to this site with that
-> one request so the route can be worked out, and the site passes a rounded
-> position on to the routing service it uses: OpenStreetMap Germany for
-> walking and driving, and peatus.ee, Estonia's public journey planner, for
-> buses and trams. This site does not keep it and does not connect it to
-> your account. Checking in at a place while you go round a list sends your
-> location with that one press too; the site compares it with the places
-> left and keeps which place you checked in at and when, never where you
-> stood. And if you record a bike ride and save it, the line you rode is
-> kept as a confirmed bike route without its first and last 200 metres,
-> stored with your account and never shown with your name. You can switch
-> location off for the app in iPhone Settings at any time.
+> a place — on foot, by bike, by bus or by car — it is sent to this site
+> with that one request so the route can be worked out, and the site passes
+> a rounded position on to the routing service it uses: OpenStreetMap
+> Germany for walking, cycling and driving, and peatus.ee, Estonia's public
+> journey planner, for buses and trams. This site does not keep it and does
+> not connect it to your account. You can switch location off for the app in
+> iPhone Settings at any time.
+>
+> Going round a list and recording a bike ride work in the app as they do on
+> this site, and what is kept of them is what “If you make an account” says
+> above: a check-in sends your location with that one press and keeps only
+> the place and the time, and a ride is sent only when you press Save. The
+> app reads your location more precisely while a walk is on screen or a ride
+> is being recorded. It records a ride only while it is open, keeps the
+> screen on while it does, pauses when you leave it, and keeps the ride on
+> your phone until you save it or throw it away.
 >
 > You can use the app without an account. If you make one, it is a username
 > and either a password, Google or Apple. If you use Apple, the site keeps
