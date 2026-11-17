@@ -2,11 +2,16 @@ import SwiftUI
 import MapKit
 
 /// One list, read: its places in its author's order with what they wrote
-/// about each, and the same list as numbered pins on a map.
+/// about each, the same list as numbered pins on a map, and its Route — the
+/// places in the shortest order to go round them, and a walk to check in on.
 struct ListDetailView: View {
     @Environment(ContentStore.self) private var content
     @Environment(AccountStore.self) private var account
     let id: String
+    /// Which of the three views it opens on.
+    var opening: Shown = LaunchScript.listView
+
+    enum Shown: Hashable { case list, map, route }
 
     @State private var list: ListDetail?
     @State private var editing = false
@@ -15,31 +20,47 @@ struct ListDetailView: View {
     @State private var keeps: Int?
     @State private var failed = false
     @State private var gone = false
-    @State private var showMap = LaunchScript.listMap
+    @State private var shown: Shown?
+    @State private var game: WalkGame?
     /// The place pressed on the page, which the map opens on.
     @State private var focus: String? = LaunchScript.listFocus
 
     var body: some View {
         Group {
             if let list {
+                let view = Binding(get: { shown ?? opening }, set: { shown = $0 })
                 VStack(spacing: 0) {
-                    Picker("", selection: $showMap) {
-                        Text(content.t("listsViewList", "List")).tag(false)
-                        Text(content.t("listsViewMap", "Map")).tag(true)
+                    Picker("", selection: view) {
+                        Text(content.t("listsViewList", "List")).tag(Shown.list)
+                        Text(content.t("listsViewMap", "Map")).tag(Shown.map)
+                        // A route needs two places to stand at.
+                        if list.items.filter({ $0.coordinate != nil }).count > 1 {
+                            Text(content.t("walkView", "Route")).tag(Shown.route)
+                        }
                     }
                     .pickerStyle(.segmented)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    if showMap {
-                        ListMap(list: list, focus: focus)
-                    } else {
+                    switch view.wrappedValue {
+                    case .map:
+                        ListMap(list: list, focus: focus, game: game) {
+                            withAnimation(.snappy) { shown = .route }
+                        }
+                    case .route:
+                        if let game {
+                            WalkRoute(game: game) {
+                                focus = nil
+                                withAnimation(.snappy) { shown = .map }
+                            }
+                        }
+                    case .list:
                         // Pressing a place on the page goes to the map, on
                         // that place, rather than off the list: a list is
                         // read to decide where to go, and where it is is the
                         // next question. Its card on the map opens the place.
                         ListPage(list: list, keepsNow: keeps) { item in
                             focus = item.id
-                            withAnimation(.snappy) { showMap = true }
+                            withAnimation(.snappy) { shown = .map }
                         }
                     }
                 }
@@ -104,6 +125,9 @@ struct ListDetailView: View {
             let envelope = try await API.get(ListEnvelope.self, "api/lists", ["id": id])
             if let l = envelope.list {
                 list = l
+                let walk = WalkGame(list: l)
+                game = walk
+                Task { await walk.load() }
                 if LaunchScript.edit == l.id { editing = true }
             } else {
                 gone = true
@@ -129,11 +153,11 @@ private struct ListPage: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(list.title).font(.title.bold()).foregroundStyle(Theme.ink)
+                    Text(GoogleWords.title(list.id, list.title, content)).font(.title.bold()).foregroundStyle(Theme.ink)
                     HStack(spacing: 4) {
                         if let by = list.by {
                             NavigationLink(value: Route.profile(by)) {
-                                Text(by).fontWeight(.semibold).foregroundStyle(Theme.ink)
+                                Text(GoogleWords.who(by)).fontWeight(.semibold).foregroundStyle(Theme.ink)
                             }
                             Text("·").foregroundStyle(Theme.muted)
                         }
@@ -141,7 +165,7 @@ private struct ListPage: View {
                     }
                     .font(.subheadline)
                     if !list.intro.isEmpty {
-                        Text(list.intro).font(.body).foregroundStyle(Theme.ink).padding(.top, 4)
+                        Text(GoogleWords.intro(list.id, list.intro, content)).font(.body).foregroundStyle(Theme.ink).padding(.top, 4)
                     }
                 }
                 .padding(16)
@@ -245,6 +269,14 @@ private struct ListMap: View {
     let list: ListDetail
     /// The place to open on, pressed on the list's page; nil frames them all.
     var focus: String?
+    /// The walk on this list, drawn on the map while it is on: a dashed line
+    /// through the places in the walker's order, a tick on the ones checked,
+    /// the next one filled, and the walk's bar where the card would be.
+    var game: WalkGame?
+    /// The walk's bar's way back to the Route view.
+    var toRoute: () -> Void = {}
+
+    private var walking: Bool { game.map { $0.started && !$0.finished } ?? false }
 
     @State private var selected: String?
     @State private var camera: MapCameraPosition = .automatic
@@ -269,12 +301,25 @@ private struct ListMap: View {
         ZStack(alignment: .bottom) {
             Map(position: $camera, selection: $selected) {
                 UserAnnotation()
-                ForEach(placed) { pin in
-                    Annotation(pin.item.name, coordinate: pin.coordinate, anchor: .center) {
-                        NumberedPin(emoji: Pins.of(list.pin), number: pin.number, selected: selected == pin.id)
+                if walking, let game {
+                    let stops = game.stops
+                    MapPolyline(coordinates: stops.compactMap(\.coordinate))
+                        .stroke(Theme.accent, style: StrokeStyle(lineWidth: 3, lineCap: .round, dash: [6, 6]))
+                    ForEach(Array(stops.enumerated()), id: \.element.id) { i, item in
+                        Annotation(item.name, coordinate: item.coordinate!, anchor: .center) {
+                            WalkPin(number: i + 1, checked: game.check(item.place) != nil, next: game.next == item)
+                        }
+                        .annotationTitles(.hidden)
+                        .tag(item.id)
                     }
-                    .annotationTitles(.hidden)
-                    .tag(pin.id)
+                } else {
+                    ForEach(placed) { pin in
+                        Annotation(pin.item.name, coordinate: pin.coordinate, anchor: .center) {
+                            NumberedPin(emoji: Pins.of(list.pin), number: pin.number, selected: selected == pin.id)
+                        }
+                        .annotationTitles(.hidden)
+                        .tag(pin.id)
+                    }
                 }
             }
             .mapStyle(.standard(pointsOfInterest: .excludingAll))
@@ -284,7 +329,11 @@ private struct ListMap: View {
 
             VStack(alignment: .trailing, spacing: 12) {
                 LocateButton(camera: $camera).padding(.trailing, 14)
-                card
+                if walking, let game {
+                    WalkBand(game: game, onList: toRoute)
+                } else {
+                    card
+                }
             }
         }
         .onAppear {
@@ -324,6 +373,28 @@ private struct ListMap: View {
     private func route(for item: ListItem) -> Route {
         if item.map, content.place(item.place) != nil { return .place(item.place) }
         return .venue(item)
+    }
+}
+
+/// A place on a walk drawn on the map: its number in the walker's order, a
+/// tick in the walk's green once checked, the next one filled.
+struct WalkPin: View {
+    let number: Int
+    let checked: Bool
+    let next: Bool
+
+    var body: some View {
+        ZStack {
+            Circle().fill(checked ? RouteView.Mode.foot.color : next ? Theme.accent : Theme.paper)
+            Circle().stroke(checked ? RouteView.Mode.foot.color : Theme.accent, lineWidth: 2)
+            if checked {
+                Image(systemName: "checkmark").font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
+            } else {
+                Text("\(number)").font(.system(size: 12, weight: .bold)).foregroundStyle(next ? Theme.onAccent : Theme.accent)
+            }
+        }
+        .frame(width: 28, height: 28)
+        .shadow(color: .black.opacity(0.2), radius: 3, y: 2)
     }
 }
 

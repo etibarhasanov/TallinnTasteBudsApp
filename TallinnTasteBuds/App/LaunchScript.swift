@@ -33,8 +33,15 @@ enum LaunchScript {
     /// `-ttbListFocus <place id>` opens a list's map on that place, as a press
     /// on the list's page does.
     static var listFocus: String? { UserDefaults.standard.string(forKey: "ttbListFocus") }
-    /// `-ttbListMap YES` shows a list as its map rather than its page.
-    static var listMap: Bool { UserDefaults.standard.bool(forKey: "ttbListMap") }
+    /// `-ttbListMap YES` shows a list as its map rather than its page, and
+    /// `-ttbListRoute YES` as its Route.
+    static var listView: ListDetailView.Shown {
+        if UserDefaults.standard.bool(forKey: "ttbListRoute") { return .route }
+        return UserDefaults.standard.bool(forKey: "ttbListMap") ? .map : .list
+    }
+    /// `-ttbRide YES` opens the ride card on the Bike tab, as Record a ride
+    /// does. Signed out, which a script always is, it asks to sign in first.
+    static var ride: Bool { UserDefaults.standard.bool(forKey: "ttbRide") }
     /// `-ttbSheet signin` opens the sign-in sheet over the first screen.
     static var sheet: String? { UserDefaults.standard.string(forKey: "ttbSheet") }
     /// `-ttbEdit <list id>` opens that list's editor once it has loaded, so the
@@ -65,4 +72,15 @@ enum LaunchScript {
     /// instead, with the suggestions under it.
     static var query: String? { UserDefaults.standard.string(forKey: "ttbQuery") }
     static var typing: Bool { UserDefaults.standard.bool(forKey: "ttbTyping") }
+    /// Whether the map tab opens on Discover: yes for a plain launch, which is
+    /// every reader's, and no where a script opens the map on something —
+    /// the way a link about something skips it on the website. `-ttbDiscover
+    /// NO` photographs the bare map.
+    static var discover: Bool {
+        if UserDefaults.standard.object(forKey: "ttbDiscover") != nil {
+            return UserDefaults.standard.bool(forKey: "ttbDiscover")
+        }
+        return tab == 0 && routes(tab: 0).isEmpty && route == nil && pass == nil
+            && select == nil && query == nil && type == nil
+    }
 }

@@ -69,6 +69,9 @@ enum API {
     struct Refusal: Error, LocalizedError {
         let code: String
         let status: Int
+        /// What a walk's `far` names: the nearest place left and how far.
+        var place: String?
+        var meters: Double?
         var errorDescription: String? { code }
     }
 
@@ -80,7 +83,8 @@ enum API {
         let (data, status) = try await send(path, body)
         let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
         if !(200..<300).contains(status) {
-            throw Refusal(code: object["error"] as? String ?? "status-\(status)", status: status)
+            throw Refusal(code: object["error"] as? String ?? "status-\(status)", status: status,
+                          place: object["place"] as? String, meters: object["meters"] as? Double)
         }
         return object
     }

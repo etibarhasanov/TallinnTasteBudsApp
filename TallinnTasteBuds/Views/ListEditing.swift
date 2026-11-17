@@ -288,7 +288,7 @@ struct ListEditor: View {
     }
 }
 
-/// The forty markers a list can wear, the website's grid.
+/// The forty-five markers a list can wear, the website's grid.
 struct PinPicker: View {
     @Binding var selected: String
 

@@ -18,16 +18,33 @@ import MapKit
 /// at once; move the map and Search this area asks again for the part on
 /// screen. Empty the field and the map is the one that opens. Offline, the
 /// places the app carries still answer.
+///
+/// It opens on Discover, laid over the map the way the website's phone does
+/// it — `DiscoverView` — with the search field above it still live. Open map,
+/// or a word in the field, puts it away; the round button beside the locate
+/// button brings it back, where the website has its Back.
+///
+/// From five letters the suggestions end in the website's second door, Look
+/// for it on Google Maps, under results or none: the site's city is places to
+/// eat plus what earlier lookups kept, and "raamat" finds three bookshops and
+/// not the rest. It is a press and never a search that fires by itself, since
+/// each is a call against the site's daily budget. What Google answers goes on
+/// the map as results — Google's first, then what the field had found — framed,
+/// with the first one's card up.
 struct MapTab: View {
     @Environment(ContentStore.self) private var content
     @Environment(SavesStore.self) private var saves
     @Environment(LocationProvider.self) private var location
+
+    /// Discover's See all: the Lists tab, everybody's lists.
+    var seeLists: () -> Void = {}
 
     @State private var path = NavigationPath(LaunchScript.routes(tab: 0))
     @State private var query = LaunchScript.query ?? ""
     @State private var type: String? = LaunchScript.type
     @State private var selected: String? = LaunchScript.select
     @State private var showingList = false
+    @State private var discovering = LaunchScript.discover
     @State private var camera: MapCameraPosition = .region(MapTab.tallinn)
 
     /// What the site answered for the field, and whether it is still being
@@ -47,6 +64,16 @@ struct MapTab: View {
     @State private var settled: MKCoordinateRegion?
     @State private var moved = false
     @FocusState private var typing: Bool
+    /// Whether the site can ask Google Maps at all — nil until asked, which is
+    /// the first time five letters are in the field — and what one press of
+    /// the door came to, for the words it was pressed on.
+    @State private var canLook: Bool?
+    @State private var looked: (q: String, state: Looked)?
+
+    enum Looked { case asking, found, nothing, resting }
+
+    /// The website's FIND_LOOK_MIN.
+    private static let lookMin = 5
 
     static let tallinn = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 59.437, longitude: 24.745),
@@ -77,22 +104,49 @@ struct MapTab: View {
         NavigationStack(path: $path) {
             ZStack {
                 map
+                // Discover is a page, not a panel over the map: the field
+                // stands on its paper, as the website's brand and find bar do.
+                if discovering && !(typing && !typed.isEmpty) {
+                    Theme.paper.ignoresSafeArea()
+                }
                 VStack(spacing: 10) {
                     SearchField(text: $query, prompt: content.t("findPlaceholder", "Find anywhere in Tallinn"),
                                 focus: $typing, submit: showAll)
                         .padding(.horizontal, 16)
                     if typing && !typed.isEmpty {
                         suggestions.padding(.horizontal, 16)
+                        Spacer()
+                    } else if discovering {
+                        DiscoverView {
+                            withAnimation(.snappy) { discovering = false }
+                        } open: { route in
+                            path.append(route)
+                        } seeAll: {
+                            seeLists()
+                        }
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     } else {
                         ChipRow(selected: $type)
-                    }
-                    Spacer()
-                    HStack {
                         Spacer()
-                        LocateButton(camera: $camera)
+                        HStack {
+                            Button {
+                                typing = false
+                                withAnimation(.snappy) { discovering = true }
+                            } label: {
+                                Image(systemName: "square.grid.2x2")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(Theme.ink)
+                                    .frame(width: 48, height: 48)
+                                    .background(Theme.paper, in: Circle())
+                                    .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
+                            }
+                            .accessibilityLabel(content.t("discoverLabel", "Discover"))
+                            Spacer()
+                            LocateButton(camera: $camera)
+                        }
+                        .padding(.horizontal, 14)
+                        bottom
                     }
-                    .padding(.horizontal, 14)
-                    bottom
                 }
                 .padding(.top, 8)
             }
@@ -113,6 +167,7 @@ struct MapTab: View {
                 if LaunchScript.typing { typing = true }
             }
             .onChange(of: query) { _, _ in
+                if !typed.isEmpty { discovering = false }
                 if typed.isEmpty {
                     found = []
                     drawn = []
@@ -120,9 +175,17 @@ struct MapTab: View {
                     moved = false
                 }
                 framing = false
+                if looked?.q != typed { looked = nil }
                 deselectIfHidden()
             }
             .onChange(of: type) { _, _ in deselectIfHidden() }
+            // Whether the Google door can be offered, asked once, the first
+            // time the field is long enough for it.
+            .task(id: typed.count >= Self.lookMin) {
+                guard typed.count >= Self.lookMin, canLook == nil else { return }
+                let ready = (try? await API.get(LookupReady.self, "api/lookup"))?.ready
+                if !Task.isCancelled { canLook = ready ?? false }
+            }
             // A third of a second after the last letter, from two letters:
             // the pause the list picker takes before asking the same route.
             .task(id: query) {
@@ -206,6 +269,18 @@ struct MapTab: View {
                     .buttonStyle(.plain)
                 }
             }
+            if canLook == true, looked == nil, typed.count >= Self.lookMin {
+                Button { Task { await lookUp(typed) } } label: {
+                    Label(content.t("findGoogleAsk", "Look for “{q}” on Google Maps", ["q": typed]),
+                          systemImage: "magnifyingglass")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+            }
             if let note = note(empty: mine.isEmpty && rest.isEmpty, waiting: rest.isEmpty) {
                 Text(note)
                     .font(.footnote)
@@ -230,6 +305,15 @@ struct MapTab: View {
     /// The one line under the suggestions: still asking, could not ask, or
     /// nothing anywhere. Nil when the rows say it all.
     private func note(empty: Bool, waiting: Bool) -> String? {
+        switch looked?.state {
+        case .asking?: return content.t("findGoogleAsking", "Asking Google Maps…")
+        case .resting?: return content.t("findGoogleResting", "Looking on Google is resting for today. Try again tomorrow.")
+        case .nothing?:
+            return empty
+                ? content.t("findGoogleNone", "Google Maps has nothing in Tallinn for “{q}” either.", ["q": typed])
+                : content.t("findGoogleNoMore", "Google Maps has nothing more in Tallinn for “{q}”.", ["q": typed])
+        default: break
+        }
         if typed.count < 2 { return empty ? content.t("searchNone", "Nothing matches “{q}”.", ["q": typed]) : nil }
         if asking && waiting { return content.t("findLooking", "Looking everywhere…") }
         if unreachable { return content.t("appCityUnreachable", "Can’t reach the rest of Tallinn right now.") }
@@ -319,6 +403,25 @@ struct MapTab: View {
             asking = false
             return false
         }
+    }
+
+    /// Look for it on Google Maps: the site asks Google, keeps what it
+    /// answers, and the places go on the map as results.
+    private func lookUp(_ q: String) async {
+        looked = (q, .asking)
+        let answer = try? await API.post(LookupAnswer.self, "api/lookup", ["q": q])
+        // The field has moved on while Google was thinking.
+        guard typed == q else { return }
+        guard let answer, answer.ok else {
+            if answer?.why == "no-key" { canLook = false; looked = nil } else { looked = (q, .resting) }
+            return
+        }
+        guard !answer.places.isEmpty else { looked = (q, .nothing); return }
+        looked = (q, .found)
+        let fresh = Set(answer.places.map(\.id))
+        found = answer.places + found.filter { !fresh.contains($0.id) }
+        showAll()
+        selected = answer.places.first(where: { $0.coordinate != nil })?.id
     }
 
     // MARK: What a press does

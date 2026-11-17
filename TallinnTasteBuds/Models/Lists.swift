@@ -298,7 +298,9 @@ struct ProfileRow: Hashable, Decodable {
 }
 
 /// The marker a list chose for its places, by the name the site stores.
-/// The same forty as `assets/pins.js`; anything unknown is the map pin.
+/// The same forty-five as `assets/pins.js` — the forty markers, then the five
+/// things to eat and drink the site added on 2026-11-13; anything unknown is
+/// the map pin.
 enum Pins {
     static let emoji: [String: String] = [
         "pin": "📍", "flag": "🚩", "flame": "🔥", "sun": "☀️", "heart": "❤️",
@@ -308,7 +310,8 @@ enum Pins {
         "panda": "🐼", "fox": "🦊", "frog": "🐸", "chick": "🐥", "penguin": "🐧",
         "octopus": "🐙", "whale": "🐳", "ladybird": "🐞", "sunflower": "🌻", "tulip": "🌷",
         "cactus": "🌵", "snowflake": "❄️", "cloud": "☁️", "gift": "🎁", "camera": "📷",
-        "books": "📚", "teddy": "🧸", "ghost": "👻", "turtle": "🐢", "hedgehog": "🦔"
+        "books": "📚", "teddy": "🧸", "ghost": "👻", "turtle": "🐢", "hedgehog": "🦔",
+        "plate": "\u{1F37D}\u{FE0F}", "croissant": "🥐", "espresso": "\u{2615}\u{FE0F}", "beers": "🍻", "pizza": "🍕"
     ]
 
     /// The picker's order, which is the website's grid read left to right.
@@ -316,11 +319,44 @@ enum Pins {
         "pin", "flag", "flame", "sun", "heart", "blossom", "gem", "balloon", "laptop", "star",
         "rainbow", "cat", "bow", "sparkles", "music", "moon", "dog", "unicorn", "bunny", "bear",
         "panda", "fox", "frog", "chick", "penguin", "octopus", "whale", "ladybird", "sunflower", "tulip",
-        "cactus", "snowflake", "cloud", "gift", "camera", "books", "teddy", "ghost", "turtle", "hedgehog"
+        "cactus", "snowflake", "cloud", "gift", "camera", "books", "teddy", "ghost", "turtle", "hedgehog",
+        "plate", "croissant", "espresso", "beers", "pizza"
     ]
 
     static func of(_ name: String?) -> String {
         guard let name, let e = emoji[name] else { return "📍" }
         return e
+    }
+}
+
+/// The six lists Google's numbers write, in the reader's language — the
+/// website's `assets/googlewords.js`. Their rows hold English and the
+/// username `google-statistics`; the site prints a title and an intro out of
+/// `ui.json` instead, and the name the account is printed under, which is a
+/// name and is not translated.
+enum GoogleWords {
+    static let account = "google-statistics"
+
+    private static let titles = [
+        "top-ten-restaurants-by-google-pt7mwk": "googleTitleRestaurants",
+        "top-ten-bakeries-by-google-65nfrf": "googleTitleBakeries",
+        "top-ten-cafes-by-google-jz7c2b": "googleTitleCafes",
+        "top-ten-bars-by-google-8y6grz": "googleTitleBars",
+        "top-twenty-places-by-google-kwb7l5": "googleTitleOverall",
+        "top-ten-pizzerias-by-google-k83p93": "googleTitlePizzerias"
+    ]
+    private static let overall = "top-twenty-places-by-google-kwb7l5"
+
+    /// "Google Statistics" for the account, anybody else as they are.
+    static func who(_ name: String) -> String { name == account ? "Google Statistics" : name }
+
+    @MainActor static func title(_ id: String, _ title: String, _ content: ContentStore) -> String {
+        guard let key = titles[id] else { return title }
+        return content.t(key, title)
+    }
+
+    @MainActor static func intro(_ id: String, _ intro: String, _ content: ContentStore) -> String {
+        guard titles[id] != nil, !intro.isEmpty else { return intro }
+        return content.t(id == overall ? "googleIntroOverall" : "googleIntro", intro)
     }
 }

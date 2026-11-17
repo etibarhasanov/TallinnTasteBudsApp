@@ -68,25 +68,60 @@ struct RouteTarget: Identifiable, Hashable {
     }
 }
 
-/// The way from here to a place, on our own map: on foot, by bus or tram, or
-/// by car — the website's directions, drawn natively.
+/// The way from here to a place, on our own map: on foot, by bike, by bus or
+/// tram, or by car — the website's directions, drawn natively.
 ///
-/// The route is the website's `/api/route`: walking and driving from the
-/// OpenStreetMap routing service, the bus from peatus.ee, the national
-/// journey planner, with every operator's timetable in Tallinn. A bus journey
-/// is drawn with its walks dotted in the blue of the dot and each ride solid
-/// in its line's own colour, and the bar says which line, when, and from which
-/// stop, with the other departures under it to press. The mode pressed last is
-/// remembered, because somebody who takes the bus takes it to the next place
-/// too. Apple Maps stays a small link at the foot, for turn-by-turn.
+/// The route is the website's `/api/route`: walking, cycling and driving from
+/// the OpenStreetMap routing service, the bus from peatus.ee, the national
+/// journey planner, with every operator's timetable in Tallinn. Each way wears
+/// its own colour, green to red by how green it is to travel that way — the
+/// website's `--way-foot` to `--way-car` — on the line and on the tab that is
+/// pressed, so the tab says what the line's colour means. A bus journey is
+/// drawn with its walks dotted in a walk's green and its rides solid in amber,
+/// and the bar says which line, when, and from which stop, with the other
+/// departures under it to press. The mode pressed last is remembered, because
+/// somebody who takes the bus takes it to the next place too.
+///
+/// The way follows the dot: once the phone is sixty metres from where a walk,
+/// a ride or a drive was asked from, it is asked for again, at most every
+/// twenty seconds, and the line that is up stays until the new one arrives.
+/// A bus journey is a timetable and is not asked again. Apple Maps stays a
+/// small link at the foot, for turn-by-turn.
+///
+/// The Bike tab also carries Record a ride — `RideRecorder` — and under a
+/// bike way it draws the rides people recorded near it faintly, the bar
+/// saying how much of the suggestion has been ridden before.
 struct RouteView: View {
     @Environment(ContentStore.self) private var content
     @Environment(LocationProvider.self) private var location
+    @Environment(\.scenePhase) private var phase
     @Environment(\.dismiss) private var dismiss
 
     let target: RouteTarget
 
-    enum Mode: String, CaseIterable { case foot, bus, car }
+    enum Mode: String, CaseIterable {
+        case foot, bike, bus, car
+
+        /// The website's `--way-*` tokens, the night styles' brighter set on
+        /// the two dark styles.
+        var color: Color {
+            switch (self, Theme.dark) {
+            case (.foot, false): return Color(hex: 0x1a8f4c)
+            case (.foot, true): return Color(hex: 0x4fd18a)
+            case (.bike, false): return Color(hex: 0x7ab317)
+            case (.bike, true): return Color(hex: 0xb5e04a)
+            case (.bus, false): return Color(hex: 0xe08a1e)
+            case (.bus, true): return Color(hex: 0xf2a640)
+            case (.car, false): return Color(hex: 0xd23b3b)
+            case (.car, true): return Color(hex: 0xff6b6b)
+            }
+        }
+    }
+
+    /// How far the dot moves, and how long it rests, before the way is asked
+    /// for again — the website's ROUTE_MOVED and ROUTE_REST.
+    private static let moved: CLLocationDistance = 60
+    private static let rest: TimeInterval = 20
 
     @AppStorage("routeMode") private var modeName = Mode.foot.rawValue
     @State private var camera: MapCameraPosition = .automatic
@@ -94,6 +129,13 @@ struct RouteView: View {
     @State private var trip = 0
     @State private var say = ""
     @State private var finding = false
+    /// Where the way up now was asked from, and when.
+    @State private var askedFrom: CLLocation?
+    @State private var askedAt = Date.distantPast
+    /// The rides recorded under a bike way, and what the bar says of them.
+    @State private var ridden: [[CLLocationCoordinate2D]] = []
+    @State private var riddenSay = ""
+    @State private var ride = RideRecorder.shared
 
     private var mode: Mode { Mode(rawValue: modeName) ?? .foot }
 
@@ -104,11 +146,21 @@ struct RouteView: View {
                 Annotation(target.name, coordinate: target.coordinate, anchor: .bottom) {
                     PlacePin(selected: true)
                 }
+                // Rides people recorded, faint and under the way.
+                ForEach(Array(ridden.enumerated()), id: \.offset) { _, line in
+                    MapPolyline(coordinates: line)
+                        .stroke(Mode.bike.color.opacity(0.4), style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+                }
                 ForEach(Array(stretches.enumerated()), id: \.offset) { _, stretch in
                     MapPolyline(coordinates: stretch.points)
                         .stroke(stretch.color, style: StrokeStyle(
                             lineWidth: stretch.walk ? 4 : 6, lineCap: .round, lineJoin: .round,
                             dash: stretch.walk ? [1, 9] : []))
+                }
+                // The ride being recorded, solid in the bike's colour.
+                if ride.shown, ride.points.count > 1 {
+                    MapPolyline(coordinates: ride.points)
+                        .stroke(Mode.bike.color, style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
                 }
             }
             .mapStyle(.standard(pointsOfInterest: .excludingAll))
@@ -118,12 +170,20 @@ struct RouteView: View {
             .safeAreaInset(edge: .bottom) {
                 VStack(alignment: .trailing, spacing: 12) {
                     LocateButton(camera: $camera).padding(.trailing, 14)
-                    bar
+                    if ride.shown && mode == .bike {
+                        RideCard(ride: ride)
+                    } else {
+                        bar
+                    }
                 }
             }
         }
         .overlay(alignment: .topLeading) {
-            Button { dismiss() } label: {
+            Button {
+                // A ride being recorded is paused and kept, never lost.
+                ride.pause(location)
+                dismiss()
+            } label: {
                 Image(systemName: "xmark").font(.headline)
                     .frame(width: 44, height: 44)
                     .background(Theme.paper, in: Circle())
@@ -134,6 +194,19 @@ struct RouteView: View {
             .accessibilityLabel(content.t("close", "Close"))
         }
         .task(id: modeName) { await find() }
+        // The sentence is written when the answer lands; a language that
+        // arrives after it — a first launch in Russian — writes it again.
+        .onChange(of: content.ui) { _, _ in if answer != nil { describe() } }
+        .onChange(of: location.location) { _, now in
+            if let now, ride.recording { ride.fix(now) }
+            guard mode != .bus, !finding, let now, let from = askedFrom,
+                  now.distance(from: from) >= Self.moved,
+                  Date().timeIntervalSince(askedAt) >= Self.rest else { return }
+            Task { await find(again: true) }
+        }
+        // The app records only while it is looked at, and pauses outright
+        // rather than drawing a straight line across what it did not see.
+        .onChange(of: phase) { _, now in if now != .active { ride.pause(location) } }
     }
 
     // MARK: The bar
@@ -141,12 +214,17 @@ struct RouteView: View {
     private var bar: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(target.name).font(.headline).foregroundStyle(Theme.ink).lineLimit(1)
-            Picker(content.t("routeModes", "How to get there"), selection: $modeName) {
-                Text(content.t("routeModeWalk", "Walk")).tag(Mode.foot.rawValue)
-                Text(content.t("routeModeBus", "Bus")).tag(Mode.bus.rawValue)
-                Text(content.t("routeModeCar", "Car")).tag(Mode.car.rawValue)
+            // Four tabs fit a phone in English and not in Russian or Turkish,
+            // so the row slides sideways rather than squeezing a word.
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    tab(.foot, content.t("routeModeWalk", "Walk"))
+                    tab(.bike, content.t("routeModeBike", "Bike"))
+                    tab(.bus, content.t("routeModeBus", "Bus"))
+                    tab(.car, content.t("routeModeCar", "Car"))
+                }
             }
-            .pickerStyle(.segmented)
+            .accessibilityLabel(content.t("routeModes", "How to get there"))
 
             HStack(spacing: 8) {
                 if finding { ProgressView() }
@@ -154,6 +232,18 @@ struct RouteView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            if mode == .bike, !riddenSay.isEmpty {
+                Text(riddenSay).font(.footnote).foregroundStyle(Theme.muted)
+            }
+            if mode == .bike {
+                Button {
+                    ride.shown = true
+                } label: {
+                    Label(content.t("rideRecord", "Record a ride"), systemImage: "record.circle")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .tint(Mode.bike.color)
+            }
 
             if mode == .bus, let trips = answer?.trips, trips.count > 1 {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -185,6 +275,20 @@ struct RouteView: View {
         .shadow(color: .black.opacity(0.12), radius: 10, y: -2)
     }
 
+    private func tab(_ which: Mode, _ label: String) -> some View {
+        let on = mode == which
+        return Button { modeName = which.rawValue } label: {
+            Text(label)
+                .font(.subheadline.weight(on ? .semibold : .regular))
+                .padding(.horizontal, 14).padding(.vertical, 7)
+                .background(on ? which.color : Color.clear, in: Capsule())
+                .overlay(Capsule().stroke(on ? which.color : Theme.hairline))
+                .foregroundStyle(on ? Theme.paper : Theme.ink)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
+
     // MARK: What is drawn
 
     private struct Stretch {
@@ -200,21 +304,27 @@ struct RouteView: View {
             return trips[trip].legs.compactMap { leg in
                 let points = leg.coordinates
                 guard points.count > 1 else { return nil }
-                if leg.name == nil { return Stretch(points: points, color: Theme.here, walk: true) }
-                let color = leg.color.flatMap { UInt32($0, radix: 16) }.map { Color(hex: $0) } ?? Theme.accent
-                return Stretch(points: points, color: color, walk: false)
+                let walk = leg.name == nil
+                return Stretch(points: points, color: walk ? Mode.foot.color : Mode.bus.color, walk: walk)
             }
         }
         let points = answer.coordinates
-        return points.count > 1 ? [Stretch(points: points, color: Theme.here, walk: false)] : []
+        return points.count > 1 ? [Stretch(points: points, color: mode.color, walk: false)] : []
     }
 
     // MARK: Asking
 
-    private func find() async {
-        answer = nil
-        trip = 0
-        say = content.t("routeFinding", "Finding the way…")
+    /// Ask for the way. Asked again because the dot moved, the line and the
+    /// sentence that are up stay until the new answer replaces them, the map
+    /// is not refitted under a thumb, and no answer leaves the old way up.
+    private func find(again: Bool = false) async {
+        if !again {
+            answer = nil
+            trip = 0
+            ridden = []
+            riddenSay = ""
+            say = content.t("routeFinding", "Finding the way…")
+        }
         finding = true
         defer { finding = false }
 
@@ -224,6 +334,7 @@ struct RouteView: View {
             try? await Task.sleep(for: .milliseconds(250))
         }
         guard let here = location.location else {
+            if again { return }
             say = content.t("routeLocate", "Share your location to see the way.")
             camera = .region(MKCoordinateRegion(center: target.coordinate, latitudinalMeters: 1200, longitudinalMeters: 1200))
             return
@@ -233,14 +344,20 @@ struct RouteView: View {
             "from": String(format: "%.5f,%.5f", here.coordinate.latitude, here.coordinate.longitude),
             "to": String(format: "%.5f,%.5f", target.latitude, target.longitude)
         ]
+        askedFrom = here
+        askedAt = Date()
+        let asked = mode
         do {
             let got = try await API.get(RouteAnswer.self, "api/route", query)
-            if Task.isCancelled { return }
+            // A quiet ask the dot started is not cancelled by a tab pressed
+            // while it was out, so its answer is checked against the tab.
+            if Task.isCancelled || mode != asked { return }
             answer = got
             describe()
-            fit()
+            if !again { fit() }
+            if asked == .bike { await under(got.coordinates) }
         } catch {
-            if Task.isCancelled { return }
+            if Task.isCancelled || again || mode != asked { return }
             say = noRoute
         }
     }
@@ -248,6 +365,7 @@ struct RouteView: View {
     private var noRoute: String {
         switch mode {
         case .foot: return content.t("routeNone", "Couldn't find a walking route.")
+        case .bike: return content.t("routeNoBike", "Couldn't find a bike route.")
         case .bus: return content.t("routeNoBus", "No bus or tram found right now.")
         case .car: return content.t("routeNoCar", "Couldn't find a driving route.")
         }
@@ -273,12 +391,36 @@ struct RouteView: View {
             say = noRoute
             return
         }
-        let distance = meters < 1000
+        let distance = distanceText(meters)
+        let (key, english): (String, String)
+        switch mode {
+        case .bike: (key, english) = ("routeBike", "{min} min by bike · {dist}")
+        case .car: (key, english) = ("routeCar", "{min} min by car · {dist}")
+        default: (key, english) = ("routeWalk", "{min} min on foot · {dist}")
+        }
+        say = content.t(key, english, ["min": "\(max(1, Int((seconds / 60).rounded())))", "dist": distance])
+    }
+
+    /// The rides recorded under a bike way, from `/api/rides`, and how much
+    /// of the way runs along them. Nothing, rather than a failure, when there
+    /// are none or the route cannot answer.
+    private func under(_ way: [CLLocationCoordinate2D]) async {
+        guard way.count > 1 else { return }
+        let lats = way.map(\.latitude), lngs = way.map(\.longitude)
+        let box = [lats.min()!, lngs.min()!, lats.max()!, lngs.max()!].map { String(format: "%.3f", $0) }.joined(separator: ",")
+        guard let near = try? await API.get(RidesNear.self, "api/rides", ["bbox": box]),
+              mode == .bike, !near.rides.isEmpty else { return }
+        ridden = near.rides.map(\.coordinates).filter { $0.count > 1 }
+        let along = RidesNear.ridden(way, by: ridden)
+        riddenSay = along >= 50
+            ? content.t("rideAlong", "{dist} of this way has been ridden before — the faint lines.", ["dist": distanceText(along)])
+            : content.t("rideNearby", "The faint lines are rides people recorded nearby.")
+    }
+
+    private func distanceText(_ meters: Double) -> String {
+        meters < 1000
             ? content.t("askMetres", "{n} m", ["n": "\(max(10, Int((meters / 10).rounded()) * 10))"])
             : content.t("askKm", "{n} km", ["n": String(format: "%.1f", meters / 1000)])
-        say = content.t(mode == .car ? "routeCar" : "routeWalk",
-                        mode == .car ? "{min} min by car · {dist}" : "{min} min on foot · {dist}",
-                        ["min": "\(max(1, Int((seconds / 60).rounded())))", "dist": distance])
     }
 
     /// Frame the whole way, with the bar's height of room at the bottom.
@@ -301,7 +443,9 @@ struct RouteView: View {
         item.name = target.name
         let launch: String
         switch mode {
-        case .foot: launch = MKLaunchOptionsDirectionsModeWalking
+        // Apple Maps has a cycling mode only from iOS 18's SDK on; walking
+        // is the nearer of what every phone has.
+        case .foot, .bike: launch = MKLaunchOptionsDirectionsModeWalking
         case .bus: launch = MKLaunchOptionsDirectionsModeTransit
         case .car: launch = MKLaunchOptionsDirectionsModeDriving
         }
@@ -332,7 +476,6 @@ struct RouteAnswer: Decodable {
     struct Leg: Decodable {
         let line: [[Double]]
         let name: String?
-        let color: String?
         let from: String?
         let at: String?
 
