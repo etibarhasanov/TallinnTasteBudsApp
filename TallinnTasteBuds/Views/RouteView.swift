@@ -167,6 +167,9 @@ struct RouteView: View {
             .accessibilityLabel(content.t("close", "Close"))
         }
         .task(id: modeName) { await find() }
+        // The sentence is written when the answer lands; a language that
+        // arrives after it — a first launch in Russian — writes it again.
+        .onChange(of: content.ui) { _, _ in if answer != nil { describe() } }
         .onChange(of: location.location) { _, now in
             guard mode != .bus, !finding, let now, let from = askedFrom,
                   now.distance(from: from) >= Self.moved,
