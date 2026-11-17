@@ -23,6 +23,9 @@ struct Place: Identifiable, Hashable, Decodable {
     let website: String
     let phone: String
     let closed: Bool
+    /// Words of the write-up that open somewhere on the site — "@tallinnbits",
+    /// "their list of new cafés" — in `data/map.json`'s `links`.
+    let links: [BlurbLink]
 
     var coordinate: CLLocationCoordinate2D { .init(latitude: lat, longitude: lng) }
     var location: CLLocation { .init(latitude: lat, longitude: lng) }
@@ -36,7 +39,7 @@ struct Place: Identifiable, Hashable, Decodable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, address, lat, lng, price, types, mustOrder, reel, photos, website, phone, closed
+        case id, name, address, lat, lng, price, types, mustOrder, reel, photos, website, phone, closed, links
     }
 
     init(from decoder: Decoder) throws {
@@ -54,6 +57,7 @@ struct Place: Identifiable, Hashable, Decodable {
         website = (try? c.decodeIfPresent(String.self, forKey: .website)) ?? ""
         phone = (try? c.decodeIfPresent(String.self, forKey: .phone)) ?? ""
         closed = (try? c.decodeIfPresent(Bool.self, forKey: .closed)) ?? false
+        links = (try? c.decodeIfPresent([BlurbLink].self, forKey: .links)) ?? []
     }
 
     /// Every place that decodes; the ones that do not are dropped one by one.
@@ -63,6 +67,41 @@ struct Place: Identifiable, Hashable, Decodable {
             guard let one = try? JSONSerialization.data(withJSONObject: item) else { return nil }
             return try? JSONDecoder().decode(Place.self, from: one)
         }
+    }
+}
+
+/// A phrase of a write-up that is a link: an address on the site, and the
+/// words it is drawn on — one string where every language says the same thing
+/// (an @name), or one per language where it does not. The write-up itself
+/// stays plain text, the way the website keeps it.
+struct BlurbLink: Hashable, Decodable {
+    let href: String
+    let words: [String: String]
+
+    enum CodingKeys: String, CodingKey { case href, text }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        href = try c.decode(String.self, forKey: .href)
+        if let one = try? c.decode(String.self, forKey: .text) {
+            words = ["": one]
+        } else {
+            words = try c.decode([String: String].self, forKey: .text)
+        }
+    }
+
+    func text(_ lang: String) -> String? { words[""] ?? words[lang] }
+
+    /// Where it goes in the app: a profile or a list opens here, anything
+    /// else on the website.
+    var route: Route? {
+        guard let url = URL(string: href, relativeTo: API.base) else { return nil }
+        let parts = url.path.split(separator: "/").map(String.init)
+        if parts.count == 2, parts[0] == "u" { return .profile(parts[1]) }
+        if parts.count == 2, parts[0] == "list" { return .list(parts[1]) }
+        if let list = URLComponents(url: url, resolvingAgainstBaseURL: true)?
+            .queryItems?.first(where: { $0.name == "list" })?.value { return .list(list) }
+        return nil
     }
 }
 

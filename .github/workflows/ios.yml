@@ -140,8 +140,13 @@ jobs:
           shot 20-route-walk -ttbRoute badam -routeMode foot
           shot 21-route-bus -ttbRoute badam -routeMode bus
           shot 22-route-car -ttbRoute badam -routeMode car
+          shot 22b-route-bike -ttbRoute badam -routeMode bike
+          shot 22c-route-bike-ru -ttbRoute badam -routeMode bike -lang ru -style plum
           shot 23-search-suggestions -ttbQuery pizza -ttbTyping YES
           shot 24-search-results -ttbQuery pizza
+          shot 24b-search-google-door -ttbQuery raamat -ttbTyping YES
+          shot 24c-place-links -ttbOpen place:jaspier-pagariari
+          shot 24d-google-list -ttbTab 1 -ttbOpen list:top-ten-cafes-by-google-jz7c2b -lang et
           # The app's own strings in another language, and the three styles
           # that are not the one every picture above is drawn in. `-lang` and
           # `-style` are the keys the app keeps those two choices under.

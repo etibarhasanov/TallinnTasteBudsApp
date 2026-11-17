@@ -25,7 +25,11 @@ Four tabs.
   the mark, so a word finds the whole city whether or not Search is pressed.
   Pressing a suggestion goes to that place; the keyboard's Search frames
   every result at once, and **Search this area** asks again once the map is
-  moved. Offline, the places the app carries still answer.
+  moved. From five letters the suggestions end in **Look for it on Google
+  Maps**, the website's `/api/lookup`, for the museum or the bookshop the
+  site's city does not have yet; what Google answers goes on the map as
+  results, first, with its card up. Offline, the places the app carries still
+  answer.
 - **Lists.** Everybody's lists, the most opened first, searchable by list,
   author or place — `/lists` on the website. A list opens as a numbered page
   with what its author wrote about each place and what to order, or as pins on
@@ -34,6 +38,8 @@ Four tabs.
   what the author and Google say about it, and is labelled as not on the map.
   Signed in, your own lists and the ones you saved sit above everybody's,
   with **New list** first.
+  The six lists Google's numbers write are titled in the reader's language and
+  signed Google Statistics, the way the website prints them.
 - **Saved.** The places this phone saved, newest first.
 - **Me.** Signing in or making an account, your profile, signing out and
   deleting the account; the language; the colour — the website's four
@@ -104,7 +110,7 @@ an ordinary Apple ID — and on such a build the Apple button answers that the
 sign-in did not finish.
 
 Signed in, you can make a list, name it, give it a line, pick its pin from the
-same forty, make it private, put places on it from every place in Tallinn (the
+same forty-five, make it private, put places on it from every place in Tallinn (the
 map's and Google's), say what is good about each and what to order, drag them
 into order, take them off, and delete it — from the list's **Edit**, or from
 any place page's add-to-list button. It works the way the website's editor
@@ -129,18 +135,26 @@ opens its page directly.
 ### Directions
 
 **Directions** opens the way there on our own map, as the website does it: the
-website's `/api/route`, with **Walk · Bus · Car** at the foot. Walking and
-driving are the OpenStreetMap routing service; the bus is peatus.ee, the
-national journey planner with every operator's timetable in Tallinn. A bus
-journey is drawn with its walks dotted in the dot's blue and each ride solid in
-its line's own colour, and the bar says which line, when and from which stop
-("T4 at 13:33 from Hobujaama · 16 min in all"), with the other departures under
-it to press. The mode pressed last is remembered. Apple Maps is a small link at
-the foot, in the same mode, for turn-by-turn; nothing leaves for Google.
+website's `/api/route`, with **Walk · Bike · Bus · Car** at the foot. Walking,
+cycling and driving are the OpenStreetMap routing service — its bike profile
+keeps to cycle paths and walks a pedestrian street — and the bus is peatus.ee,
+the national journey planner with every operator's timetable in Tallinn. Each
+way wears the website's colour for it, green to red by how green it is to go
+that way: a walk green, a bike a lighter green, a bus amber and a car red, on
+the line and on the pressed tab alike. A bus journey is drawn with its walks
+dotted in a walk's green and its rides solid in amber, and the bar says which
+line, when and from which stop ("T4 at 13:33 from Hobujaama · 16 min in all"),
+with the other departures under it to press. A walk, a ride or a drive follows
+the dot: sixty metres from where it was asked from, it is asked for again, at
+most every twenty seconds. The mode pressed last is remembered. Apple Maps is a
+small link at the foot, in the same mode (a bike opens on foot there), for
+turn-by-turn; nothing leaves for Google.
 
-Every place page has the photos, the write-up in the reader's language, the
-kinds of place, what to order, walking directions in Apple Maps, the website,
-the phone and the reel, and a share link that opens the same place on the site.
+Every place page has the photos, the write-up in the reader's language — the
+words it links drawn in the accent, a name opening that person's profile and a
+list opening the list — the kinds of place, what to order, the way there, the
+website, the phone and the reel, and a share link that opens the same place on
+the site.
 
 ### What is not in it yet
 
@@ -183,7 +197,7 @@ website.
 | A place that search does not have — a museum, a shop — looked up on Google Maps and kept on the site | `GET /api/lookup`, `POST /api/lookup` |
 | The discounts | `data/deals.json` |
 | Whether this session may show a pass, and its drawn rate | `GET /api/pass?r=<place>` |
-| The way there on foot, by bus or by car | `GET /api/route?from=…&to=…&mode=foot\|bus\|car` |
+| The way there on foot, by bike, by bus or by car | `GET /api/route?from=…&to=…&mode=foot\|bike\|bus\|car` |
 
 **Strings.** The app asks the site's `ui.json` for every string by key, so it is
 in the site's eleven languages wherever the site already says the thing. The

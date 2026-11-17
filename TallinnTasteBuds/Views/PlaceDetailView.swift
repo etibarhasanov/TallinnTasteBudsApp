@@ -12,6 +12,8 @@ struct PlaceDetailView: View {
     @State private var adding = false
     @State private var signingIn = false
     @State private var route: RouteTarget?
+    /// A link in the write-up pressed: a profile or a list, opened here.
+    @State private var linked: Route?
 
     var body: some View {
         if let place = content.place(id) {
@@ -45,7 +47,13 @@ struct PlaceDetailView: View {
                         }
                     }
                     if let blurb = content.blurb(place.id) {
-                        Text(blurb).font(.body).foregroundStyle(Theme.ink).lineSpacing(3)
+                        Text(writeUp(blurb, place.links)).font(.body).foregroundStyle(Theme.ink).lineSpacing(3)
+                            .environment(\.openURL, OpenURLAction { url in
+                                guard let link = place.links.first(where: { absolute($0.href) == url }),
+                                      let to = link.route else { return .systemAction }
+                                linked = to
+                                return .handled
+                            })
                     }
                     if let deal = content.deal(place.id) {
                         DealBlock(deal: deal)
@@ -65,6 +73,7 @@ struct PlaceDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $adding) { AddToListSheet(place: place) }
         .fullScreenCover(item: $route) { RouteView(target: $0) }
+        .navigationDestination(item: $linked) { RouteScreen(route: $0) }
         .sheet(isPresented: $signingIn) {
             SignInView(reason: content.t("appSignInToList", "Sign in to put this place on a list of your own"))
         }
@@ -84,6 +93,22 @@ struct PlaceDetailView: View {
             }
         }
     }
+
+    /// The write-up with its links drawn in, in the accent, the way the
+    /// website's blurbKids() draws them. A phrase that is not in this
+    /// language's write-up is left out rather than guessed at.
+    private func writeUp(_ blurb: String, _ links: [BlurbLink]) -> AttributedString {
+        var text = AttributedString(blurb)
+        for link in links {
+            guard let words = link.text(content.lang), let url = absolute(link.href),
+                  let range = text.range(of: words) else { continue }
+            text[range].link = url
+            text[range].foregroundColor = Theme.accent
+        }
+        return text
+    }
+
+    private func absolute(_ href: String) -> URL? { URL(string: href, relativeTo: API.base)?.absoluteURL }
 
     @ViewBuilder
     private func photos(_ place: Place) -> some View {

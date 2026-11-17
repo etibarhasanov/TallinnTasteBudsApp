@@ -15,14 +15,23 @@ extension View {
     /// Registers every route on a tab's navigation stack, so any screen can
     /// link to any other with `NavigationLink(value:)`.
     func withRoutes() -> some View {
-        navigationDestination(for: Route.self) { route in
-            switch route {
-            case .place(let id): PlaceDetailView(id: id)
-            case .list(let id): ListDetailView(id: id)
-            case .profile(let name): ProfileView(name: name)
-            case .venue(let item): VenueView(item: item)
-            case .discounts: DiscountsView()
-            }
+        navigationDestination(for: Route.self) { RouteScreen(route: $0) }
+    }
+}
+
+/// The screen a route opens — for `withRoutes()`, and for a screen that
+/// pushes one from something that is not a `NavigationLink`, such as a link
+/// in a write-up.
+struct RouteScreen: View {
+    let route: Route
+
+    var body: some View {
+        switch route {
+        case .place(let id): PlaceDetailView(id: id)
+        case .list(let id): ListDetailView(id: id)
+        case .profile(let name): ProfileView(name: name)
+        case .venue(let item): VenueView(item: item)
+        case .discounts: DiscountsView()
         }
     }
 }

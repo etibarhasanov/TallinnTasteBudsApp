@@ -166,7 +166,7 @@ struct ListCard: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 5) {
-                Text(list.title).font(.headline).foregroundStyle(Theme.ink).multilineTextAlignment(.leading)
+                Text(GoogleWords.title(list.id, list.title, content)).font(.headline).foregroundStyle(Theme.ink).multilineTextAlignment(.leading)
                 Text(byline).font(.subheadline).foregroundStyle(Theme.muted)
                 if !list.taste.isEmpty {
                     Text(list.taste.joined(separator: " · "))
@@ -182,7 +182,7 @@ struct ListCard: View {
 
     private var byline: String {
         var parts: [String] = []
-        if let by = list.by { parts.append(by) }
+        if let by = list.by { parts.append(GoogleWords.who(by)) }
         if let n = list.n { parts.append(content.t("appPlacesN", "{n} places", ["n": "\(n)"])) }
         if list.keeps == 1 { parts.append(content.t("listsKeptOne", "saved by 1 person")) }
         if list.keeps > 1 { parts.append(content.t("listsKeptN", "saved by {n} people", ["n": "\(list.keeps)"])) }
@@ -234,7 +234,7 @@ struct MiniListCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(list.title).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
+            Text(GoogleWords.title(list.id, list.title, content)).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink)
                 .lineLimit(3).multilineTextAlignment(.leading)
             Spacer(minLength: 0)
             HStack(spacing: 4) {
@@ -243,7 +243,7 @@ struct MiniListCard: View {
                 if list.isPublic == false { Image(systemName: "lock.fill") }
             }
             .font(.caption).foregroundStyle(Theme.muted)
-            if let by = list.by { Text(by).font(.caption).foregroundStyle(Theme.muted).lineLimit(1) }
+            if let by = list.by { Text(GoogleWords.who(by)).font(.caption).foregroundStyle(Theme.muted).lineLimit(1) }
         }
         .padding(10)
         .frame(width: 140, height: 112, alignment: .topLeading)

@@ -129,11 +129,11 @@ private struct ListPage: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(list.title).font(.title.bold()).foregroundStyle(Theme.ink)
+                    Text(GoogleWords.title(list.id, list.title, content)).font(.title.bold()).foregroundStyle(Theme.ink)
                     HStack(spacing: 4) {
                         if let by = list.by {
                             NavigationLink(value: Route.profile(by)) {
-                                Text(by).fontWeight(.semibold).foregroundStyle(Theme.ink)
+                                Text(GoogleWords.who(by)).fontWeight(.semibold).foregroundStyle(Theme.ink)
                             }
                             Text("·").foregroundStyle(Theme.muted)
                         }
@@ -141,7 +141,7 @@ private struct ListPage: View {
                     }
                     .font(.subheadline)
                     if !list.intro.isEmpty {
-                        Text(list.intro).font(.body).foregroundStyle(Theme.ink).padding(.top, 4)
+                        Text(GoogleWords.intro(list.id, list.intro, content)).font(.body).foregroundStyle(Theme.ink).padding(.top, 4)
                     }
                 }
                 .padding(16)
