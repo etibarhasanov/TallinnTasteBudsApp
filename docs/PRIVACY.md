@@ -135,8 +135,12 @@ app at all.
   line under the Bike tab.
 - *An account.* A username and password to `/api/account`. The site keeps the
   username and a scrambled password. Signed in, the app sends what you make:
-  lists, the places on them, what you wrote about each, and which lists you
-  saved. Public lists and your profile can be seen by anyone.
+  lists, the places on them, what you wrote about each, which lists you
+  saved, and the places you save with the heart, to `/api/saves`
+  (`Core/SavesStore.swift`), which keeps each with the account and the same
+  salted fingerprint of the network a save on the website gets, for its cap.
+  Signing in also sends the account the places the phone saved before. Public
+  lists and your profile can be seen by anyone.
 - *Google.* The sign-in sheet is the system's (`ASWebAuthenticationSession`)
   and shares Safari's cookies, so Google may already know you there. The site
   asks Google for `openid` and nothing else, and keeps Google's number for

@@ -23,6 +23,8 @@ final class AccountStore {
     private(set) var checked = false
     private(set) var mine: [ListSummary] = []
     private(set) var kept: [ListSummary] = []
+    /// The phone's saves, told when somebody signs in or out.
+    private weak var saves: SavesStore?
 
     /// Whether the site can finish a Google or an Apple sign-in for an app.
     #if DEBUG
@@ -37,6 +39,7 @@ final class AccountStore {
 
     /// Ask the site who this cookie belongs to, and fetch their lists.
     func refresh(saves: SavesStore) async {
+        self.saves = saves
         do {
             let data = try await API.data("api/account")
             let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
@@ -46,7 +49,7 @@ final class AccountStore {
             #if DEBUG
             if LaunchScript.doors { googleOffered = true; appleOffered = true }
             #endif
-            if let saved = object["saved"] as? [String] { saves.adopt(saved) }
+            if user != nil { saves.adopt(object["saved"] as? [String] ?? []) } else { saves.signedIn = false }
             checked = true
             await refreshLists()
         } catch {
@@ -71,8 +74,7 @@ final class AccountStore {
             "username": username,
             "password": password
         ])
-        user = answer["user"] as? String
-        if let saved = answer["saved"] as? [String] { saves.adopt(saved) }
+        adopt(answer, saves: saves)
         await refreshLists()
     }
 
@@ -98,8 +100,9 @@ final class AccountStore {
     }
 
     private func adopt(_ answer: [String: Any], saves: SavesStore) {
+        self.saves = saves
         user = answer["user"] as? String
-        if let saved = answer["saved"] as? [String] { saves.adopt(saved) }
+        if user != nil { saves.adopt(answer["saved"] as? [String] ?? []) }
     }
 
     func signOut() async {
@@ -116,6 +119,7 @@ final class AccountStore {
 
     private func clear() {
         user = nil
+        saves?.signedIn = false
         mine = []
         kept = []
         if let cookies = HTTPCookieStorage.shared.cookies(for: API.base) {

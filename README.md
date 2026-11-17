@@ -49,7 +49,8 @@ Four tabs, and Discover in front of the first.
   with **New list** first.
   The six lists Google's numbers write are titled in the reader's language and
   signed Google Statistics, the way the website prints them.
-- **Saved.** The places this phone saved, newest first.
+- **Saved.** The places you saved, newest first — on the phone, and signed
+  in on the account too.
 - **Me.** Signing in or making an account, your profile, signing out and
   deleting the account; the language; the colour — the website's four
   styles, Red, Green, Blue and Plum; the way out to the website, Instagram and
@@ -175,7 +176,9 @@ and goes as one write per field. The heart on somebody else's list saves it to
 your account; signed out, it asks you to sign in.
 
 Signing in also folds the places the account saved on the website into
-**Saved**. Saves made in the app stay on the phone for now — see below.
+**Saved**, and sends the account the ones this phone saved before; from
+then every press of the heart goes to `/api/saves` under the session, so a
+save is on every device the account signs in on.
 
 **The round button at the bottom right of every map** is where you are: one
 press centres the map on the blue dot, a second turns the map with the phone so
@@ -215,11 +218,8 @@ the site.
 
 In the order they are planned:
 
-1. **Saves that follow the account.** Saving a place from the app to the
-   account needs a way past the Turnstile check `/api/saves` asks a browser
-   for, which an app cannot show. That is server work on the website.
-2. **Ask**, the chat. Stories are not planned for the app.
-3. **App Store screenshots, the listing copy and the privacy page**, then
+1. **Ask**, the chat. Stories are not planned for the app.
+2. **App Store screenshots, the listing copy and the privacy page**, then
    submission. `docs/PRIVACY.md` says what the app does with what it knows
    and carries the English of the section about the app on the website's
    privacy page;
@@ -243,6 +243,7 @@ website.
 | One list, whole | `GET /api/lists?id=<id>` |
 | A profile | `GET /api/profile?name=<name>` |
 | Who is signed in, and the account's saves | `GET /api/account` |
+| A save or an unsave, signed in | `POST /api/saves` |
 | Sign in, make an account, sign out, delete it | `POST /api/account` with `action` |
 | Sign in through Google | `GET /api/google?app=<challenge>`, then `POST /api/account` with `action: ticket` |
 | Sign in through Apple | `POST /api/apple` |
@@ -322,7 +323,7 @@ TallinnTasteBuds/
     Disk.swift                    the disk cache and the bundled snapshot
     ContentStore.swift            places, kinds, languages, strings, search
     PassCode.swift                the hourly discount code, the website's to the letter
-    SavesStore.swift              the places this phone saved
+    SavesStore.swift              the places saved, on the phone and the account
     AccountStore.swift            who is signed in, their lists, every write to them
     SocialSignIn.swift            the Google round trip and Apple's sheet
     WalkGame.swift                going round a list: its order, checks and presses
