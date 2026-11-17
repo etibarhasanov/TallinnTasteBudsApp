@@ -47,6 +47,8 @@ struct MapTab: View {
     @State private var discovering = LaunchScript.discover
     /// The place Surprise me picked last, so the next press picks another.
     @State private var surprised: String?
+    /// The chat's sheet is up.
+    @State private var chatting = false
     @State private var camera: MapCameraPosition = .region(MapTab.tallinn)
 
     /// What the site answered for the field, and whether it is still being
@@ -156,6 +158,16 @@ struct MapTab: View {
                             }
                             .accessibilityLabel(content.t("randomPick", "Surprise me"))
                             .disabled(visible.filter { !$0.closed }.isEmpty)
+                            // Ask: the website's chat, as a sheet over the map.
+                            Button { chatting = true } label: {
+                                Image(systemName: "bubble.left.and.text.bubble.right")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundStyle(Theme.onAccent)
+                                    .frame(width: 48, height: 48)
+                                    .background(Theme.accent, in: Circle())
+                                    .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
+                            }
+                            .accessibilityLabel(content.t("askOpen", "Ask"))
                             Spacer()
                             LocateButton(camera: $camera)
                         }
@@ -176,6 +188,12 @@ struct MapTab: View {
                     go(to: hit)
                 }
                 .presentationDetents([.medium, .large])
+            }
+            .sheet(isPresented: $chatting) {
+                AskSheet { route in
+                    chatting = false
+                    path.append(route)
+                }
             }
             .onAppear {
                 location.start()

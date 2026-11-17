@@ -39,7 +39,8 @@ Four tabs, and Discover in front of the first.
   site's city does not have yet; what Google answers goes on the map as
   results, first, with its card up. The die beside the locate button is
   Surprise me: a place at random out of whatever the field and the chips
-  allow, never a closed one and never the same one twice. The ✕ in the box
+  allow, never a closed one and never the same one twice; the filled bubble
+  beside it is **Ask**, the chat. The ✕ in the box
   clears the word and puts the keyboard away with it. Offline, the places the
   app carries still answer.
 - **Lists.** Everybody's lists, the most opened first, searchable by list,
@@ -107,6 +108,21 @@ Bike tab; under 700 m it offers Keep riding instead. The ride waits on the
 phone until it is saved or thrown away. Signed out, the card asks to sign in
 first. Under any bike way the map then draws the rides recorded near it, and
 the bar says how much of the suggestion has been ridden before.
+
+### Ask
+
+**Ask** is the website's chat, a sheet over the map (`Views/AskView.swift`).
+Somebody types what they feel like and `/api/ask` answers with up to three
+places, each with a line about why: the map's own drawn from the app's copy
+of it, so a place the model invented is never shown, and Google's labelled
+as not on the map. Earlier exchanges go with each question, and the thread
+goes when the sheet is closed. Before a question goes, `AskReader` reads it
+as the website's `assets/ask.js` does — kinds of place from the taxonomy's
+labels in every language, cheap, fancy, open, near and me from the site's
+`askWords*` — so the Function can narrow the city to what it could be about;
+the position goes with it only when the question asks for somewhere near. It runs on
+Workers AI's free daily allowance, which the website shares; when that is
+spent, the answer says it is resting until tomorrow.
 
 ### Discounts
 
@@ -224,14 +240,13 @@ the site.
 
 In the order they are planned:
 
-1. **Ask**, the chat. Stories are not planned for the app.
-2. **App Store screenshots, the listing copy and the privacy page**, then
+1. **App Store screenshots, the listing copy and the privacy page**, then
    submission. `docs/PRIVACY.md` says what the app does with what it knows
    and carries the English of the section about the app on the website's
    privacy page;
    `docs/APP-STORE.md` has the answers to Apple's privacy questions.
 
-Splitwise, the flashcards, chess, the blog and the owner's pages stay on the
+Stories, the radio, Splitwise, the flashcards, chess, the blog and the owner's pages stay on the
 website.
 
 ---
@@ -250,6 +265,7 @@ website.
 | A profile | `GET /api/profile?name=<name>` |
 | Who is signed in, and the account's saves | `GET /api/account` |
 | A save or an unsave, signed in | `POST /api/saves` |
+| A question to the chat, with the thread before it | `POST /api/ask` |
 | Sign in, make an account, sign out, delete it, change the password or the username, save the page under your name | `POST /api/account` with `action` |
 | Sign in through Google | `GET /api/google?app=<challenge>`, then `POST /api/account` with `action: ticket` |
 | Sign in through Apple | `POST /api/apple` |
