@@ -82,6 +82,15 @@ struct RouteTarget: Identifiable, Hashable {
 /// departures under it to press. The mode pressed last is remembered, because
 /// somebody who takes the bus takes it to the next place too.
 ///
+/// A walk, a ride or a drive comes with up to three ways where the router
+/// finds more than one — the first at the top level of the answer, the rest
+/// under `others` — and the bar offers them as small buttons, "9 min ·
+/// 2.1 km", as the website's bar does. The way chosen is solid and its
+/// button wears the mode's colour; the others are faint lines in the same
+/// colour, and pressing another makes it the solid one without moving the
+/// map, since the frame holds all of them. The buttons say how long and how
+/// far, never which is nicer: the router does not say.
+///
 /// The way follows the dot: once the phone is sixty metres from where a walk,
 /// a ride or a drive was asked from, it is asked for again, at most every
 /// twenty seconds, and the line that is up stays until the new one arrives.
@@ -127,6 +136,8 @@ struct RouteView: View {
     @State private var camera: MapCameraPosition = .automatic
     @State private var answer: RouteAnswer?
     @State private var trip = 0
+    /// Which of the ways on offer is chosen: 0 the router's first.
+    @State private var way = 0
     @State private var say = ""
     @State private var finding = false
     /// Where the way up now was asked from, and when.
@@ -154,7 +165,7 @@ struct RouteView: View {
                 ForEach(Array(stretches.enumerated()), id: \.offset) { _, stretch in
                     MapPolyline(coordinates: stretch.points)
                         .stroke(stretch.color, style: StrokeStyle(
-                            lineWidth: stretch.walk ? 4 : 6, lineCap: .round, lineJoin: .round,
+                            lineWidth: stretch.walk || stretch.thin ? 4 : 6, lineCap: .round, lineJoin: .round,
                             dash: stretch.walk ? [1, 9] : []))
                 }
                 // The ride being recorded, solid in the bike's colour.
@@ -245,6 +256,32 @@ struct RouteView: View {
                 .tint(Mode.bike.color)
             }
 
+            if mode != .bus, let ways = answer?.ways, ways.count > 1 {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(Array(ways.enumerated()), id: \.offset) { i, other in
+                            Button {
+                                way = i
+                                describe()
+                            } label: {
+                                Text(content.t("routeWay", "{min} min · {dist}", [
+                                    "min": "\(max(1, Int((other.seconds / 60).rounded())))",
+                                    "dist": distanceText(other.meters)
+                                ]))
+                                .font(.footnote.weight(.semibold))
+                                .monospacedDigit()
+                                .padding(.horizontal, 12).padding(.vertical, 7)
+                                .background(i == way ? mode.color : Theme.wash, in: Capsule())
+                                .foregroundStyle(i == way ? Theme.paper : Theme.ink)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityAddTraits(i == way ? .isSelected : [])
+                        }
+                    }
+                }
+                .accessibilityLabel(content.t("routeWays", "Ways there"))
+            }
+
             if mode == .bus, let trips = answer?.trips, trips.count > 1 {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
@@ -295,6 +332,8 @@ struct RouteView: View {
         let points: [CLLocationCoordinate2D]
         let color: Color
         let walk: Bool
+        /// A way on offer and not chosen.
+        var thin = false
     }
 
     private var stretches: [Stretch] {
@@ -308,8 +347,14 @@ struct RouteView: View {
                 return Stretch(points: points, color: walk ? Mode.foot.color : Mode.bus.color, walk: walk)
             }
         }
-        let points = answer.coordinates
-        return points.count > 1 ? [Stretch(points: points, color: mode.color, walk: false)] : []
+        // The ways not chosen first and faint, so the chosen one is drawn
+        // over them.
+        let ways = answer.ways
+        guard ways.indices.contains(way) else { return [] }
+        let faint = ways.enumerated().filter { $0.offset != way }.map {
+            Stretch(points: $0.element.coordinates, color: mode.color.opacity(0.38), walk: false, thin: true)
+        }
+        return faint + [Stretch(points: ways[way].coordinates, color: mode.color, walk: false)]
     }
 
     // MARK: Asking
@@ -321,6 +366,7 @@ struct RouteView: View {
         if !again {
             answer = nil
             trip = 0
+            way = 0
             ridden = []
             riddenSay = ""
             say = content.t("routeFinding", "Finding the way…")
@@ -353,6 +399,10 @@ struct RouteView: View {
             // while it was out, so its answer is checked against the tab.
             if Task.isCancelled || mode != asked { return }
             answer = got
+            // An answer after the dot moved comes back on the first way:
+            // the ways from the new place are not the ones a button was
+            // pressed among.
+            way = 0
             describe()
             if !again { fit() }
             if asked == .bike { await under(got.coordinates) }
@@ -387,11 +437,13 @@ struct RouteView: View {
             ])
             return
         }
-        guard let meters = answer.meters, let seconds = answer.seconds, answer.coordinates.count > 1 else {
+        let ways = answer.ways
+        guard ways.indices.contains(way) else {
             say = noRoute
             return
         }
-        let distance = distanceText(meters)
+        let seconds = ways[way].seconds
+        let distance = distanceText(ways[way].meters)
         let (key, english): (String, String)
         switch mode {
         case .bike: (key, english) = ("routeBike", "{min} min by bike · {dist}")
@@ -453,15 +505,34 @@ struct RouteView: View {
     }
 }
 
-/// What `/api/route` answers: a walk or a drive as one line with its length
-/// and time, or a bus journey as up to three trips of legs.
+/// What `/api/route` answers: a walk, a ride or a drive as one line with its
+/// length and time and up to two more ways under `others`, or a bus journey
+/// as up to three trips of legs.
 struct RouteAnswer: Decodable {
     let meters: Double?
     let seconds: Double?
     let line: [[Double]]?
+    /// Absent on an answer from before the website offered more than one.
+    let others: [Way]?
     let trips: [Trip]?
 
     var coordinates: [CLLocationCoordinate2D] { RouteAnswer.points(line ?? []) }
+
+    /// The first way, then the others: every way on offer that has a line.
+    var ways: [Way] {
+        var all: [Way] = []
+        if let meters, let seconds, let line { all.append(Way(meters: meters, seconds: seconds, line: line)) }
+        all += others ?? []
+        return all.filter { $0.coordinates.count > 1 }
+    }
+
+    struct Way: Decodable {
+        let meters: Double
+        let seconds: Double
+        let line: [[Double]]
+
+        var coordinates: [CLLocationCoordinate2D] { RouteAnswer.points(line) }
+    }
 
     struct Trip: Decodable {
         let seconds: Double
