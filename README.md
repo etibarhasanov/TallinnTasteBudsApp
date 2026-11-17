@@ -226,7 +226,12 @@ dotted in a walk's green and its rides solid in amber, and the bar says which
 line, when and from which stop ("T4 at 13:33 from Hobujaama · 16 min in all"),
 with the other departures under it to press. A walk, a ride or a drive follows
 the dot: sixty metres from where it was asked from, it is asked for again, at
-most every twenty seconds. The mode pressed last is remembered. Apple Maps is a
+most every twenty seconds. Where the router finds more than one way for a
+walk, a ride or a drive, up to three, the bar has a small button for each
+("9 min · 2.1 km"): the one chosen is solid and its button wears the mode's
+colour, the others are faint lines in the same colour, and pressing another
+makes it the solid one without moving the map. The mode pressed last is
+remembered. Apple Maps is a
 small link at the foot, in the same mode (a bike opens on foot there), for
 turn-by-turn; nothing leaves for Google.
 
