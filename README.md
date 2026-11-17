@@ -37,8 +37,11 @@ Four tabs, and Discover in front of the first.
   moved. From five letters the suggestions end in **Look for it on Google
   Maps**, the website's `/api/lookup`, for the museum or the bookshop the
   site's city does not have yet; what Google answers goes on the map as
-  results, first, with its card up. The ✕ in the box clears the word and puts
-  the keyboard away with it. Offline, the places the app carries still answer.
+  results, first, with its card up. The die beside the locate button is
+  Surprise me: a place at random out of whatever the field and the chips
+  allow, never a closed one and never the same one twice. The ✕ in the box
+  clears the word and puts the keyboard away with it. Offline, the places the
+  app carries still answer.
 - **Lists.** Everybody's lists, the most opened first, searchable by list,
   author or place — `/lists` on the website. A list opens as a numbered page
   with what its author wrote about each place and what to order, or as pins on
