@@ -5,9 +5,11 @@ import Observation
 /// Where the phone is, when the reader has said the app may know.
 ///
 /// Used for the blue dot on the map and for how far away each place is, both
-/// worked out on the phone. It leaves the phone for one thing: `RouteView`
-/// sends it to the site's `/api/route` when somebody asks for the way to a
-/// place, which is what the permission prompt and `docs/PRIVACY.md` say.
+/// worked out on the phone. It leaves the phone on three presses, each what
+/// the permission prompt and `docs/PRIVACY.md` say: `RouteView` sends it to
+/// the site's `/api/route` when somebody asks for the way to a place, a walk
+/// sends it to `/api/walk` with Check in, and a ride recorded on the Bike tab
+/// is sent to `/api/rides` when its rider presses Save.
 /// Without permission everything else still works and distances are measured
 /// from the Old Town, the way the website does it for a visitor who said no.
 @MainActor
@@ -41,6 +43,17 @@ final class LocationProvider: NSObject, CLLocationManagerDelegate {
     }
 
     func distance(to point: CLLocation) -> CLLocationDistance { origin.distance(from: point) }
+
+    /// How many screens want the position to the metre — a walk being
+    /// checked in on, a ride being recorded. The rest of the app is happy
+    /// with a hundred metres, which costs less battery.
+    private var preciseFor = 0
+
+    func precise(_ on: Bool) {
+        preciseFor = max(0, preciseFor + (on ? 1 : -1))
+        manager.desiredAccuracy = preciseFor > 0 ? kCLLocationAccuracyBest : kCLLocationAccuracyHundredMeters
+        start()
+    }
 
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let s = manager.authorizationStatus

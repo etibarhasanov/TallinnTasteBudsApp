@@ -167,12 +167,12 @@ the honest answers are:
   is asked for or kept.
 - **User Content → Other User Content.** Collected, linked to the user, for
   App Functionality: the lists somebody makes and what they write on them.
-- **Location → Precise Location.** The careful answer is collected, not
-  linked to the user, for App Functionality. The position is sent only when
-  somebody asks for the way to a place, is not stored by the site and is not
-  tied to an account — which under Apple's definition may not count as
-  collected at all — but a rounded copy goes on to a routing service, and
-  declaring it costs nothing.
+- **Location → Precise Location.** Collected, linked to the user, for App
+  Functionality. Asking the way sends the position without keeping it, and a
+  walk's check-in keeps only which place and when; but a ride recorded and
+  saved is a line of precise positions stored with the account that saved it
+  (never shown with its name, and with 200 m off each end), which is
+  collected and linked by Apple's definition.
 - **Search History.** Not collected: what is typed into the search is
   answered and not kept.
 - **Tracking:** none. Nothing is used for advertising or shared with a data

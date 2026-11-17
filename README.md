@@ -22,7 +22,7 @@ Four tabs, and Discover in front of the first.
   `added` date the app already carries, so New on the map is there offline.
   The search field stays live above it; Open map or a word in the field puts
   it away, and the round button beside the locate button brings it back.
-  Going round a list is not in the app yet, so a Play route opens its list.
+  A Play route opens its list on Route, your own walks still going first.
 - **Map.** Every place on the map as the site's own mark on Apple's map, with
   the site's search box and filter chips over it. Pressing a pin raises a card
   (Open, Directions, Save); **Places** at the bottom opens the same places as
@@ -54,6 +54,52 @@ Four tabs, and Discover in front of the first.
   deleting the account; the language; the colour — the website's four
   styles, Red, Green, Blue and Plum; the way out to the website, Instagram and
   the privacy page.
+
+### Going round a list
+
+Every list with two places to stand at has a third view, **Route**, beside
+List and Map: the website's `assets/walk.js`, drawn natively
+(`Core/WalkGame.swift`, `Views/WalkView.swift`). It shows the places in the
+shortest order to go round them — the true shortest up to twelve, worked out
+on the phone, nearest-next with crossed legs uncrossed past that, from the
+list's first place or from where **Start from where I am** was pressed — as a
+line down the page, each leg's distance and time and how far in the walk is
+by then, with the whole of it on foot, by bike and by car on the card.
+Distances are the straight line stretched by 1.3 and say "about", as on the
+website.
+
+Signed in, **Start** begins a walk (`POST /api/walk`, `start`). From then the
+bar at the foot names the nearest place left and how far it is, and **Check
+in at …** is greyed until inside the radius the site sends (75 m) but always
+pressable, since a fix lags a person walking and the server decides: it
+checks whichever unchecked place is nearest, or says how far the nearest one
+is. After a check the bar offers one optional comment. **Shortest from here**
+puts the places left in the shortest order from where you stand; **See it on
+the map** draws the walk on the list's map — a dashed line, numbers, ticks on
+the places checked, the next one filled — with the same bar, and Directions
+to the nearest place left. Finishing puts you on the list's board, fastest
+first, and asks how you went round (on foot, by bike, by car, mixed) and for
+a comment on the whole of it. **Start again** asks first, because it throws
+the walk away with its checks, comments and time on the board.
+
+Not in the app yet: dragging the order by hand (the website's Change the
+order), and opening a name on the board into how that person walked it.
+
+### Recording a ride
+
+The Bike tab of Directions carries **Record a ride** (`Core/RideRecorder.swift`,
+`Views/RideCard.swift`), the website's `assets/ride.js`: the position to the
+metre while the app is open, a point kept every 12 m from a fix good to 30 m,
+a jump faster than 60 km/h dropped, and the ride drawn as it grows with its
+distance, time and average. The screen is kept awake while recording, and
+leaving the app pauses the ride outright rather than drawing a straight line
+across what it did not see. **Finish** asks whether to save it under an
+optional name to `/api/rides`, where the site takes 200 m off each end, keeps
+it without ever showing whose it is, and draws it faintly under everybody's
+Bike tab; under 700 m it offers Keep riding instead. The ride waits on the
+phone until it is saved or thrown away. Signed out, the card asks to sign in
+first. Under any bike way the map then draws the rides recorded near it, and
+the bar says how much of the suggestion has been ridden before.
 
 ### Discounts
 
@@ -205,6 +251,9 @@ website.
 | Every place in Tallinn, to put one on a list | `GET /api/places?q=` |
 | A place that search does not have — a museum, a shop — looked up on Google Maps and kept on the site | `GET /api/lookup`, `POST /api/lookup` |
 | Discover's shelves of lists, its overlooked places and Play's routes | `GET /api/discover` |
+| A list's walk: start, check in, comment, order, how you went, start again | `GET /api/walk?list=<id>`, `POST /api/walk` with `action` |
+| Your walks still going, for Play | `GET /api/walk?mine=1` |
+| Rides recorded near a bike way, and saving one | `GET /api/rides?bbox=…`, `POST /api/rides` |
 | The discounts | `data/deals.json` |
 | Whether this session may show a pass, and its drawn rate | `GET /api/pass?r=<place>` |
 | The way there on foot, by bike, by bus or by car | `GET /api/route?from=…&to=…&mode=foot\|bike\|bus\|car` |
@@ -276,11 +325,14 @@ TallinnTasteBuds/
     SavesStore.swift              the places this phone saved
     AccountStore.swift            who is signed in, their lists, every write to them
     SocialSignIn.swift            the Google round trip and Apple's sheet
+    WalkGame.swift                going round a list: its order, checks and presses
+    RideRecorder.swift            recording a bike ride, and the rides under a way
     LocationProvider.swift        the blue dot and distances
   Models/
     Place.swift                   a place on the map; a kind of place
     Lists.swift                   lists, list items, profiles, list pins
     Deal.swift                    a discount: its offer, its run of rates, its dates
+    Walk.swift                    /api/walk's answer, and the shortest order
   Views/                          one file per screen, plus Theme and Routes
   Seed/                           the offline snapshot (refreshed weekly)
 Tools/

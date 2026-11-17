@@ -14,12 +14,14 @@ import MapKit
 /// While the route is out its two shelves of lists are blank cards; when it
 /// does not answer, one sentence with Try again stands in for them.
 ///
-/// Play offers lists to go round, swiped one at a time. Going round a list is
-/// not in the app yet, so a route opens its list for now; the reader's own
-/// walks still going, which the website puts first, come with the game.
+/// Play offers lists to go round, swiped one at a time: the reader's own walks
+/// still going first (`/api/walk?mine=1`, signed in only), then the lists
+/// most people have finished, then lists to be the first on. Each opens its
+/// list on Route, which is where a walk is started.
 struct DiscoverView: View {
     @Environment(ContentStore.self) private var content
     @Environment(LocationProvider.self) private var location
+    @Environment(AccountStore.self) private var account
     @Environment(\.openURL) private var openURL
 
     let openMap: () -> Void
@@ -31,6 +33,8 @@ struct DiscoverView: View {
     @State private var failed = false
     /// Pressed Try again this many times; a new value asks again.
     @State private var tries = 0
+    /// The reader's own walks still going.
+    @State private var mine: [MyWalks.Going] = []
 
     /// The website's PLACES and MIN: a shelf of places shows at most eight,
     /// and is not drawn at all with fewer than three.
@@ -46,7 +50,7 @@ struct DiscoverView: View {
                     places("discoverQuiet", "Overlooked places",
                            why: content.t("discoverQuietSay", "The five on the map that get opened least. Open one and the next takes its place."),
                            quiet(answer), line: street)
-                    if !answer.routes.isEmpty { play(answer.routes) }
+                    play(answer.routes)
                     lists("discoverPopularLists", "Popular lists", answer.popular)
                 } else if failed {
                     down
@@ -68,6 +72,9 @@ struct DiscoverView: View {
         .scrollDismissesKeyboard(.immediately)
         .background(Theme.paper)
         .task(id: tries) { if answer == nil { await load() } }
+        .task(id: account.signedIn) {
+            mine = account.signedIn ? ((try? await API.get(MyWalks.self, "api/walk", ["mine": "1"]))?.walks ?? []) : []
+        }
     }
 
     // MARK: The map's card
@@ -231,7 +238,27 @@ struct DiscoverView: View {
 
     // MARK: Play
 
-    private func play(_ routes: [PlayRoute]) -> some View {
+    /// One row of the deck: a walk of the reader's still going, or a route
+    /// offered to everybody. A list in both is the reader's.
+    private enum PlayRow: Identifiable {
+        case going(MyWalks.Going)
+        case offered(PlayRoute)
+        var id: String {
+            switch self {
+            case .going(let w): return w.id
+            case .offered(let r): return r.id
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func play(_ offered: [PlayRoute]) -> some View {
+        let ours = Set(mine.map(\.id))
+        let deck = mine.map(PlayRow.going) + offered.filter { !ours.contains($0.id) }.map(PlayRow.offered)
+        if !deck.isEmpty { playCard(deck) }
+    }
+
+    private func playCard(_ routes: [PlayRow]) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(content.t("discoverPlayEyebrow", "Play").uppercased())
                 .font(.caption.weight(.bold)).foregroundStyle(Theme.accent)
@@ -242,8 +269,14 @@ struct DiscoverView: View {
             // One route at a time, the edge of the next showing; a swipe moves
             // to it, and the dots say how many there are.
             TabView {
-                ForEach(routes) { route in
-                    Button { open(.list(route.id)) } label: { routeRow(route) }.buttonStyle(.plain)
+                ForEach(routes) { deal in
+                    Button { open(.walk(deal.id)) } label: {
+                        switch deal {
+                        case .going(let walk): goingRow(walk)
+                        case .offered(let route): routeRow(route)
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: routes.count > 1 ? .always : .never))
@@ -260,8 +293,8 @@ struct DiscoverView: View {
         let press: String
         if route.finished > 0, let best = route.best {
             parts.append(content.t("discoverPlayDone", "{n} finished", ["n": "\(route.finished)"]))
-            parts.append(content.t("discoverPlayBest", "fastest {took}", ["took": took(best)]))
-            if let went = went(route.mode) { parts.append(went) }
+            parts.append(content.t("discoverPlayBest", "fastest {took}", ["took": WalkWords(content: content).took(best)]))
+            if let went = WalkWords(content: content).went(route.mode) { parts.append(went) }
             press = content.t("walkStart", "Start")
         } else {
             parts.append(content.t("discoverPlayNobody", "nobody has finished it yet"))
@@ -284,28 +317,25 @@ struct DiscoverView: View {
         .contentShape(Rectangle())
     }
 
-    /// How long a walk took, in the list page's words — took() in
-    /// `assets/discover.js`.
-    private func took(_ ms: Double) -> String {
-        let days = Int(ms / 86_400_000)
-        if days < 1 {
-            let n = max(1, Int((ms / 60_000).rounded()))
-            return n < 60 ? content.t("walkMin", "{n} min", ["n": "\(n)"])
-                          : content.t("walkHours", "{h} h {m} min", ["h": "\(n / 60)", "m": "\(n % 60)"])
+    private func goingRow(_ walk: MyWalks.Going) -> some View {
+        HStack(spacing: 12) {
+            Text(Pins.of(walk.pin)).font(.system(size: 24))
+                .frame(width: 46, height: 46).background(Theme.wash, in: Circle())
+            VStack(alignment: .leading, spacing: 4) {
+                Text(GoogleWords.title(walk.id, walk.title, content))
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.ink).lineLimit(2)
+                Text(content.t("walkToGo", "{n} of {total} checked · {left} to go",
+                               ["n": "\(walk.checked)", "total": "\(walk.total)", "left": "\(walk.total - walk.checked)"]))
+                    .font(.caption).foregroundStyle(Theme.muted)
+                ProgressView(value: Double(walk.checked), total: Double(max(1, walk.total))).tint(Theme.accent)
+            }
+            Spacer(minLength: 0)
+            Text(content.t("discoverPlayKeep", "Keep going")).font(.footnote.weight(.semibold))
+                .padding(.horizontal, 12).padding(.vertical, 7)
+                .background(Theme.accent, in: Capsule()).foregroundStyle(Theme.onAccent)
         }
-        let hours = Int(ms.truncatingRemainder(dividingBy: 86_400_000) / 3_600_000)
-        let said = days == 1 ? content.t("walkDayOne", "1 day") : content.t("walkDays", "{n} days", ["n": "\(days)"])
-        return hours > 0 ? said + " " + content.t("walkHoursOnly", "{h} h", ["h": "\(hours)"]) : said
-    }
-
-    private func went(_ mode: String) -> String? {
-        switch mode {
-        case "foot": return content.t("walkFoot", "On foot")
-        case "bike": return content.t("walkBike", "By bike")
-        case "car": return content.t("walkCar", "By car")
-        case "mixed": return content.t("walkMixed", "Mixed")
-        default: return nil
-        }
+        .frame(maxHeight: .infinity, alignment: .top)
+        .contentShape(Rectangle())
     }
 
     // MARK: What the shelves hold

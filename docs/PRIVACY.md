@@ -20,7 +20,7 @@ and it is the address to give App Store Connect as the privacy policy URL.
 An account in the app is the website's account, so most of that page is
 already the app's policy too: what an account keeps, who else handles it, how
 long, your rights. Three things in the rest of it are not true of the app, and
-two things the app does are not in the rest of it:
+three things the app does are not in the rest of it:
 
 | The website's page says | In the app |
 |---|---|
@@ -28,6 +28,7 @@ two things the app does are not in the rest of it:
 | CARTO draws the map | Apple draws the map |
 | An account is a username and either a password or Google | Or Apple |
 | *(nothing)* | Your location is sent to the site when you ask for the way to a place |
+| *(nothing)* | A ride you record and save is kept as a bike route |
 | *(nothing)* | Signing in with Apple |
 
 So the page has a section about the app, **In the iPhone app**, added on
@@ -61,8 +62,13 @@ date on the page.
 > position on to the routing service it uses: OpenStreetMap Germany for
 > walking and driving, and peatus.ee, Estonia's public journey planner, for
 > buses and trams. This site does not keep it and does not connect it to
-> your account. You can switch location off for the app in iPhone Settings
-> at any time.
+> your account. Checking in at a place while you go round a list sends your
+> location with that one press too; the site compares it with the places
+> left and keeps which place you checked in at and when, never where you
+> stood. And if you record a bike ride and save it, the line you rode is
+> kept as a confirmed bike route without its first and last 200 metres,
+> stored with your account and never shown with your name. You can switch
+> location off for the app in iPhone Settings at any time.
 >
 > You can use the app without an account. If you make one, it is a username
 > and either a password, Google or Apple. If you use Apple, the site keeps
@@ -110,6 +116,17 @@ app at all.
   stores nothing in its database (`functions/api/route.js` in the website's
   repository says the same in its own words). **Open in Apple Maps** hands the
   destination, not your position, to Apple's app.
+- *Going round a list.* While a walk is on and on screen the position is read
+  to the metre. **Check in** sends it to `/api/walk` (`Core/WalkGame.swift`);
+  the site compares it with the places left and stores the place and the
+  time, never the coordinates. The board of who finished a list, and any
+  comment written on a walk, are public.
+- *A recorded ride.* **Record a ride** on the Bike tab keeps the position to
+  the metre while the app is open and the screen on (`Core/RideRecorder.swift`),
+  on the phone until **Save ride**, which sends the line, the seconds and an
+  optional name to `/api/rides`. The site takes 200 m off each end, stores
+  the rest with the account, and answers it to anybody only as an unnamed
+  line under the Bike tab.
 - *An account.* A username and password to `/api/account`. The site keeps the
   username and a scrambled password. Signed in, the app sends what you make:
   lists, the places on them, what you wrote about each, and which lists you
@@ -127,6 +144,7 @@ app at all.
   made on the phone.
 
 **What stays on the phone.** The saved places, the language, the colour style
+(`UserDefaults`); a ride being recorded, until it is saved or thrown away
 (`UserDefaults`); the last copy of the map's content (Application Support);
 cached photos; and the session cookie (`ttb_s`, in the system's cookie store).
 
