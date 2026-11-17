@@ -303,6 +303,17 @@ kept on disk in Application Support, and bundled as a snapshot under
 itself. Lists and profiles are read live and not cached, the same choice the
 website makes: they change while their authors are writing them.
 
+**The start waits for nothing.** While iOS starts the app it draws the launch
+screen, which is one colour, `LaunchPaper`: the paper of the Red style a new
+install opens in, where Xcode's empty one was black on a phone set to dark.
+The first screen is Discover, drawn from what is on the phone: the bundled
+or kept places, and the site's last answer to `/api/discover`, kept as
+`discover.json` beside them, so it opens whole with no signal. Apple's map is
+under Discover where nobody sees it, and is the dearest thing the app draws,
+so it is built a moment after the first screen is up, and the phone is asked
+where it is then too. The site is asked for anything newer after that, and
+what it answers takes the place of what was shown.
+
 ### What still needs an App Store release
 
 A change to the app rather than the content: a new screen, a new layout, a

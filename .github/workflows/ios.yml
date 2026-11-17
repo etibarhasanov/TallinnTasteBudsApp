@@ -84,6 +84,7 @@ jobs:
           check "location purpose string" '"NSLocationWhenInUseUsageDescription"'
           check "display name"            '"CFBundleDisplayName" => "Tallinn Taste Buds"'
           check "encryption answer"       '"ITSAppUsesNonExemptEncryption"'
+          check "launch screen colour"    '"UIColorName" => "LaunchPaper"'
           exit $fail
 
       # Nobody can look at a simulator from a cloud session, so the app is
