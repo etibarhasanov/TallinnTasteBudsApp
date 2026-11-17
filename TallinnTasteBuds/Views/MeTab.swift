@@ -99,6 +99,9 @@ struct MeTab: View {
                             .font(.subheadline).foregroundStyle(Theme.muted)
                     }
                 }
+                NavigationLink(content.t("editTitle", "Your page")) { EditPageView() }
+                NavigationLink(content.t("accountChange", "Change password")) { ChangePasswordView() }
+                NavigationLink(content.t("accountName", "Change username")) { ChangeUsernameView() }
                 Button(content.t("accountSignOut", "Sign out")) { Task { await account.signOut() } }
             }
             .listRowBackground(Theme.card)

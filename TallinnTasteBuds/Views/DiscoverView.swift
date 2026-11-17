@@ -10,7 +10,8 @@ import MapKit
 /// New lists, Overlooked places, Play, Popular lists and New on the map, then
 /// the ways out to Feedback and Privacy. Three of the shelves and Play are the
 /// website's `GET /api/discover`, the same answer for everybody; New on the
-/// map is the `added` date the app already holds, so the page is never empty.
+/// map is the later of the `added` and `updated` dates the app already holds
+/// — new photographs make a place news again — so the page is never empty.
 /// While the route is out its two shelves of lists are blank cards; when it
 /// does not answer, one sentence with Try again stands in for them.
 ///
@@ -347,7 +348,7 @@ struct DiscoverView: View {
     }
 
     private var newest: [Place] {
-        content.places.filter { !$0.closed && !$0.added.isEmpty }.sorted { $0.added > $1.added }
+        content.places.filter { !$0.closed && !$0.newsDay.isEmpty }.sorted { $0.newsDay > $1.newsDay }
     }
 
     /// The street and the number, which is what an address is before its comma.
@@ -355,18 +356,20 @@ struct DiscoverView: View {
         String(place.address.split(separator: ",").first ?? "")
     }
 
-    /// "November 2026", in the reader's language.
+    /// "November 2026" for a place new on the map, "Updated November 2026"
+    /// for one whose new photographs brought it back.
     private func month(_ place: Place) -> String {
         let parse = DateFormatter()
         parse.dateFormat = "yyyy-MM-dd"
         parse.locale = Locale(identifier: "en_US_POSIX")
         parse.timeZone = TimeZone(identifier: "UTC")
-        guard let day = parse.date(from: String(place.added.prefix(10))) else { return "" }
+        guard let day = parse.date(from: String(place.newsDay.prefix(10))) else { return "" }
         let say = DateFormatter()
         say.locale = Locale(identifier: content.lang)
         say.timeZone = TimeZone(identifier: "UTC")
         say.setLocalizedDateFormatFromTemplate("LLLLyyyy")
-        return say.string(from: day)
+        let month = say.string(from: day)
+        return place.newsDay == place.added ? month : content.t("discoverUpdated", "Updated {month}", ["month": month])
     }
 
     private func load() async {

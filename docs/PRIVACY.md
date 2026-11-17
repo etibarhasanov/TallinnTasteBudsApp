@@ -122,6 +122,12 @@ app at all.
   stores nothing in its database (`functions/api/route.js` in the website's
   repository says the same in its own words). **Open in Apple Maps** hands the
   destination, not your position, to Apple's app.
+- *Ask.* A question typed into the chat goes to `/api/ask` with the
+  exchanges before it in the same sheet, what the app read it as asking for,
+  and, only when it asks for somewhere near, the position
+  (`Views/AskView.swift`). The site asks Workers AI and keeps nothing but a
+  count of how each question ended, never its words; the thread is gone when
+  the sheet is closed.
 - *Going round a list.* While a walk is on and on screen the position is read
   to the metre. **Check in** sends it to `/api/walk` (`Core/WalkGame.swift`);
   the site compares it with the places left and stores the place and the
@@ -135,8 +141,12 @@ app at all.
   line under the Bike tab.
 - *An account.* A username and password to `/api/account`. The site keeps the
   username and a scrambled password. Signed in, the app sends what you make:
-  lists, the places on them, what you wrote about each, and which lists you
-  saved. Public lists and your profile can be seen by anyone.
+  lists, the places on them, what you wrote about each, which lists you
+  saved, and the places you save with the heart, to `/api/saves`
+  (`Core/SavesStore.swift`), which keeps each with the account and the same
+  salted fingerprint of the network a save on the website gets, for its cap.
+  Signing in also sends the account the places the phone saved before. Public
+  lists and your profile can be seen by anyone.
 - *Google.* The sign-in sheet is the system's (`ASWebAuthenticationSession`)
   and shares Safari's cookies, so Google may already know you there. The site
   asks Google for `openid` and nothing else, and keeps Google's number for

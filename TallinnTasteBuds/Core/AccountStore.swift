@@ -23,6 +23,8 @@ final class AccountStore {
     private(set) var checked = false
     private(set) var mine: [ListSummary] = []
     private(set) var kept: [ListSummary] = []
+    /// The phone's saves, told when somebody signs in or out.
+    private weak var saves: SavesStore?
 
     /// Whether the site can finish a Google or an Apple sign-in for an app.
     #if DEBUG
@@ -37,6 +39,7 @@ final class AccountStore {
 
     /// Ask the site who this cookie belongs to, and fetch their lists.
     func refresh(saves: SavesStore) async {
+        self.saves = saves
         do {
             let data = try await API.data("api/account")
             let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
@@ -46,7 +49,7 @@ final class AccountStore {
             #if DEBUG
             if LaunchScript.doors { googleOffered = true; appleOffered = true }
             #endif
-            if let saved = object["saved"] as? [String] { saves.adopt(saved) }
+            if user != nil { saves.adopt(object["saved"] as? [String] ?? []) } else { saves.signedIn = false }
             checked = true
             await refreshLists()
         } catch {
@@ -71,8 +74,7 @@ final class AccountStore {
             "username": username,
             "password": password
         ])
-        user = answer["user"] as? String
-        if let saved = answer["saved"] as? [String] { saves.adopt(saved) }
+        adopt(answer, saves: saves)
         await refreshLists()
     }
 
@@ -98,13 +100,31 @@ final class AccountStore {
     }
 
     private func adopt(_ answer: [String: Any], saves: SavesStore) {
+        self.saves = saves
         user = answer["user"] as? String
-        if let saved = answer["saved"] as? [String] { saves.adopt(saved) }
+        if user != nil { saves.adopt(answer["saved"] as? [String] ?? []) }
     }
 
     func signOut() async {
         _ = try? await API.post("api/account", ["action": "logout"])
         clear()
+    }
+
+    /// A new password. Every other device is signed out; this one stays.
+    func changePassword(current: String, to password: String) async throws {
+        try await API.post("api/account", ["action": "password-change", "current": current, "password": password])
+    }
+
+    /// A new username, which the site answers with.
+    func changeUsername(to username: String, current: String) async throws {
+        let answer = try await API.post("api/account", ["action": "username-change", "username": username, "current": current])
+        if let name = answer["user"] as? String { user = name }
+    }
+
+    /// One part of the public page — `display`, `about` or `links` — as the
+    /// website's page editor saves it.
+    func savePage(_ body: [String: Any]) async throws {
+        try await API.post("api/account", body)
     }
 
     /// Delete the account for good. The site asks for the password again, or,
@@ -116,6 +136,7 @@ final class AccountStore {
 
     private func clear() {
         user = nil
+        saves?.signedIn = false
         mine = []
         kept = []
         if let cookies = HTTPCookieStorage.shared.cookies(for: API.base) {
@@ -171,6 +192,8 @@ extension ContentStore {
         case "apple": return t("appErrApple", "Apple sign-in did not finish. Try again.")
         case "slow-down": return t("accountErrSlow", "Too many tries. Wait a few minutes.")
         case "current": return t("accountErrCurrent", "That is not the password you use now.")
+        case "same": return t("accountErrSame", "That is already your password.")
+        case "same-name": return t("accountErrSameName", "That is already your username.")
         case "confirm": return t("accountErrDeleteConfirm", "Type your username exactly as it is.")
         case "signed-out": return t("accountErrSignedOut", "You have been signed out. Sign in again.")
         case "title": return t("listsErrTitle", "A list needs a name.")

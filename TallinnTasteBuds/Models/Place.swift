@@ -29,6 +29,11 @@ struct Place: Identifiable, Hashable, Decodable {
     /// The day it went on the map, "2026-11-13", for New on the map;
     /// empty for the places older than the field.
     let added: String
+    /// The day an edit last added photographs, which makes it news again.
+    let updated: String
+
+    /// The day New on the map files it under: the later of the two.
+    var newsDay: String { max(added, updated) }
 
     var coordinate: CLLocationCoordinate2D { .init(latitude: lat, longitude: lng) }
     var location: CLLocation { .init(latitude: lat, longitude: lng) }
@@ -42,7 +47,7 @@ struct Place: Identifiable, Hashable, Decodable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, address, lat, lng, price, types, mustOrder, reel, photos, website, phone, closed, links, added
+        case id, name, address, lat, lng, price, types, mustOrder, reel, photos, website, phone, closed, links, added, updated
     }
 
     init(from decoder: Decoder) throws {
@@ -62,6 +67,7 @@ struct Place: Identifiable, Hashable, Decodable {
         closed = (try? c.decodeIfPresent(Bool.self, forKey: .closed)) ?? false
         links = (try? c.decodeIfPresent([BlurbLink].self, forKey: .links)) ?? []
         added = (try? c.decodeIfPresent(String.self, forKey: .added)) ?? ""
+        updated = (try? c.decodeIfPresent(String.self, forKey: .updated)) ?? ""
     }
 
     /// Every place that decodes; the ones that do not are dropped one by one.

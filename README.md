@@ -37,8 +37,12 @@ Four tabs, and Discover in front of the first.
   moved. From five letters the suggestions end in **Look for it on Google
   Maps**, the website's `/api/lookup`, for the museum or the bookshop the
   site's city does not have yet; what Google answers goes on the map as
-  results, first, with its card up. Offline, the places the app carries still
-  answer.
+  results, first, with its card up. The die beside the locate button is
+  Surprise me: a place at random out of whatever the field and the chips
+  allow, never a closed one and never the same one twice; the filled bubble
+  beside it is **Ask**, the chat. The ✕ in the box
+  clears the word and puts the keyboard away with it. Offline, the places the
+  app carries still answer.
 - **Lists.** Everybody's lists, the most opened first, searchable by list,
   author or place — `/lists` on the website. A list opens as a numbered page
   with what its author wrote about each place and what to order, or as pins on
@@ -49,9 +53,13 @@ Four tabs, and Discover in front of the first.
   with **New list** first.
   The six lists Google's numbers write are titled in the reader's language and
   signed Google Statistics, the way the website prints them.
-- **Saved.** The places this phone saved, newest first.
+- **Saved.** The places you saved, newest first — on the phone, and signed
+  in on the account too.
 - **Me.** Signing in or making an account, your profile, signing out and
-  deleting the account; the language; the colour — the website's four
+  deleting the account; **Your page** — the name you go by, your line and
+  your Instagram, TikTok and Facebook, the rest of the page on the website's
+  editor — **Change password** and **Change username**, each the website's
+  own `/api/account` action; the language; the colour — the website's four
   styles, Red, Green, Blue and Plum; the way out to the website, Instagram and
   the privacy page.
 
@@ -100,6 +108,21 @@ Bike tab; under 700 m it offers Keep riding instead. The ride waits on the
 phone until it is saved or thrown away. Signed out, the card asks to sign in
 first. Under any bike way the map then draws the rides recorded near it, and
 the bar says how much of the suggestion has been ridden before.
+
+### Ask
+
+**Ask** is the website's chat, a sheet over the map (`Views/AskView.swift`).
+Somebody types what they feel like and `/api/ask` answers with up to three
+places, each with a line about why: the map's own drawn from the app's copy of
+it, so a place the model invented is never shown, and Google's labelled as not
+on the map. Earlier exchanges go with each question, and the thread goes when
+the sheet is closed. Before a question goes, `AskReader` reads it as the
+website's `assets/ask.js` does — kinds of place from the taxonomy's labels in
+every language, cheap, fancy, open, near and me from the site's `askWords*` —
+so the Function can narrow the city to what it could be about; the position
+goes with it only when the question asks for somewhere near. It runs on
+Workers AI's free daily allowance, which the website shares; when that is
+spent, the answer says it is resting until tomorrow.
 
 ### Discounts
 
@@ -175,7 +198,9 @@ and goes as one write per field. The heart on somebody else's list saves it to
 your account; signed out, it asks you to sign in.
 
 Signing in also folds the places the account saved on the website into
-**Saved**. Saves made in the app stay on the phone for now — see below.
+**Saved**, and sends the account the ones this phone saved before; from
+then every press of the heart goes to `/api/saves` under the session, so a
+save is on every device the account signs in on.
 
 **The round button at the bottom right of every map** is where you are: one
 press centres the map on the blue dot, a second turns the map with the phone so
@@ -215,17 +240,13 @@ the site.
 
 In the order they are planned:
 
-1. **Saves that follow the account.** Saving a place from the app to the
-   account needs a way past the Turnstile check `/api/saves` asks a browser
-   for, which an app cannot show. That is server work on the website.
-2. **Ask**, the chat. Stories are not planned for the app.
-3. **App Store screenshots, the listing copy and the privacy page**, then
+1. **App Store screenshots, the listing copy and the privacy page**, then
    submission. `docs/PRIVACY.md` says what the app does with what it knows
    and carries the English of the section about the app on the website's
    privacy page;
    `docs/APP-STORE.md` has the answers to Apple's privacy questions.
 
-Splitwise, the flashcards, chess, the blog and the owner's pages stay on the
+Stories, the radio, Splitwise, the flashcards, chess, the blog and the owner's pages stay on the
 website.
 
 ---
@@ -243,7 +264,9 @@ website.
 | One list, whole | `GET /api/lists?id=<id>` |
 | A profile | `GET /api/profile?name=<name>` |
 | Who is signed in, and the account's saves | `GET /api/account` |
-| Sign in, make an account, sign out, delete it | `POST /api/account` with `action` |
+| A save or an unsave, signed in | `POST /api/saves` |
+| A question to the chat, with the thread before it | `POST /api/ask` |
+| Sign in, make an account, sign out, delete it, change the password or the username, save the page under your name | `POST /api/account` with `action` |
 | Sign in through Google | `GET /api/google?app=<challenge>`, then `POST /api/account` with `action: ticket` |
 | Sign in through Apple | `POST /api/apple` |
 | Your lists and the ones you saved | `GET /api/lists` (signed in) |
@@ -322,7 +345,7 @@ TallinnTasteBuds/
     Disk.swift                    the disk cache and the bundled snapshot
     ContentStore.swift            places, kinds, languages, strings, search
     PassCode.swift                the hourly discount code, the website's to the letter
-    SavesStore.swift              the places this phone saved
+    SavesStore.swift              the places saved, on the phone and the account
     AccountStore.swift            who is signed in, their lists, every write to them
     SocialSignIn.swift            the Google round trip and Apple's sheet
     WalkGame.swift                going round a list: its order, checks and presses

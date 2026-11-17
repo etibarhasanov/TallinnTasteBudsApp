@@ -45,6 +45,10 @@ struct MapTab: View {
     @State private var selected: String? = LaunchScript.select
     @State private var showingList = false
     @State private var discovering = LaunchScript.discover
+    /// The place Surprise me picked last, so the next press picks another.
+    @State private var surprised: String?
+    /// The chat's sheet is up.
+    @State private var chatting = false
     @State private var camera: MapCameraPosition = .region(MapTab.tallinn)
 
     /// What the site answered for the field, and whether it is still being
@@ -141,6 +145,29 @@ struct MapTab: View {
                                     .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
                             }
                             .accessibilityLabel(content.t("discoverLabel", "Discover"))
+                            // Surprise me: a place at random out of what the
+                            // field and the chips allow, never a closed one
+                            // and never the same one twice in a row.
+                            Button { surprise() } label: {
+                                Image(systemName: "dice")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(Theme.ink)
+                                    .frame(width: 48, height: 48)
+                                    .background(Theme.paper, in: Circle())
+                                    .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
+                            }
+                            .accessibilityLabel(content.t("randomPick", "Surprise me"))
+                            .disabled(visible.filter { !$0.closed }.isEmpty)
+                            // Ask: the website's chat, as a sheet over the map.
+                            Button { chatting = true } label: {
+                                Image(systemName: "bubble.left.and.text.bubble.right")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundStyle(Theme.onAccent)
+                                    .frame(width: 48, height: 48)
+                                    .background(Theme.accent, in: Circle())
+                                    .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
+                            }
+                            .accessibilityLabel(content.t("askOpen", "Ask"))
                             Spacer()
                             LocateButton(camera: $camera)
                         }
@@ -161,6 +188,12 @@ struct MapTab: View {
                     go(to: hit)
                 }
                 .presentationDetents([.medium, .large])
+            }
+            .sheet(isPresented: $chatting) {
+                AskSheet { route in
+                    chatting = false
+                    path.append(route)
+                }
             }
             .onAppear {
                 location.start()
@@ -426,6 +459,13 @@ struct MapTab: View {
 
     // MARK: What a press does
 
+    private func surprise() {
+        let pool = visible.filter { !$0.closed && $0.id != surprised }
+        guard let place = pool.randomElement() ?? visible.first(where: { !$0.closed }) else { return }
+        surprised = place.id
+        go(to: place)
+    }
+
     /// A place of the map's own, pressed among the suggestions.
     private func go(to place: Place) {
         typing = false
@@ -613,7 +653,11 @@ struct CityCard: View {
 }
 
 /// The search box over the map: the site's own placeholder, a clear button,
-/// and the keyboard's Search key.
+/// and the keyboard's Search key. The clear button puts the keyboard away
+/// with the word: pressing it says the search is over, and a keyboard left
+/// standing over half the map with nothing in the field is in the way of the
+/// map somebody cleared it to see. Backspacing to empty keeps it, since that
+/// is somebody about to type the next word.
 struct SearchField: View {
     @Binding var text: String
     let prompt: String
@@ -630,7 +674,10 @@ struct SearchField: View {
                 .focused(focus)
                 .onSubmit(submit)
             if !text.isEmpty {
-                Button { text = "" } label: {
+                Button {
+                    text = ""
+                    focus.wrappedValue = false
+                } label: {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.muted)
                 }
             }
