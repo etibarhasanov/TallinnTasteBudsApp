@@ -110,6 +110,23 @@ final class AccountStore {
         clear()
     }
 
+    /// A new password. Every other device is signed out; this one stays.
+    func changePassword(current: String, to password: String) async throws {
+        try await API.post("api/account", ["action": "password-change", "current": current, "password": password])
+    }
+
+    /// A new username, which the site answers with.
+    func changeUsername(to username: String, current: String) async throws {
+        let answer = try await API.post("api/account", ["action": "username-change", "username": username, "current": current])
+        if let name = answer["user"] as? String { user = name }
+    }
+
+    /// One part of the public page — `display`, `about` or `links` — as the
+    /// website's page editor saves it.
+    func savePage(_ body: [String: Any]) async throws {
+        try await API.post("api/account", body)
+    }
+
     /// Delete the account for good. The site asks for the password again, or,
     /// for an account that never had one, the username typed out.
     func delete(confirmation: String) async throws {
@@ -175,6 +192,8 @@ extension ContentStore {
         case "apple": return t("appErrApple", "Apple sign-in did not finish. Try again.")
         case "slow-down": return t("accountErrSlow", "Too many tries. Wait a few minutes.")
         case "current": return t("accountErrCurrent", "That is not the password you use now.")
+        case "same": return t("accountErrSame", "That is already your password.")
+        case "same-name": return t("accountErrSameName", "That is already your username.")
         case "confirm": return t("accountErrDeleteConfirm", "Type your username exactly as it is.")
         case "signed-out": return t("accountErrSignedOut", "You have been signed out. Sign in again.")
         case "title": return t("listsErrTitle", "A list needs a name.")

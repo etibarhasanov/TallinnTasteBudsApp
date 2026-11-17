@@ -72,6 +72,8 @@ enum API {
         /// What a walk's `far` names: the nearest place left and how far.
         var place: String?
         var meters: Double?
+        /// What a profile's `bad-link` names: the network whose handle it was.
+        var network: String?
         var errorDescription: String? { code }
     }
 
@@ -84,7 +86,8 @@ enum API {
         let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
         if !(200..<300).contains(status) {
             throw Refusal(code: object["error"] as? String ?? "status-\(status)", status: status,
-                          place: object["place"] as? String, meters: object["meters"] as? Double)
+                          place: object["place"] as? String, meters: object["meters"] as? Double,
+                          network: object["network"] as? String)
         }
         return object
     }

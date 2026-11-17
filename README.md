@@ -55,7 +55,10 @@ Four tabs, and Discover in front of the first.
 - **Saved.** The places you saved, newest first — on the phone, and signed
   in on the account too.
 - **Me.** Signing in or making an account, your profile, signing out and
-  deleting the account; the language; the colour — the website's four
+  deleting the account; **Your page** — the name you go by, your line and
+  your Instagram, TikTok and Facebook, the rest of the page on the website's
+  editor — **Change password** and **Change username**, each the website's
+  own `/api/account` action; the language; the colour — the website's four
   styles, Red, Green, Blue and Plum; the way out to the website, Instagram and
   the privacy page.
 
@@ -247,7 +250,7 @@ website.
 | A profile | `GET /api/profile?name=<name>` |
 | Who is signed in, and the account's saves | `GET /api/account` |
 | A save or an unsave, signed in | `POST /api/saves` |
-| Sign in, make an account, sign out, delete it | `POST /api/account` with `action` |
+| Sign in, make an account, sign out, delete it, change the password or the username, save the page under your name | `POST /api/account` with `action` |
 | Sign in through Google | `GET /api/google?app=<challenge>`, then `POST /api/account` with `action: ticket` |
 | Sign in through Apple | `POST /api/apple` |
 | Your lists and the ones you saved | `GET /api/lists` (signed in) |
