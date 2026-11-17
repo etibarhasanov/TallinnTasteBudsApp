@@ -113,14 +113,14 @@ the bar says how much of the suggestion has been ridden before.
 
 **Ask** is the website's chat, a sheet over the map (`Views/AskView.swift`).
 Somebody types what they feel like and `/api/ask` answers with up to three
-places, each with a line about why: the map's own drawn from the app's copy
-of it, so a place the model invented is never shown, and Google's labelled
-as not on the map. Earlier exchanges go with each question, and the thread
-goes when the sheet is closed. Before a question goes, `AskReader` reads it
-as the website's `assets/ask.js` does — kinds of place from the taxonomy's
-labels in every language, cheap, fancy, open, near and me from the site's
-`askWords*` — so the Function can narrow the city to what it could be about;
-the position goes with it only when the question asks for somewhere near. It runs on
+places, each with a line about why: the map's own drawn from the app's copy of
+it, so a place the model invented is never shown, and Google's labelled as not
+on the map. Earlier exchanges go with each question, and the thread goes when
+the sheet is closed. Before a question goes, `AskReader` reads it as the
+website's `assets/ask.js` does — kinds of place from the taxonomy's labels in
+every language, cheap, fancy, open, near and me from the site's `askWords*` —
+so the Function can narrow the city to what it could be about; the position
+goes with it only when the question asks for somewhere near. It runs on
 Workers AI's free daily allowance, which the website shares; when that is
 spent, the answer says it is resting until tomorrow.
 
