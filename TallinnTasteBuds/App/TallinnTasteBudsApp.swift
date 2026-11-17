@@ -48,7 +48,7 @@ struct RootView: View {
 
     var body: some View {
         TabView(selection: $tab) {
-            MapTab()
+            MapTab(seeLists: { tab = 1 })
                 .tabItem { Label(content.t("appTabMap", "Map"), systemImage: "map") }
                 .tag(0)
             ListsTab()

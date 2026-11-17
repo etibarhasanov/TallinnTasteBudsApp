@@ -118,7 +118,10 @@ jobs:
             xcrun simctl io "$dev" screenshot "screens/$name.png" >/dev/null
             echo "photographed $name"
           }
-          shot 01-map
+          shot 01-discover
+          shot 01b-map -ttbDiscover NO
+          shot 01c-discover-green -style green
+          shot 01d-discover-ru -lang ru
           shot 02-map-pressed -ttbSelect badam
           shot 03-place -ttbOpen place:badam
           shot 04-lists -ttbTab 1
@@ -150,7 +153,7 @@ jobs:
           # The app's own strings in another language, and the three styles
           # that are not the one every picture above is drawn in. `-lang` and
           # `-style` are the keys the app keeps those two choices under.
-          shot 25-map-az -lang az
+          shot 25-map-az -lang az -ttbDiscover NO
           shot 26-me-az -ttbTab 3 -lang az
           shot 27-editor-az -ttbTab 1 -ttbOpen list:top-bars-hxzz7m -ttbEdit top-bars-hxzz7m -lang az
           shot 28-me-plum -ttbTab 3 -style plum

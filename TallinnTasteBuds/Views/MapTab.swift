@@ -19,6 +19,11 @@ import MapKit
 /// screen. Empty the field and the map is the one that opens. Offline, the
 /// places the app carries still answer.
 ///
+/// It opens on Discover, laid over the map the way the website's phone does
+/// it — `DiscoverView` — with the search field above it still live. Open map,
+/// or a word in the field, puts it away; the round button beside the locate
+/// button brings it back, where the website has its Back.
+///
 /// From five letters the suggestions end in the website's second door, Look
 /// for it on Google Maps, under results or none: the site's city is places to
 /// eat plus what earlier lookups kept, and "raamat" finds three bookshops and
@@ -31,11 +36,15 @@ struct MapTab: View {
     @Environment(SavesStore.self) private var saves
     @Environment(LocationProvider.self) private var location
 
+    /// Discover's See all: the Lists tab, everybody's lists.
+    var seeLists: () -> Void = {}
+
     @State private var path = NavigationPath(LaunchScript.routes(tab: 0))
     @State private var query = LaunchScript.query ?? ""
     @State private var type: String? = LaunchScript.type
     @State private var selected: String? = LaunchScript.select
     @State private var showingList = false
+    @State private var discovering = LaunchScript.discover
     @State private var camera: MapCameraPosition = .region(MapTab.tallinn)
 
     /// What the site answered for the field, and whether it is still being
@@ -95,22 +104,49 @@ struct MapTab: View {
         NavigationStack(path: $path) {
             ZStack {
                 map
+                // Discover is a page, not a panel over the map: the field
+                // stands on its paper, as the website's brand and find bar do.
+                if discovering && !(typing && !typed.isEmpty) {
+                    Theme.paper.ignoresSafeArea()
+                }
                 VStack(spacing: 10) {
                     SearchField(text: $query, prompt: content.t("findPlaceholder", "Find anywhere in Tallinn"),
                                 focus: $typing, submit: showAll)
                         .padding(.horizontal, 16)
                     if typing && !typed.isEmpty {
                         suggestions.padding(.horizontal, 16)
+                        Spacer()
+                    } else if discovering {
+                        DiscoverView {
+                            withAnimation(.snappy) { discovering = false }
+                        } open: { route in
+                            path.append(route)
+                        } seeAll: {
+                            seeLists()
+                        }
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     } else {
                         ChipRow(selected: $type)
-                    }
-                    Spacer()
-                    HStack {
                         Spacer()
-                        LocateButton(camera: $camera)
+                        HStack {
+                            Button {
+                                typing = false
+                                withAnimation(.snappy) { discovering = true }
+                            } label: {
+                                Image(systemName: "square.grid.2x2")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(Theme.ink)
+                                    .frame(width: 48, height: 48)
+                                    .background(Theme.paper, in: Circle())
+                                    .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
+                            }
+                            .accessibilityLabel(content.t("discoverLabel", "Discover"))
+                            Spacer()
+                            LocateButton(camera: $camera)
+                        }
+                        .padding(.horizontal, 14)
+                        bottom
                     }
-                    .padding(.horizontal, 14)
-                    bottom
                 }
                 .padding(.top, 8)
             }
@@ -131,6 +167,7 @@ struct MapTab: View {
                 if LaunchScript.typing { typing = true }
             }
             .onChange(of: query) { _, _ in
+                if !typed.isEmpty { discovering = false }
                 if typed.isEmpty {
                     found = []
                     drawn = []

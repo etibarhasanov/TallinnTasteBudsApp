@@ -12,8 +12,17 @@ deploys, with nothing submitted to Apple.
 
 ## What it does
 
-Four tabs.
+Four tabs, and Discover in front of the first.
 
+- **Discover**, which is where the Map tab opens, the way the website's phone
+  front page does: the map as one card with **Open map** on its corner, then
+  New lists, Overlooked places (the five on the map opened least), **Play**
+  (lists to go round, swiped one at a time), Popular lists and New on the
+  map, and Feedback and Privacy at the foot — `GET /api/discover`, plus the
+  `added` date the app already carries, so New on the map is there offline.
+  The search field stays live above it; Open map or a word in the field puts
+  it away, and the round button beside the locate button brings it back.
+  Going round a list is not in the app yet, so a Play route opens its list.
 - **Map.** Every place on the map as the site's own mark on Apple's map, with
   the site's search box and filter chips over it. Pressing a pin raises a card
   (Open, Directions, Save); **Places** at the bottom opens the same places as
@@ -195,6 +204,7 @@ website.
 | Make, edit, fill, order, save or delete a list | `POST /api/lists` with `action` |
 | Every place in Tallinn, to put one on a list | `GET /api/places?q=` |
 | A place that search does not have — a museum, a shop — looked up on Google Maps and kept on the site | `GET /api/lookup`, `POST /api/lookup` |
+| Discover's shelves of lists, its overlooked places and Play's routes | `GET /api/discover` |
 | The discounts | `data/deals.json` |
 | Whether this session may show a pass, and its drawn rate | `GET /api/pass?r=<place>` |
 | The way there on foot, by bike, by bus or by car | `GET /api/route?from=…&to=…&mode=foot\|bike\|bus\|car` |

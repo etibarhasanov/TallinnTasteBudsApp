@@ -26,6 +26,9 @@ struct Place: Identifiable, Hashable, Decodable {
     /// Words of the write-up that open somewhere on the site — "@tallinnbits",
     /// "their list of new cafés" — in `data/map.json`'s `links`.
     let links: [BlurbLink]
+    /// The day it went on the map, "2026-11-13", for New on the map;
+    /// empty for the places older than the field.
+    let added: String
 
     var coordinate: CLLocationCoordinate2D { .init(latitude: lat, longitude: lng) }
     var location: CLLocation { .init(latitude: lat, longitude: lng) }
@@ -39,7 +42,7 @@ struct Place: Identifiable, Hashable, Decodable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, address, lat, lng, price, types, mustOrder, reel, photos, website, phone, closed, links
+        case id, name, address, lat, lng, price, types, mustOrder, reel, photos, website, phone, closed, links, added
     }
 
     init(from decoder: Decoder) throws {
@@ -58,6 +61,7 @@ struct Place: Identifiable, Hashable, Decodable {
         phone = (try? c.decodeIfPresent(String.self, forKey: .phone)) ?? ""
         closed = (try? c.decodeIfPresent(Bool.self, forKey: .closed)) ?? false
         links = (try? c.decodeIfPresent([BlurbLink].self, forKey: .links)) ?? []
+        added = (try? c.decodeIfPresent(String.self, forKey: .added)) ?? ""
     }
 
     /// Every place that decodes; the ones that do not are dropped one by one.

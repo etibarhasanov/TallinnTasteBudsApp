@@ -65,4 +65,15 @@ enum LaunchScript {
     /// instead, with the suggestions under it.
     static var query: String? { UserDefaults.standard.string(forKey: "ttbQuery") }
     static var typing: Bool { UserDefaults.standard.bool(forKey: "ttbTyping") }
+    /// Whether the map tab opens on Discover: yes for a plain launch, which is
+    /// every reader's, and no where a script opens the map on something —
+    /// the way a link about something skips it on the website. `-ttbDiscover
+    /// NO` photographs the bare map.
+    static var discover: Bool {
+        if UserDefaults.standard.object(forKey: "ttbDiscover") != nil {
+            return UserDefaults.standard.bool(forKey: "ttbDiscover")
+        }
+        return tab == 0 && routes(tab: 0).isEmpty && route == nil && pass == nil
+            && select == nil && query == nil && type == nil
+    }
 }
