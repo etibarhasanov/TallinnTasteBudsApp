@@ -29,8 +29,10 @@ struct DiscoverView: View {
     let open: (Route) -> Void
     let seeAll: () -> Void
 
-    /// nil while asking, false when the site did not answer.
-    @State private var answer: DiscoverAnswer?
+    /// nil while asking with nothing kept. It starts as what the site
+    /// answered last time, so Discover opens whole, with no signal too, and
+    /// the site's newer answer takes its place when it comes.
+    @State private var answer: DiscoverAnswer? = DiscoverView.kept
     @State private var failed = false
     /// Pressed Try again this many times; a new value asks again.
     @State private var tries = 0
@@ -72,7 +74,7 @@ struct DiscoverView: View {
         }
         .scrollDismissesKeyboard(.immediately)
         .background(Theme.paper)
-        .task(id: tries) { if answer == nil { await load() } }
+        .task(id: tries) { await load() }
         .task(id: account.signedIn) {
             mine = account.signedIn ? ((try? await API.get(MyWalks.self, "api/walk", ["mine": "1"]))?.walks ?? []) : []
         }
@@ -372,11 +374,23 @@ struct DiscoverView: View {
         return place.newsDay == place.added ? month : content.t("discoverUpdated", "Updated {month}", ["month": month])
     }
 
+    /// The site's last answer, read off the disk once and kept up to date
+    /// from then on, so coming back to Discover starts from the newest one.
+    private static var kept: DiscoverAnswer? = Disk.read(keptFile)
+        .flatMap { try? API.decoder.decode(DiscoverAnswer.self, from: $0) }
+    private static let keptFile = "discover.json"
+
     private func load() async {
         do {
-            answer = try await API.get(DiscoverAnswer.self, "api/discover")
+            let data = try await API.data("api/discover")
+            let fresh = try API.decoder.decode(DiscoverAnswer.self, from: data)
+            answer = fresh
+            failed = false
+            Self.kept = fresh
+            Disk.write(data, Self.keptFile)
         } catch {
-            if !Task.isCancelled { failed = true }
+            // With a kept answer on screen a failure changes nothing.
+            if !Task.isCancelled && answer == nil { failed = true }
         }
     }
 }

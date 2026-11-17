@@ -50,6 +50,11 @@ struct MapTab: View {
     /// The chat's sheet is up.
     @State private var chatting = false
     @State private var camera: MapCameraPosition = .region(MapTab.tallinn)
+    /// Whether Apple's map has been built yet. It is the dearest thing the
+    /// app draws, and it opens under Discover's paper where nobody sees it,
+    /// so the first screen goes up without it and it is built a moment
+    /// after: the launch screen is on for that much less.
+    @State private var mapUp = false
 
     /// What the site answered for the field, and whether it is still being
     /// asked or could not be reached.
@@ -107,7 +112,7 @@ struct MapTab: View {
     var body: some View {
         NavigationStack(path: $path) {
             ZStack {
-                map
+                if mapUp { map } else { Theme.paper.ignoresSafeArea() }
                 // Discover is a page, not a panel over the map: the field
                 // stands on its paper, as the website's brand and find bar do.
                 if discovering && !(typing && !typed.isEmpty) {
@@ -196,8 +201,16 @@ struct MapTab: View {
                 }
             }
             .onAppear {
-                location.start()
                 if LaunchScript.typing { typing = true }
+            }
+            // After the first screen is drawn, not as part of it: the map,
+            // and where the phone is, which nothing on that screen waits
+            // for. Distances are from the Old Town until the fix arrives.
+            .task {
+                guard !mapUp else { return }
+                try? await Task.sleep(for: .milliseconds(60))
+                mapUp = true
+                location.start()
             }
             .onChange(of: query) { _, _ in
                 if !typed.isEmpty { discovering = false }
