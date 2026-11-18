@@ -17,6 +17,14 @@ import UIKit
 /// drawing a straight line across what was ridden unseen. The ride waits on
 /// the phone until it is saved or thrown away, so a closed app or a failed
 /// save comes back to it, paused.
+///
+/// Each point goes with when it was passed — whole seconds by the clock from
+/// the ride's first point, so a pause is a gap — and how sure the phone was
+/// of it, `[lat, lng, t, acc]`, the way the website's recorder sends them.
+/// The site keeps them beside the line and makes the speeds on Your rides out
+/// of them (`functions/api/rides.js`, WHEN EACH POINT WAS PASSED). A ride the
+/// phone was keeping from before the app sent them has none, and goes as bare
+/// pairs: the site keeps all of them or none.
 @MainActor
 @Observable
 final class RideRecorder {
@@ -40,6 +48,10 @@ final class RideRecorder {
     var shown = false
     private(set) var stage: Stage = .ready
     private(set) var points: [CLLocationCoordinate2D] = []
+    /// `[t, acc]` for each of `points`, or empty for a ride kept from before.
+    private var stamps: [[Double]] = []
+    /// When the first point was passed, which every `t` is counted from.
+    private var firstAt: Date?
     /// The ride's summary once saved, for the card that says so.
     private(set) var saved: String?
     /// The site's word for why the save did not go: signed-out, often,
@@ -53,7 +65,11 @@ final class RideRecorder {
     private init() {
         if let draft = UserDefaults.standard.dictionary(forKey: Self.draftKey),
            let raw = draft["points"] as? [[Double]], raw.count > 0 {
-            points = raw.compactMap { $0.count == 2 ? CLLocationCoordinate2D(latitude: $0[0], longitude: $0[1]) : nil }
+            points = raw.compactMap { $0.count >= 2 ? CLLocationCoordinate2D(latitude: $0[0], longitude: $0[1]) : nil }
+            if let first = draft["firstAt"] as? Double, raw.allSatisfy({ $0.count == 4 }) {
+                stamps = raw.map { [$0[2], $0[3]] }
+                firstAt = Date(timeIntervalSince1970: first)
+            }
             before = draft["seconds"] as? Double ?? 0
             stage = .paused
             shown = true
@@ -91,6 +107,11 @@ final class RideRecorder {
             if d < Self.step { return }
             if let lastFix, d / max(1, reading.timestamp.timeIntervalSince(lastFix)) > Self.jump { return }
         }
+        // A ride kept from before times were kept stays without them.
+        if points.isEmpty { firstAt = reading.timestamp; stamps = [] }
+        if let firstAt, stamps.count == points.count {
+            stamps.append([reading.timestamp.timeIntervalSince(firstAt).rounded(), reading.horizontalAccuracy.rounded()])
+        }
         points.append(at)
         lastFix = reading.timestamp
         if stage == .waiting { stage = .recording }
@@ -123,6 +144,8 @@ final class RideRecorder {
     func throwAway(_ location: LocationProvider) {
         stop(location)
         points = []
+        stamps = []
+        firstAt = nil
         before = 0
         forget()
         stage = .ready
@@ -142,12 +165,14 @@ final class RideRecorder {
             "action": "save",
             "name": String(name.prefix(Self.maxName)),
             "seconds": Int(seconds.rounded()),
-            "line": points.map { [$0.latitude, $0.longitude] }
+            "line": line
         ]
         do {
             try await API.post("api/rides", body)
             saved = summary
             points = []
+            stamps = []
+            firstAt = nil
             before = 0
             forget()
             stage = .saved
@@ -162,9 +187,18 @@ final class RideRecorder {
 
     // MARK: The phone's copy
 
+    /// The points as the site takes them: with their times where every one
+    /// has them, bare pairs where not.
+    private var line: [[Double]] {
+        stamps.count == points.count
+            ? zip(points, stamps).map { [$0.latitude, $0.longitude] + $1 }
+            : points.map { [$0.latitude, $0.longitude] }
+    }
+
     private func keep() {
-        UserDefaults.standard.set(["points": points.map { [$0.latitude, $0.longitude] }, "seconds": seconds],
-                                  forKey: Self.draftKey)
+        var draft: [String: Any] = ["points": line, "seconds": seconds]
+        if let firstAt { draft["firstAt"] = firstAt.timeIntervalSince1970 }
+        UserDefaults.standard.set(draft, forKey: Self.draftKey)
     }
 
     private func forget() { UserDefaults.standard.removeObject(forKey: Self.draftKey) }
