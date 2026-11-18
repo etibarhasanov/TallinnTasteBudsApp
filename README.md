@@ -8,6 +8,14 @@ Functions the website does, so anything published on the website — a place,
 a translation, a list somebody made — is in the app the moment the site
 deploys, with nothing submitted to Apple.
 
+Every route it calls is asked at its versioned address, `/api/v1/…` —
+`API.versioned()` in `TallinnTasteBuds/Core/API.swift` turns the `api/<route>`
+the screens write into it, `api/places` into `api/v1/find` and `api/lists`
+into `api/v1/me/lists`. The site only ever adds fields to v1; a change that
+would break this build is `/api/v2`, and v1 keeps answering while this build
+is still on phones. The routes are named by their old `/api/` addresses in the
+comments below, which still answer the same.
+
 ---
 
 ## What it does

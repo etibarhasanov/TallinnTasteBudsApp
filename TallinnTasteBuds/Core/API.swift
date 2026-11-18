@@ -5,7 +5,7 @@ import Foundation
 /// The app has no server of its own. Everything it shows is either one of the
 /// static files the website reads (`data/map.json`, `data/lang/<code>.json`,
 /// `data/taxonomy.json`) or an answer from one of the website's own Functions
-/// under `/api/`. So a place added on the site, a list somebody publishes or a
+/// under `/api/v1/` — `versioned()` below. So a place added on the site, a list somebody publishes or a
 /// translation fixed in `ui.json` reaches the app the moment the site deploys,
 /// with nothing submitted to Apple.
 ///
@@ -39,9 +39,35 @@ enum API {
 
     static let decoder = JSONDecoder()
 
+    /// Which version of the site's API this build asks. Every route the app
+    /// reads answers under `/api/v1/` as well as under its old `/api/`
+    /// address, and a version in the address is a promise that it only ever
+    /// gains fields: when the site needs a change that breaks one, that is
+    /// `/api/v2`, beside this one, and v1 keeps answering for at least six
+    /// months while builds on it are still in people's pockets. **The public
+    /// API** in the website's `docs/handbook.md`.
+    static let version = "v1"
+
+    /// The two routes whose v1 name is not their old one, because the
+    /// website's public reads hold `places` and `lists` under `/api/v1/`:
+    /// the city search is `find`, and your own lists are `me/lists`.
+    private static let renamed = ["places": "find", "lists": "me/lists"]
+
+    /// `api/<route>` as the screens write it, at this build's version:
+    /// `api/account` is `api/v1/account`, `api/places` is `api/v1/find`.
+    /// Anything that is not a route — a data file, a photo, the share
+    /// links — is left as it is, and so is a path that already names its
+    /// version (`api/v1/route`, which the route screen asks by name).
+    static func versioned(_ path: String) -> String {
+        guard path.hasPrefix("api/") else { return path }
+        let route = String(path.dropFirst("api/".count))
+        if route.range(of: #"^v[0-9]+/"#, options: .regularExpression) != nil { return path }
+        return "api/\(version)/" + (renamed[route] ?? route)
+    }
+
     /// A URL on the site, with an optional query.
     static func url(_ path: String, _ query: [String: String] = [:]) -> URL {
-        var parts = URLComponents(url: base.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        var parts = URLComponents(url: base.appendingPathComponent(versioned(path)), resolvingAgainstBaseURL: false)!
         if !query.isEmpty {
             parts.queryItems = query.sorted { $0.key < $1.key }.map { URLQueryItem(name: $0.key, value: $0.value) }
         }
