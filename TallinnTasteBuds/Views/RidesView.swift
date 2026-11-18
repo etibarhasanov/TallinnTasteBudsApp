@@ -59,9 +59,11 @@ struct RidesView: View {
         .navigationTitle(content.t("ridesYours", "Your rides"))
         .navigationBarTitleDisplayMode(.inline)
         // Again each time it is shown, so a ride renamed or deleted on its
-        // own page is right here on the way back.
+        // own page is right here on the way back: a `.task` starts again on
+        // every appearance, so it is the one call. An `.onAppear` beside it
+        // used to load a second time on every way back — four requests where
+        // two do, each the site's rows read.
         .task(id: account.user) { await load() }
-        .onAppear { if rides != nil { Task { await load() } } }
     }
 
     private func load() async {
