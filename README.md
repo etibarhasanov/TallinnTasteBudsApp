@@ -253,7 +253,13 @@ that way: a walk green, a bike a lighter green, a bus amber and a car red, on
 the line and on the pressed tab alike. A bus journey is drawn with its walks
 dotted in a walk's green and its rides solid in amber, and the bar says which
 line, when and from which stop ("T4 at 13:33 from Hobujaama · 16 min in all"),
-with the other departures under it to press. A walk, a ride or a drive follows
+with the other departures under it to press. By bike a way can also be a
+train — ride to a station, an Elron train with the bike on it, ride on — where
+the website's `/api/v1/route` finds one quicker counted from setting off: one
+more button after the bike ways ("15 min · train 09:31") in the bus's amber,
+the rides drawn green and the rail amber, and the bar saying when to leave and
+which train. `/api/route` is asked where the versioned route does not answer,
+which costs the trains and nothing else. A walk, a ride or a drive follows
 the dot: sixty metres from where it was asked from, it is asked for again, at
 most every twenty seconds. Where the router finds more than one way for a
 walk, a ride or a drive, up to three, the bar has a small button for each
@@ -314,7 +320,7 @@ website.
 | Your rides, one of them opened, renamed or deleted | `GET /api/rides`, `GET /api/rides/<id>`, `POST /api/rides` with `rename` or `drop` |
 | The discounts | `data/deals.json` |
 | Whether this session may show a pass, and its drawn rate | `GET /api/pass?r=<place>` |
-| The way there on foot, by bike, by bus or by car | `GET /api/route?from=…&to=…&mode=foot\|bike\|bus\|car` |
+| The way there on foot, by bike, by bus or by car | `GET /api/v1/route?from=…&to=…&mode=foot\|bike\|bus\|car`, and `GET /api/route` with the same query where that does not answer |
 
 **Strings.** The app asks the site's `ui.json` for every string by key, so it is
 in the site's eleven languages wherever the site already says the thing. The
