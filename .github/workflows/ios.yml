@@ -1,7 +1,8 @@
 name: build
 
-# Builds the app for the simulator when asked, so a change that does not
-# compile is caught here rather than the next time someone opens Xcode.
+# Builds the app for the simulator, so a change that does not compile is
+# caught here rather than the next time someone opens Xcode. Nothing starts
+# it any more — see below.
 
 # The screenshots below are pushed to the ci-screens branch, which needs
 # write access to the repository's contents.
@@ -12,10 +13,17 @@ permissions:
 # about twenty minutes of a macOS runner each, and failed once in sixty runs.
 # It now runs only when somebody asks: Actions -> build -> Run workflow, on
 # the branch to check. Press it before a release or after a change to how the
-# app looks, when the screenshots are worth having. To turn it back on, put
-# the push and pull_request triggers back above workflow_dispatch.
+# app looks, when the screenshots are worth having.
+#
+# Switched off whole on 2026-11-18, the same day, at the owner's word: the
+# Run workflow button went too. A workflow has to name a trigger, and
+# workflow_call is the one nothing here fires — it runs only when another
+# workflow calls it, and none does — so no push, pull request or press can
+# start a macOS runner. The steps are kept as they were. To have the button
+# back, put workflow_dispatch in its place; for every push as well, push and
+# pull_request beside it.
 on:
-  workflow_dispatch:
+  workflow_call:
 
 jobs:
   build:
