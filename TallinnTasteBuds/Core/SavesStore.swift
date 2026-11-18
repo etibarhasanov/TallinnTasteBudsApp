@@ -43,7 +43,30 @@ final class SavesStore {
             ids += missing
             UserDefaults.standard.set(ids, forKey: Self.key)
         }
-        Task { for id in mineOnly { await send(id, on: true) } }
+        Task { for id in due(mineOnly) { await send(id, on: true) } }
+    }
+
+    /// ONE OFFER A DAY
+    ///
+    /// `adopt` runs on every sign-in check, which is every time the app comes
+    /// to the front, and a place the account refuses — one the site does not
+    /// know, a cap, a check it wants — is still "this phone's and not the
+    /// account's" the next time. So it was sent again on every foreground,
+    /// by every phone, for as long as it stayed saved, and every request
+    /// costs the site rows read out of a free five million a day. Now each
+    /// such place is offered at most once a day; one the account took is
+    /// the account's next time and is never due again.
+    private static let offeredKey = "saves-offered"
+    private static let offerEvery: TimeInterval = 86_400
+
+    private func due(_ candidates: [String]) -> [String] {
+        let now = Date().timeIntervalSince1970
+        var offered = UserDefaults.standard.dictionary(forKey: Self.offeredKey) as? [String: Double] ?? [:]
+        offered = offered.filter { candidates.contains($0.key) }
+        let ready = candidates.filter { (offered[$0] ?? 0) < now - Self.offerEvery }
+        for id in ready { offered[id] = now }
+        UserDefaults.standard.set(offered, forKey: Self.offeredKey)
+        return ready
     }
 
     func toggle(_ id: String) {
