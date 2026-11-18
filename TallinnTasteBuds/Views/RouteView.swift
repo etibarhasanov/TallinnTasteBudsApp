@@ -91,6 +91,15 @@ struct RouteTarget: Identifiable, Hashable {
 /// map, since the frame holds all of them. The buttons say how long and how
 /// far, never which is nicer: the router does not say.
 ///
+/// By bike a way can also be a train: ride to a station, an Elron train with
+/// the bike on it, ride on — `trains` in the website's `/api/v1/route`,
+/// offered only where it is quicker counted from setting off. It is one more
+/// button after the bike ways, "15 min · train 09:31", pressed in the bus's
+/// amber; the rides are drawn in the bike's green and the rail in amber, and
+/// the bar says when to leave and which train. `/api/v1/route` is asked
+/// first and `/api/route` where it does not answer, which costs the trains
+/// and nothing else, so this build reads a website from before them.
+///
 /// The way follows the dot: once the phone is sixty metres from where a walk,
 /// a ride or a drive was asked from, it is asked for again, at most every
 /// twenty seconds, and the line that is up stays until the new one arrives.
@@ -264,14 +273,11 @@ struct RouteView: View {
                                 way = i
                                 describe()
                             } label: {
-                                Text(content.t("routeWay", "{min} min · {dist}", [
-                                    "min": "\(max(1, Int((other.seconds / 60).rounded())))",
-                                    "dist": distanceText(other.meters)
-                                ]))
+                                Text(chip(other))
                                 .font(.footnote.weight(.semibold))
                                 .monospacedDigit()
                                 .padding(.horizontal, 12).padding(.vertical, 7)
-                                .background(i == way ? mode.color : Theme.wash, in: Capsule())
+                                .background(i == way ? (other.train == nil ? mode.color : Mode.bus.color) : Theme.wash, in: Capsule())
                                 .foregroundStyle(i == way ? Theme.paper : Theme.ink)
                             }
                             .buttonStyle(.plain)
@@ -310,6 +316,16 @@ struct RouteView: View {
         .background(Theme.paper)
         .clipShape(UnevenRoundedRectangle(topLeadingRadius: 18, topTrailingRadius: 18))
         .shadow(color: .black.opacity(0.12), radius: 10, y: -2)
+    }
+
+    /// A way's button: how long and how far, or for a train how long and
+    /// when it goes, which is what a way by train hangs on.
+    private func chip(_ other: RouteAnswer.Way) -> String {
+        let min = "\(max(1, Int((other.seconds / 60).rounded())))"
+        if let rail = other.train?.rail {
+            return content.t("routeTrainWay", "{min} min · train {at}", ["min": min, "at": rail.at ?? ""])
+        }
+        return content.t("routeWay", "{min} min · {dist}", ["min": min, "dist": distanceText(other.meters)])
     }
 
     private func tab(_ which: Mode, _ label: String) -> some View {
@@ -351,10 +367,18 @@ struct RouteView: View {
         // over them.
         let ways = answer.ways
         guard ways.indices.contains(way) else { return [] }
-        let faint = ways.enumerated().filter { $0.offset != way }.map {
-            Stretch(points: $0.element.coordinates, color: mode.color.opacity(0.38), walk: false, thin: true)
+        let faint = ways.enumerated().filter { $0.offset != way }.flatMap { drawn($0.element, faint: true) }
+        return faint + drawn(ways[way], faint: false)
+    }
+
+    /// One way as its stretches: the line in the mode's colour, or a way by
+    /// train leg by leg, the rides in the bike's green and the rail amber.
+    private func drawn(_ way: RouteAnswer.Way, faint: Bool) -> [Stretch] {
+        let legs: [([CLLocationCoordinate2D], Color)] = way.train?.legs.map { ($0.coordinates, $0.kind == "train" ? Mode.bus.color : Mode.bike.color) }
+            ?? [(way.coordinates, mode.color)]
+        return legs.filter { $0.0.count > 1 }.map {
+            Stretch(points: $0.0, color: faint ? $0.1.opacity(0.38) : $0.1, walk: false, thin: faint)
         }
-        return faint + [Stretch(points: ways[way].coordinates, color: mode.color, walk: false)]
     }
 
     // MARK: Asking
@@ -394,7 +418,7 @@ struct RouteView: View {
         askedAt = Date()
         let asked = mode
         do {
-            let got = try await API.get(RouteAnswer.self, "api/route", query)
+            let got = try await route(query)
             // A quiet ask the dot started is not cancelled by a tab pressed
             // while it was out, so its answer is checked against the tab.
             if Task.isCancelled || mode != asked { return }
@@ -410,6 +434,14 @@ struct RouteView: View {
             if Task.isCancelled || again || mode != asked { return }
             say = noRoute
         }
+    }
+
+    /// The versioned route first, for the trains, then the one every build
+    /// has always read. A refusal from the first is asked again of the
+    /// second, which answers it in the same word.
+    private func route(_ query: [String: String]) async throws -> RouteAnswer {
+        if let got = try? await API.get(RouteAnswer.self, "api/v1/route", query), got.version != nil { return got }
+        return try await API.get(RouteAnswer.self, "api/route", query)
     }
 
     private var noRoute: String {
@@ -443,6 +475,13 @@ struct RouteView: View {
             return
         }
         let seconds = ways[way].seconds
+        if let train = ways[way].train, let rail = train.rail {
+            say = content.t("routeTrain", "Leave at {leave}: ride to {from}, the {line} at {at} to {to}, ride on · {min} min", [
+                "leave": train.leave, "from": rail.from ?? "", "line": rail.name ?? "", "at": rail.at ?? "",
+                "to": rail.to ?? "", "min": "\(max(1, Int((seconds / 60).rounded())))"
+            ])
+            return
+        }
         let distance = distanceText(ways[way].meters)
         let (key, english): (String, String)
         switch mode {
@@ -515,6 +554,10 @@ struct RouteAnswer: Decodable {
     /// Absent on an answer from before the website offered more than one.
     let others: [Way]?
     let trips: [Trip]?
+    /// 1 on an answer from /api/v1/route, absent on one from /api/route.
+    let version: Int?
+    /// By bike, from /api/v1/route only: the ways by train.
+    let trains: [Train]?
 
     var coordinates: [CLLocationCoordinate2D] { RouteAnswer.points(line ?? []) }
 
@@ -523,6 +566,7 @@ struct RouteAnswer: Decodable {
         var all: [Way] = []
         if let meters, let seconds, let line { all.append(Way(meters: meters, seconds: seconds, line: line)) }
         all += others ?? []
+        all += (trains ?? []).map { Way(meters: $0.meters, seconds: $0.seconds, line: $0.legs.flatMap(\.line), train: $0) }
         return all.filter { $0.coordinates.count > 1 }
     }
 
@@ -530,6 +574,33 @@ struct RouteAnswer: Decodable {
         let meters: Double
         let seconds: Double
         let line: [[Double]]
+        /// Set where the way is a train, never decoded: a way of `others`
+        /// has no such field.
+        var train: Train? = nil
+
+        var coordinates: [CLLocationCoordinate2D] { RouteAnswer.points(line) }
+
+        private enum CodingKeys: String, CodingKey { case meters, seconds, line }
+    }
+
+    /// A way by train: when to set off, and its legs — a ride (`bike`) or
+    /// the train, which carries its name, its two stations and its time.
+    struct Train: Decodable {
+        let seconds: Double
+        let meters: Double
+        let leave: String
+        let legs: [TrainLeg]
+
+        var rail: TrainLeg? { legs.first { $0.kind == "train" } }
+    }
+
+    struct TrainLeg: Decodable {
+        let kind: String
+        let line: [[Double]]
+        let name: String?
+        let from: String?
+        let to: String?
+        let at: String?
 
         var coordinates: [CLLocationCoordinate2D] { RouteAnswer.points(line) }
     }

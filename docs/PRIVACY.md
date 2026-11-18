@@ -116,8 +116,9 @@ app at all.
   to within about a hundred metres. Without permission distances are
   measured from the Old Town. Distances and the blue dot are worked out on
   the phone. `Views/RouteView.swift` sends your position, to
-  five decimals, to `/api/route` with the place's. The site rounds the start
-  to four decimals — about eleven metres — before asking the routing service,
+  five decimals, to `/api/v1/route` (or `/api/route`) with the place's. The
+  site rounds the start to four decimals — about eleven metres — before asking
+  the routing service, and by bike peatus.ee too, for a train,
   keeps the answer in Cloudflare's cache under those rounded points, and
   stores nothing in its database (`functions/api/route.js` in the website's
   repository says the same in its own words). **Open in Apple Maps** hands the
