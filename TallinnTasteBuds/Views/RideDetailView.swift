@@ -204,7 +204,8 @@ struct RideDetailView: View {
     }
 
     /// The box round the line, with a margin so its ends are not on the edge.
-    private static func frame(_ line: [CLLocationCoordinate2D]) -> MKMapRect {
+    /// Your rides frames every ride of a range with it too.
+    static func frame(_ line: [CLLocationCoordinate2D]) -> MKMapRect {
         let rect = line.reduce(MKMapRect.null) { box, c in
             box.union(MKMapRect(origin: MKMapPoint(c), size: MKMapSize(width: 1, height: 1)))
         }
