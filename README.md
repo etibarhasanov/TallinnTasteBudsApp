@@ -127,6 +127,16 @@ set against the same length of time before in the words Insights uses, with a
 line of kilometres a day under them (a week over 90 days, a month over all
 of it). The figures are sums over the list, worked out on the phone.
 
+Under them is **Where you rode**: every ride of the range on one of Apple's
+maps, framed to fit them all, each a see-through line in the accent so a
+street ridden more than once comes out darker. It follows the chips, says so
+where a range has no rides, and is zoomed rather than panned, as one ride's
+map is. The lines are a second request, `GET /api/rides?mine=1&lines=1` —
+the same list with each ride's `line`, thinned by the site to a point every
+fifty metres or so — so the figures and the rows neither wait on them nor go
+when they fail; the card then says the site could not be reached and offers
+to try again.
+
 A row opens the ride (`Views/RideDetailView.swift`), `GET /api/rides/<id>`:
 the ride on Apple's map with a ring where it starts and a dot where it ends,
 its distance, time and average, and — where the ride has the times each
@@ -325,7 +335,7 @@ website.
 | A list's walk: start, check in, comment, order, how you went, start again | `GET /api/walk?list=<id>`, `POST /api/walk` with `action` |
 | Your walks still going, for Play | `GET /api/walk?mine=1` |
 | Rides recorded near a bike way, and saving one | `GET /api/rides?bbox=…`, `POST /api/rides` |
-| Your rides, one of them opened, renamed or deleted | `GET /api/rides`, `GET /api/rides/<id>`, `POST /api/rides` with `rename` or `drop` |
+| Your rides, where they went, one of them opened, renamed or deleted | `GET /api/rides`, `GET /api/rides?mine=1&lines=1`, `GET /api/rides/<id>`, `POST /api/rides` with `rename` or `drop` |
 | The discounts | `data/deals.json` |
 | Whether this session may show a pass, and its drawn rate | `GET /api/pass?r=<place>` |
 | The way there on foot, by bike, by bus or by car | `GET /api/v1/route?from=…&to=…&mode=foot\|bike\|bus\|car`, and `GET /api/route` with the same query where that does not answer |

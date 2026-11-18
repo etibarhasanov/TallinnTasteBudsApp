@@ -4,6 +4,9 @@ import CoreLocation
 /// The rides the signed-in person recorded, as `GET /api/rides` answers them
 /// with no query: newest first, names and numbers, no lines. The website's
 /// `functions/api/rides.js`, `mine()`.
+///
+/// Asked with `lines=1` each ride also carries its `line`, thinned to a point
+/// every fifty metres or so, which is what Where you rode draws.
 struct MyRides: Decodable {
     let user: String?
     let rides: [MyRide]
@@ -26,10 +29,14 @@ struct MyRide: Decodable, Identifiable, Hashable {
     let at: Double
     /// Whether the ride has the times its speeds are made of.
     let timed: Bool
+    /// The way, thinned, where the list was asked for with `lines=1`; empty
+    /// otherwise, and from a site that does not answer it yet.
+    let line: [[Double]]
 
     var date: Date { Date(timeIntervalSince1970: at / 1000) }
+    var coordinates: [CLLocationCoordinate2D] { RouteAnswer.points(line) }
 
-    enum CodingKeys: String, CodingKey { case id, name, meters, seconds, at, timed }
+    enum CodingKeys: String, CodingKey { case id, name, meters, seconds, at, timed, line }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -39,6 +46,7 @@ struct MyRide: Decodable, Identifiable, Hashable {
         seconds = (try? c.decodeIfPresent(Double.self, forKey: .seconds)) ?? 0
         at = (try? c.decodeIfPresent(Double.self, forKey: .at)) ?? 0
         timed = (try? c.decodeIfPresent(Bool.self, forKey: .timed)) ?? false
+        line = (try? c.decodeIfPresent([[Double]].self, forKey: .line)) ?? []
     }
 }
 

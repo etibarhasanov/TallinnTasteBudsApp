@@ -1,5 +1,6 @@
 import SwiftUI
 import Charts
+import MapKit
 
 /// Your rides: every bike ride you saved under your account, with how far,
 /// how long and how often over a range, and each ride a row that opens it —
@@ -10,12 +11,21 @@ import Charts
 /// the list is every ride the site keeps for you (up to `MINE`, two hundred)
 /// and a range is three sums over it. Each is set against the same length of
 /// time just before, in the words the website's Insights uses.
+///
+/// Where you rode is the one part asked for separately: the same list with
+/// `lines=1`, each ride's way thinned by the site, drawn together on one map
+/// so the streets ridden show. It is a second request because the lines are
+/// the heavy half, and the figures and the rows should not wait on them or
+/// go when they fail.
 struct RidesView: View {
     @Environment(ContentStore.self) private var content
     @Environment(AccountStore.self) private var account
 
     @State private var rides: [MyRide]?
     @State private var failed = false
+    /// Each ride's thinned line by its id, once `lines=1` has answered.
+    @State private var lines: [String: [CLLocationCoordinate2D]]?
+    @State private var linesFailed = false
     /// Days back, or 0 for all of it — the website's Insights ranges.
     @State private var span = 28
 
@@ -62,6 +72,20 @@ struct RidesView: View {
         } catch {
             if rides == nil { failed = true }
         }
+        await loadLines()
+    }
+
+    /// The lines Where you rode draws. Kept through a failed reload, so a
+    /// map already drawn is not swapped for a sentence on the way back.
+    private func loadLines() async {
+        guard account.signedIn else { return }
+        do {
+            let withLines = try await API.get(MyRides.self, "api/rides", ["mine": "1", "lines": "1"]).rides
+            lines = Dictionary(withLines.map { ($0.id, $0.coordinates) }, uniquingKeysWith: { first, _ in first })
+            linesFailed = false
+        } catch {
+            if lines == nil { linesFailed = true }
+        }
     }
 
     // MARK: The page
@@ -77,6 +101,8 @@ struct RidesView: View {
                     chart(rides).padding(.top, 6)
                 }
                 .card()
+
+                whereYouRode(rides)
 
                 SectionLabel(text: content.t("appRidesAll", "All rides")).padding(.top, 4)
                 ForEach(rides) { ride in
@@ -121,6 +147,63 @@ struct RidesView: View {
             Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Theme.muted)
         }
         .card()
+    }
+
+    // MARK: Where you rode
+
+    /// Every ride of the range on one map, each a see-through line, so a
+    /// street ridden more than once comes out darker. It follows the chips.
+    private func whereYouRode(_ rides: [MyRide]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(content.t("appRidesWhere", "Where you rode")).font(.headline).foregroundStyle(Theme.ink)
+            if let lines {
+                let ridden = within(rides).compactMap { lines[$0.id] }.filter { $0.count > 1 }
+                if ridden.isEmpty {
+                    note(span > 0
+                         ? content.t("appRidesWhereNone", "No rides in these {n} days.", ["n": String(span)])
+                         : content.t("appRidesWhereNothing", "Nothing to draw yet."))
+                } else {
+                    coverage(ridden)
+                    Text(content.t("appRidesWhereDarker", "A street you rode more than once is drawn darker."))
+                        .font(.caption).foregroundStyle(Theme.muted)
+                }
+            } else if linesFailed {
+                VStack(spacing: 8) {
+                    Text(content.t("appOffline", "Couldn’t reach tallinntastebuds.ee."))
+                        .font(.subheadline).foregroundStyle(Theme.muted)
+                    Button(content.t("appRetry", "Try again")) { Task { await loadLines() } }
+                }
+                .frame(maxWidth: .infinity, minHeight: 120)
+            } else {
+                ProgressView().frame(maxWidth: .infinity, minHeight: 120)
+            }
+        }
+        .card()
+    }
+
+    private func note(_ text: String) -> some View {
+        Text(text)
+            .font(.subheadline).foregroundStyle(Theme.muted)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, minHeight: 120)
+    }
+
+    /// The lines on Apple's map, framed to fit them all. Zoomed and not
+    /// panned, as one ride's map is, so the page scrolls under the thumb;
+    /// made again for each range, since the frame is set once.
+    private func coverage(_ ridden: [[CLLocationCoordinate2D]]) -> some View {
+        Map(initialPosition: .rect(RideDetailView.frame(ridden.flatMap { $0 })), interactionModes: [.zoom]) {
+            ForEach(Array(ridden.enumerated()), id: \.offset) { _, line in
+                MapPolyline(coordinates: line)
+                    .stroke(Theme.accent.opacity(0.45), style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+            }
+        }
+        .mapStyle(.standard(pointsOfInterest: .excludingAll))
+        .frame(height: 240)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.radius))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius).stroke(Theme.hairline))
+        .id("\(span)-\(ridden.count)")
+        .accessibilityLabel(content.t("appRidesWhere", "Where you rode"))
     }
 
     // MARK: The figures
