@@ -340,8 +340,10 @@ a synchronised folder, so a Swift file dropped anywhere under
 `TallinnTasteBuds/` is compiled without touching the project file.
 
 CI (`.github/workflows/ios.yml`) checks the snapshot and builds for the
-simulator on every push to a `claude/**` branch, then launches the app in the
-simulator on a dozen screens and photographs each one. The pictures are the
+simulator when somebody asks for it — Actions → build → Run workflow, on the
+branch to check; since 2026-11-18 a push no longer starts it, because twenty
+minutes of a macOS runner a push was failing once in sixty — then launches
+the app in the simulator on a dozen screens and photographs each one. The pictures are the
 run's `screens` artifact and, shrunk, the `ci-screens` branch (one commit,
 overwritten every run), which is how a session with no Mac looks at what it
 built. `App/LaunchScript.swift` reads the launch arguments that choose the
