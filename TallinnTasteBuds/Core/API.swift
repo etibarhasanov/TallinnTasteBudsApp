@@ -56,10 +56,12 @@ enum API {
     /// `api/<route>` as the screens write it, at this build's version:
     /// `api/account` is `api/v1/account`, `api/places` is `api/v1/find`.
     /// Anything that is not a route — a data file, a photo, the share
-    /// links — is left as it is.
+    /// links — is left as it is, and so is a path that already names its
+    /// version (`api/v1/route`, which the route screen asks by name).
     static func versioned(_ path: String) -> String {
         guard path.hasPrefix("api/") else { return path }
         let route = String(path.dropFirst("api/".count))
+        if route.range(of: #"^v[0-9]+/"#, options: .regularExpression) != nil { return path }
         return "api/\(version)/" + (renamed[route] ?? route)
     }
 
