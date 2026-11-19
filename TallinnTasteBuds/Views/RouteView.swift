@@ -106,13 +106,15 @@ struct RouteTarget: Identifiable, Hashable {
 /// A bus journey is a timetable and is not asked again. Apple Maps stays a
 /// small link at the foot, for turn-by-turn.
 ///
-/// The Bike tab also carries Record a ride — `RideRecorder` — and under a
-/// bike way it draws the rides people recorded near it faintly, the bar
-/// saying how much of the suggestion has been ridden before.
+/// Directions draws the way and nothing else. The Bike tab carried Record a
+/// ride and, under a bike way, every ride people had recorded near it, until
+/// 2026-11-19: recording is Rattatee's, and somebody else's rides beside a
+/// suggested way read as a map painted green and gave away where they ride
+/// from — the website took them off its own map on 2026-11-18 for the same
+/// reason (**Recorded rides** in its `docs/handbook.md`).
 struct RouteView: View {
     @Environment(ContentStore.self) private var content
     @Environment(LocationProvider.self) private var location
-    @Environment(\.scenePhase) private var phase
     @Environment(\.dismiss) private var dismiss
 
     let target: RouteTarget
@@ -152,10 +154,6 @@ struct RouteView: View {
     /// Where the way up now was asked from, and when.
     @State private var askedFrom: CLLocation?
     @State private var askedAt = Date.distantPast
-    /// The rides recorded under a bike way, and what the bar says of them.
-    @State private var ridden: [[CLLocationCoordinate2D]] = []
-    @State private var riddenSay = ""
-    @State private var ride = RideRecorder.shared
 
     private var mode: Mode { Mode(rawValue: modeName) ?? .foot }
 
@@ -166,21 +164,11 @@ struct RouteView: View {
                 Annotation(target.name, coordinate: target.coordinate, anchor: .bottom) {
                     PlacePin(selected: true)
                 }
-                // Rides people recorded, faint and under the way.
-                ForEach(Array(ridden.enumerated()), id: \.offset) { _, line in
-                    MapPolyline(coordinates: line)
-                        .stroke(Mode.bike.color.opacity(0.4), style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
-                }
                 ForEach(Array(stretches.enumerated()), id: \.offset) { _, stretch in
                     MapPolyline(coordinates: stretch.points)
                         .stroke(stretch.color, style: StrokeStyle(
                             lineWidth: stretch.walk || stretch.thin ? 4 : 6, lineCap: .round, lineJoin: .round,
                             dash: stretch.walk ? [1, 9] : []))
-                }
-                // The ride being recorded, solid in the bike's colour.
-                if ride.shown, ride.points.count > 1 {
-                    MapPolyline(coordinates: ride.points)
-                        .stroke(Mode.bike.color, style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
                 }
             }
             .mapStyle(.standard(pointsOfInterest: .excludingAll))
@@ -190,18 +178,12 @@ struct RouteView: View {
             .safeAreaInset(edge: .bottom) {
                 VStack(alignment: .trailing, spacing: 12) {
                     LocateButton(camera: $camera).padding(.trailing, 14)
-                    if ride.shown && mode == .bike {
-                        RideCard(ride: ride)
-                    } else {
-                        bar
-                    }
+                    bar
                 }
             }
         }
         .overlay(alignment: .topLeading) {
             Button {
-                // A ride being recorded is paused and kept, never lost.
-                ride.pause(location)
                 dismiss()
             } label: {
                 Image(systemName: "xmark").font(.headline)
@@ -218,15 +200,11 @@ struct RouteView: View {
         // arrives after it — a first launch in Russian — writes it again.
         .onChange(of: content.ui) { _, _ in if answer != nil { describe() } }
         .onChange(of: location.location) { _, now in
-            if let now, ride.recording { ride.fix(now) }
             guard mode != .bus, !finding, let now, let from = askedFrom,
                   now.distance(from: from) >= Self.moved,
                   Date().timeIntervalSince(askedAt) >= Self.rest else { return }
             Task { await find(again: true) }
         }
-        // The app records only while it is looked at, and pauses outright
-        // rather than drawing a straight line across what it did not see.
-        .onChange(of: phase) { _, now in if now != .active { ride.pause(location) } }
     }
 
     // MARK: The bar
@@ -252,18 +230,6 @@ struct RouteView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            if mode == .bike, !riddenSay.isEmpty {
-                Text(riddenSay).font(.footnote).foregroundStyle(Theme.muted)
-            }
-            if mode == .bike {
-                Button {
-                    ride.shown = true
-                } label: {
-                    Label(content.t("rideRecord", "Record a ride"), systemImage: "record.circle")
-                        .font(.subheadline.weight(.semibold))
-                }
-                .tint(Mode.bike.color)
-            }
 
             if mode != .bus, let ways = answer?.ways, ways.count > 1 {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -391,8 +357,6 @@ struct RouteView: View {
             answer = nil
             trip = 0
             way = 0
-            ridden = []
-            riddenSay = ""
             say = content.t("routeFinding", "Finding the way…")
         }
         finding = true
@@ -429,7 +393,6 @@ struct RouteView: View {
             way = 0
             describe()
             if !again { fit() }
-            if asked == .bike { await under(got.coordinates) }
         } catch {
             if Task.isCancelled || again || mode != asked { return }
             say = noRoute
@@ -490,22 +453,6 @@ struct RouteView: View {
         default: (key, english) = ("routeWalk", "{min} min on foot · {dist}")
         }
         say = content.t(key, english, ["min": "\(max(1, Int((seconds / 60).rounded())))", "dist": distance])
-    }
-
-    /// The rides recorded under a bike way, from `/api/rides`, and how much
-    /// of the way runs along them. Nothing, rather than a failure, when there
-    /// are none or the route cannot answer.
-    private func under(_ way: [CLLocationCoordinate2D]) async {
-        guard way.count > 1 else { return }
-        let lats = way.map(\.latitude), lngs = way.map(\.longitude)
-        let box = [lats.min()!, lngs.min()!, lats.max()!, lngs.max()!].map { String(format: "%.3f", $0) }.joined(separator: ",")
-        guard let near = try? await API.get(RidesNear.self, "api/rides", ["bbox": box]),
-              mode == .bike, !near.rides.isEmpty else { return }
-        ridden = near.rides.map(\.coordinates).filter { $0.count > 1 }
-        let along = RidesNear.ridden(way, by: ridden)
-        riddenSay = along >= 50
-            ? content.t("rideAlong", "{dist} of this way has been ridden before — the faint lines.", ["dist": distanceText(along)])
-            : content.t("rideNearby", "The faint lines are rides people recorded nearby.")
     }
 
     private func distanceText(_ meters: Double) -> String {

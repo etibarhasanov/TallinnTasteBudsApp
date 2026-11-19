@@ -159,7 +159,6 @@ jobs:
           shot 22c-route-bike-ru -ttbRoute badam -routeMode bike -lang ru -style plum
           shot 23-search-suggestions -ttbQuery pizza -ttbTyping YES
           shot 24-search-results -ttbQuery pizza
-          shot 22d-route-ride -ttbRoute badam -routeMode bike -ttbRide YES
           shot 22e-list-route -ttbTab 1 -ttbOpen list:8-new-cafes-bakeries-to-know-in-z3255p -ttbListRoute YES
           shot 22f-list-route-ru -ttbTab 1 -ttbOpen list:8-new-cafes-bakeries-to-know-in-z3255p -ttbListRoute YES -lang ru -style green
           shot 24b-search-google-door -ttbQuery raamat -ttbTyping YES

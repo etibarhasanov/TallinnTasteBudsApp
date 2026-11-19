@@ -39,9 +39,6 @@ enum LaunchScript {
         if UserDefaults.standard.bool(forKey: "ttbListRoute") { return .route }
         return UserDefaults.standard.bool(forKey: "ttbListMap") ? .map : .list
     }
-    /// `-ttbRide YES` opens the ride card on the Bike tab, as Record a ride
-    /// does. Signed out, which a script always is, it asks to sign in first.
-    static var ride: Bool { UserDefaults.standard.bool(forKey: "ttbRide") }
     /// `-ttbSheet signin` opens the sign-in sheet over the first screen.
     static var sheet: String? { UserDefaults.standard.string(forKey: "ttbSheet") }
     /// `-ttbEdit <list id>` opens that list's editor once it has loaded, so the
