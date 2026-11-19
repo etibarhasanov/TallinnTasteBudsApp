@@ -248,6 +248,11 @@ struct MapTab: View {
         }
     }
 
+    /// Close enough in — a few streets on the screen — that the pins carry
+    /// their names. Further out they would cover the map, so the names wait for a press.
+    /// MapKit drops a name that would overlap another.
+    private var close: Bool { (region?.span.latitudeDelta ?? .infinity) <= 0.012 }
+
     private var map: some View {
         // Pressing a pin goes through MapKit's own selection rather than a
         // tap gesture on the pin: a gesture on the map as well, to clear the
@@ -259,14 +264,14 @@ struct MapTab: View {
                 Annotation(place.name, coordinate: place.coordinate, anchor: .bottom) {
                     PlacePin(selected: place.id == selected)
                 }
-                .annotationTitles(.hidden)
+                .annotationTitles(close ? .automatic : .hidden)
                 .tag(place.id)
             }
             ForEach(drawn) { hit in
                 Annotation(hit.name, coordinate: hit.coordinate ?? MapTab.tallinn.center, anchor: .center) {
                     CityPin(selected: hit.id == selected)
                 }
-                .annotationTitles(.hidden)
+                .annotationTitles(close ? .automatic : .hidden)
                 .tag(hit.id)
             }
         }
