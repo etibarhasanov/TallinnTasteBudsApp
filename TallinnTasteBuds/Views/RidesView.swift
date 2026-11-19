@@ -40,7 +40,7 @@ struct RidesView: View {
             } else if let rides {
                 if rides.isEmpty {
                     EmptyNote(title: content.t("ridesYours", "Your rides"),
-                              text: content.t("appRidesNone", "No rides yet. Record one from the Bike tab of Directions, and it is here once it is saved."),
+                              text: content.t("appRidesNoneSite", "No rides yet. Record one on tallinntastebuds.ee, and it is here once it is saved."),
                               systemImage: "bicycle")
                 } else {
                     page(rides)
