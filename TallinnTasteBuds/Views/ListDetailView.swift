@@ -369,18 +369,35 @@ private struct ListMap: View {
         }
     }
 
+    /// The places' cards side by side in the list's order, one showing at a
+    /// time: swiping left or right goes to the next or the one before, and
+    /// the map follows to its pin, as pressing the pin would.
     @ViewBuilder
     private var card: some View {
-        if let id = selected, let found = placed.first(where: { $0.id == id }) {
-            NavigationLink(value: route(for: found.item)) {
-                ListItemRow(number: found.number, item: found.item)
-                    .padding(.vertical, 4)
-                    .background(Theme.paper, in: RoundedRectangle(cornerRadius: 18))
-                    .shadow(color: .black.opacity(0.18), radius: 14, y: 4)
+        if selected != nil, !placed.isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .bottom, spacing: 8) {
+                    ForEach(placed) { pin in
+                        NavigationLink(value: route(for: pin.item)) {
+                            ListItemRow(number: pin.number, item: pin.item)
+                                .padding(.vertical, 4)
+                                .background(Theme.paper, in: RoundedRectangle(cornerRadius: 18))
+                                .shadow(color: .black.opacity(0.18), radius: 14, y: 4)
+                        }
+                        .buttonStyle(.plain)
+                        .containerRelativeFrame(.horizontal)
+                        .id(pin.id)
+                    }
+                }
+                .scrollTargetLayout()
+                // Room for the shadow, which the scroll view would clip.
+                .padding(.vertical, 16)
             }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 12)
-            .padding(.bottom, 12)
+            .contentMargins(.horizontal, 12, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+            .scrollPosition(id: $selected)
+            .padding(.top, -16)
+            .padding(.bottom, -4)
         }
     }
 
