@@ -69,6 +69,9 @@ struct ListEditor: View {
 
     let original: ListDetail
     let done: () -> Void
+    /// The list was deleted: there is nothing to read again, and the screen
+    /// under the editor has nothing left to show.
+    let deleted: () -> Void
 
     @State private var title: String
     @State private var intro: String
@@ -94,9 +97,10 @@ struct ListEditor: View {
         var id: String { place }
     }
 
-    init(list: ListDetail, isPublic: Bool, done: @escaping () -> Void) {
+    init(list: ListDetail, isPublic: Bool, done: @escaping () -> Void, deleted: @escaping () -> Void) {
         original = list
         self.done = done
+        self.deleted = deleted
         _title = State(initialValue: list.title)
         _intro = State(initialValue: list.intro)
         _pin = State(initialValue: list.pin ?? "pin")
@@ -175,6 +179,7 @@ struct ListEditor: View {
 
                 Section {
                     Button(content.t("listsDelete", "Delete the list"), role: .destructive) { confirmDelete = true }
+                        .disabled(working)
                 }
             }
             .environment(\.editMode, .constant(.active))
@@ -216,9 +221,12 @@ struct ListEditor: View {
                                 isPresented: $confirmDelete, titleVisibility: .visible) {
                 Button(content.t("listsDelete", "Delete the list"), role: .destructive) {
                     Task {
+                        working = true
+                        problem = nil
+                        defer { working = false }
                         do {
                             try await account.deleteList(original.id)
-                            done()
+                            deleted()
                             dismiss()
                         } catch {
                             problem = content.say(error)

@@ -162,8 +162,15 @@ final class AccountStore {
         try await API.post("api/lists", ["action": "drop", "id": list, "place": place])
     }
 
+    /// Delete a list. A list the site no longer has is a list deleted — by
+    /// an earlier press here, or on the website — so `not-found` is the
+    /// answer that was asked for and not a failure.
     func deleteList(_ id: String) async throws {
-        try await API.post("api/lists", ["action": "delete", "id": id])
+        do {
+            try await API.post("api/lists", ["action": "delete", "id": id])
+        } catch let refusal as API.Refusal where refusal.code == "not-found" {
+            // Already gone.
+        }
         await refreshLists()
     }
 
