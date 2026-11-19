@@ -101,21 +101,17 @@ the walk away with its checks, comments and time on the board.
 Not in the app yet: dragging the order by hand (the website's Change the
 order), and opening a name on the board into how that person walked it.
 
-### Recording a ride
+### No recorder, and nobody else's rides
 
-The Bike tab of Directions carries **Record a ride** (`Core/RideRecorder.swift`,
-`Views/RideCard.swift`), the website's `assets/ride.js`: the position to the
-metre while the app is open, a point kept every 12 m from a fix good to 30 m,
-a jump faster than 60 km/h dropped, and the ride drawn as it grows with its
-distance, time and average. The screen is kept awake while recording, and
-leaving the app pauses the ride outright rather than drawing a straight line
-across what it did not see. **Finish** asks whether to save it under an
-optional name to `/api/rides`, where the site takes 200 m off each end, keeps
-it without ever showing whose it is, and draws it faintly under everybody's
-Bike tab; under 700 m it offers Keep riding instead. The ride waits on the
-phone until it is saved or thrown away. Signed out, the card asks to sign in
-first. Under any bike way the map then draws the rides recorded near it, and
-the bar says how much of the suggestion has been ridden before.
+The Bike tab of Directions is a way like the other three and nothing more.
+It carried **Record a ride** and, under every bike way, the rides people had
+recorded near it as faint green lines, until 2026-11-19, when the owner took
+both out: recording is Rattatee's (`etibarhasanov/rattatee`), which can do it
+with the phone locked in a pocket, and other people's rides beside a
+suggested way covered the map in green and gave away where they ride from.
+The website took them off its own map the day before, for the same reason.
+So this app no longer asks `GET /api/rides?bbox=` or posts a ride; Your
+rides, below, still reads the rides saved under the account.
 
 ### Your rides
 
@@ -150,11 +146,6 @@ last 200 m off. **Rename** and **Delete this ride** are `POST /api/rides`
 with `rename` and `drop`; delete asks first, since it takes the ride off the
 map too. Somebody else's ride, or one deleted elsewhere, is *This ride is not
 one of yours, or it was deleted.*
-
-The recorder sends each point with when it was passed and how sure the phone
-was, `[lat, lng, t, acc]`, as the website's does, so a ride recorded in the
-app from this version on has its speeds. A ride the phone was already keeping
-from an older version goes as bare pairs and has none.
 
 ### Ask
 
@@ -334,7 +325,6 @@ website.
 | Discover's shelves of lists, its overlooked places and Play's routes | `GET /api/discover` |
 | A list's walk: start, check in, comment, order, how you went, start again | `GET /api/walk?list=<id>`, `POST /api/walk` with `action` |
 | Your walks still going, for Play | `GET /api/walk?mine=1` |
-| Rides recorded near a bike way, and saving one | `GET /api/rides?bbox=…`, `POST /api/rides` |
 | Your rides, where they went, one of them opened, renamed or deleted | `GET /api/rides`, `GET /api/rides?mine=1&lines=1`, `GET /api/rides/<id>`, `POST /api/rides` with `rename` or `drop` |
 | The discounts | `data/deals.json` |
 | Whether this session may show a pass, and its drawn rate | `GET /api/pass?r=<place>` |
@@ -423,7 +413,6 @@ TallinnTasteBuds/
     AccountStore.swift            who is signed in, their lists, every write to them
     SocialSignIn.swift            the Google round trip and Apple's sheet
     WalkGame.swift                going round a list: its order, checks and presses
-    RideRecorder.swift            recording a bike ride, and the rides under a way
     LocationProvider.swift        the blue dot and distances
   Models/
     Place.swift                   a place on the map; a kind of place

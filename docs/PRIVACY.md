@@ -134,12 +134,9 @@ app at all.
   the site compares it with the places left and stores the place and the
   time, never the coordinates. The board of who finished a list, and any
   comment written on a walk, are public.
-- *A recorded ride.* **Record a ride** on the Bike tab keeps the position to
-  the metre while the app is open and the screen on (`Core/RideRecorder.swift`),
-  on the phone until **Save ride**, which sends the line, the seconds and an
-  optional name to `/api/rides`. The site takes 200 m off each end, stores
-  the rest with the account, and answers it to anybody only as an unnamed
-  line under the Bike tab.
+- *A recorded ride.* Not recorded in this app since 2026-11-19: Rattatee
+  records rides, and this app only lists the ones saved under the account
+  (Your rides). It no longer draws anybody's rides under a bike way.
 - *An account.* A username and password to `/api/account`. The site keeps the
   username and a scrambled password. Signed in, the app sends what you make:
   lists, the places on them, what you wrote about each, which lists you
