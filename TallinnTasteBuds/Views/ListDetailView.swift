@@ -7,6 +7,7 @@ import MapKit
 struct ListDetailView: View {
     @Environment(ContentStore.self) private var content
     @Environment(AccountStore.self) private var account
+    @Environment(\.dismiss) private var dismiss
     let id: String
     /// Which of the three views it opens on.
     var opening: Shown = LaunchScript.listView
@@ -20,6 +21,8 @@ struct ListDetailView: View {
     @State private var keeps: Int?
     @State private var failed = false
     @State private var gone = false
+    /// Deleted in the editor, so this screen closes behind it.
+    @State private var deleted = false
     @State private var shown: Shown?
     @State private var game: WalkGame?
     /// The place pressed on the page, which the map opens on.
@@ -81,8 +84,13 @@ struct ListDetailView: View {
                         }
                     }
                 }
-                .fullScreenCover(isPresented: $editing) {
-                    ListEditor(list: list, isPublic: list.isPublic) { Task { await load() } }
+                // A deleted list leaves this screen too, once the editor has
+                // gone from over it: reading it again would only be a 404,
+                // and staying would show a list that is no longer there.
+                .fullScreenCover(isPresented: $editing, onDismiss: { if deleted { dismiss() } }) {
+                    ListEditor(list: list, isPublic: list.isPublic,
+                               done: { Task { await load() } },
+                               deleted: { deleted = true })
                 }
                 .sheet(isPresented: $signingIn) {
                     SignInView(reason: content.t("listsKeepIn", "Sign in to save this list"))
@@ -130,12 +138,18 @@ struct ListDetailView: View {
                 Task { await walk.load() }
                 if LaunchScript.edit == l.id { editing = true }
             } else {
+                list = nil
                 gone = true
             }
         } catch API.Failure.notFound {
+            // Not the copy read before it went: a list that is gone is shown
+            // as gone.
+            list = nil
+            game = nil
             gone = true
         } catch {
-            failed = true
+            // Offline with a list already on screen: keep showing it.
+            failed = list == nil
         }
     }
 }
