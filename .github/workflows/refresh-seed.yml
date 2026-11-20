@@ -18,7 +18,10 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
+      # Work goes to develop; main moves only on a release (CLAUDE.md).
       - uses: actions/checkout@v4
+        with:
+          ref: develop
 
       - uses: actions/setup-node@v4
         with:

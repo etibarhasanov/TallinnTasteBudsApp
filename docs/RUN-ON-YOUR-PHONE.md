@@ -38,14 +38,14 @@ install the extra components it asks for.
 You do not need git or the Terminal.
 
 1. Go to
-   <https://github.com/etibarhasanov/TallinnTasteBudsApp/tree/claude/ios-app-tallinn-taste-buds-dsywel>
+   <https://github.com/etibarhasanov/TallinnTasteBudsApp/tree/main>
 2. Click the green **Code** button → **Download ZIP**.
 3. Double-click the downloaded ZIP to unpack it.
 4. Open the unpacked folder and double-click **TallinnTasteBuds.xcodeproj**.
 
 Xcode opens. Ignore everything on screen except the toolbar at the top.
 
-> Each time Claude pushes a change, download the ZIP again the same way. If that
+> Each time a new version is released to `main`, download the ZIP again the same way. If that
 > gets tedious, install **GitHub Desktop** (<https://desktop.github.com>) — it is
 > a normal Mac app with a Fetch button, no Terminal involved.
 
