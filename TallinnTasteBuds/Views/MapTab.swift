@@ -742,7 +742,7 @@ struct MapCard<Card: View>: View {
                 DragGesture(minimumDistance: 10, coordinateSpace: .global)
                     .onChanged { drag in
                         let down = drag.translation.height
-                        pull = down > 0 ? down : -sqrt(-down) * 2
+                        pull = down > 0 ? down : -(-down).squareRoot() * 2
                     }
                     .onEnded { drag in
                         // Far enough, or let go on the way down fast enough.
