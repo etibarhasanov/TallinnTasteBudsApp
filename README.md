@@ -32,12 +32,15 @@ Four tabs, and Discover in front of the first.
   it away, and the round button beside the locate button brings it back.
   A Play route opens its list on Route, your own walks still going first.
 - **Map.** Every place on the map as the site's own mark on Apple's map, with
-  the site's search box and filter chips over it. Pressing a pin raises a card
-  (Open, Directions, Save); **Places** at the bottom opens the same places as
-  a list, nearest first. The search box searches all of Tallinn, the way a
-  maps app does: suggestions drop under it as you type — the map's own
-  places, then everywhere in the city, which the website answers from
-  `/api/places?q=`, the same search its own pages use. The site's answer is
+  the site's search box and filter chips over it. Pressing a pin rings it and
+  its stem in the style's accent, writes its name under it at any distance,
+  and raises a card (Open, Directions, Save); the ✕ in the card's corner, a
+  swipe down on it or a press on the empty map puts it away again. **Places**
+  at the bottom opens the same places as a list, nearest first. The search
+  box searches all of Tallinn, the way a maps app does: suggestions drop
+  under it as you type — the map's own places, then everywhere in the city,
+  which the website answers from `/api/places?q=`, the same search its own
+  pages use. The site's answer is
   drawn on the map as soon as it arrives, the city's as plain dots beside
   the mark, so a word finds the whole city whether or not Search is pressed.
   Pressing a suggestion goes to that place; the keyboard's Search frames

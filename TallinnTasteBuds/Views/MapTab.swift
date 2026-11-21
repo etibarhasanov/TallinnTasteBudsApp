@@ -253,6 +253,13 @@ struct MapTab: View {
     /// MapKit drops a name that would overlap another.
     private var close: Bool { (region?.span.latitudeDelta ?? .infinity) <= 0.012 }
 
+    /// The chosen pin carries its name however far out the map is, under the
+    /// pin, so the pin and the card below it read as one thing: in the Old
+    /// Town the pins stand on each other, and a ring alone can be half hidden.
+    private func titles(_ id: String) -> Visibility {
+        id == selected ? .visible : (close ? .automatic : .hidden)
+    }
+
     private var map: some View {
         // Pressing a pin goes through MapKit's own selection rather than a
         // tap gesture on the pin: a gesture on the map as well, to clear the
@@ -264,14 +271,14 @@ struct MapTab: View {
                 Annotation(place.name, coordinate: place.coordinate, anchor: .bottom) {
                     PlacePin(selected: place.id == selected)
                 }
-                .annotationTitles(close ? .automatic : .hidden)
+                .annotationTitles(titles(place.id))
                 .tag(place.id)
             }
             ForEach(drawn) { hit in
                 Annotation(hit.name, coordinate: hit.coordinate ?? MapTab.tallinn.center, anchor: .center) {
                     CityPin(selected: hit.id == selected)
                 }
-                .annotationTitles(close ? .automatic : .hidden)
+                .annotationTitles(titles(hit.id))
                 .tag(hit.id)
             }
         }
@@ -380,12 +387,12 @@ struct MapTab: View {
     @ViewBuilder
     private var bottom: some View {
         if let id = selected, let place = content.place(id) {
-            PlaceCard(place: place) { path.append(Route.place(place.id)) }
+            PlaceCard(place: place, close: { closeCard() }) { path.append(Route.place(place.id)) }
                 .padding(.horizontal, 12)
                 .padding(.bottom, 12)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
         } else if let id = selected, let hit = drawn.first(where: { $0.id == id }) {
-            CityCard(hit: hit, far: far(hit)) { path.append(Route.venue(ListItem(hit: hit))) }
+            CityCard(hit: hit, far: far(hit), close: { closeCard() }) { path.append(Route.venue(ListItem(hit: hit))) }
                 .padding(.horizontal, 12)
                 .padding(.bottom, 12)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -476,6 +483,13 @@ struct MapTab: View {
     }
 
     // MARK: What a press does
+
+    /// The card's ✕ and a swipe down on it: what a press on the empty map
+    /// already did, which MapKit answers by letting go of the pin. The card
+    /// goes down the way it came and the buttons above it follow.
+    private func closeCard() {
+        withAnimation(.snappy) { selected = nil }
+    }
 
     private func surprise() {
         let pool = visible.filter { !$0.closed && $0.id != surprised }
@@ -604,13 +618,14 @@ struct SuggestionRow: View {
 }
 
 /// A place in the city that is not on this map: a plain dot, so the mark
-/// stays the sign of somewhere with a write-up.
+/// stays the sign of somewhere with a write-up. Chosen, it takes the accent,
+/// as a chosen pin's ring does.
 struct CityPin: View {
     var selected: Bool
 
     var body: some View {
         Circle()
-            .fill(selected ? Theme.ink : Theme.muted)
+            .fill(selected ? Theme.accent : Theme.muted)
             .frame(width: selected ? 24 : 14, height: selected ? 24 : 14)
             .overlay(Circle().stroke(.white, lineWidth: selected ? 3 : 2))
             .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
@@ -627,46 +642,117 @@ struct CityCard: View {
     @Environment(ContentStore.self) private var content
     let hit: CatalogueHit
     let far: String
+    let close: () -> Void
     let open: () -> Void
     @State private var route: RouteTarget?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Button(action: open) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(hit.name).font(.headline).foregroundStyle(Theme.ink).lineLimit(2)
-                    Text([hit.category, far].filter { !$0.isEmpty }.joined(separator: " · "))
-                        .font(.subheadline).foregroundStyle(Theme.muted).lineLimit(1)
-                    if !hit.address.isEmpty {
-                        Text(hit.address).font(.footnote).foregroundStyle(Theme.muted).lineLimit(1)
-                    }
-                    Text(content.t("appNotOnMap", "Not on the Tallinn Tastebuds map"))
-                        .font(.footnote).foregroundStyle(Theme.muted)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            HStack(spacing: 8) {
-                if let point = hit.coordinate {
-                    Button {
-                        route = RouteTarget(id: hit.id, name: hit.name, coordinate: point)
-                    } label: {
-                        Text(content.t("directions", "Directions")).frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.prominent)
-                }
+        MapCard(close: close) {
+            VStack(alignment: .leading, spacing: 12) {
                 Button(action: open) {
-                    Text(content.t("appOpen", "Open")).frame(maxWidth: .infinity)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(hit.name).font(.headline).foregroundStyle(Theme.ink).lineLimit(2)
+                        Text([hit.category, far].filter { !$0.isEmpty }.joined(separator: " · "))
+                            .font(.subheadline).foregroundStyle(Theme.muted).lineLimit(1)
+                        if !hit.address.isEmpty {
+                            Text(hit.address).font(.footnote).foregroundStyle(Theme.muted).lineLimit(1)
+                        }
+                        Text(content.t("appNotOnMap", "Not on the Tallinn Tastebuds map"))
+                            .font(.footnote).foregroundStyle(Theme.muted)
+                    }
+                    // Clear of the ✕ in the corner.
+                    .padding(.trailing, 30)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.plain)
+                HStack(spacing: 8) {
+                    if let point = hit.coordinate {
+                        Button {
+                            route = RouteTarget(id: hit.id, name: hit.name, coordinate: point)
+                        } label: {
+                            Text(content.t("directions", "Directions")).frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.prominent)
+                    }
+                    Button(action: open) {
+                        Text(content.t("appOpen", "Open")).frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .controlSize(.large)
             }
-            .controlSize(.large)
         }
-        .padding(14)
-        .background(Theme.paper, in: RoundedRectangle(cornerRadius: 18))
-        .shadow(color: .black.opacity(0.18), radius: 14, y: 4)
         .fullScreenCover(item: $route) { RouteView(target: $0) }
+    }
+}
+
+/// What a pressed pin's card sits on, and the three ways a maps app has of
+/// putting one away: the ✕ in its corner, a swipe down, and a press on the
+/// empty map, which MapKit answers itself by letting go of the pin. The last
+/// was the only one, and nothing on the card said so. The handle on top is
+/// what says the card can be swiped.
+struct MapCard<Card: View>: View {
+    @Environment(ContentStore.self) private var content
+    let close: () -> Void
+    let card: Card
+    /// How far the card is pulled down. Pulled up, it gives a little and no more.
+    @State private var pull: CGFloat = 0
+
+    init(close: @escaping () -> Void, @ViewBuilder card: () -> Card) {
+        self.close = close
+        self.card = card()
+    }
+
+    var body: some View {
+        card
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // Room for the handle.
+            .padding(.top, 6)
+            .padding(14)
+            .background(Theme.paper, in: RoundedRectangle(cornerRadius: 18))
+            .overlay(alignment: .top) {
+                Capsule()
+                    .fill(Theme.muted.opacity(0.45))
+                    .frame(width: 36, height: 5)
+                    .padding(.top, 7)
+                    .accessibilityHidden(true)
+            }
+            .overlay(alignment: .topTrailing) {
+                Button(action: close) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Theme.muted)
+                        .frame(width: 30, height: 30)
+                        .background(Theme.wash, in: Circle())
+                        // A finger is wider than the circle.
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(3)
+                .accessibilityLabel(content.t("close", "Close"))
+            }
+            .shadow(color: .black.opacity(0.18), radius: 14, y: 4)
+            .offset(y: pull)
+            // Ahead of the card's own buttons, so a swipe that starts on one
+            // still moves the card. A press that does not move is still the
+            // button's: the swipe only begins ten points in.
+            .highPriorityGesture(
+                DragGesture(minimumDistance: 10, coordinateSpace: .global)
+                    .onChanged { drag in
+                        let down = drag.translation.height
+                        pull = down > 0 ? down : -sqrt(-down) * 2
+                    }
+                    .onEnded { drag in
+                        // Far enough, or let go on the way down fast enough.
+                        if drag.translation.height > 70 || drag.predictedEndTranslation.height > 220 {
+                            close()
+                        } else {
+                            withAnimation(.snappy) { pull = 0 }
+                        }
+                    }
+            )
     }
 }
 
@@ -748,16 +834,24 @@ struct ChipRow: View {
     }
 }
 
-/// The website's mark, on a stem, for every place on the map.
+/// The website's mark, on a stem, for every place on the map. The chosen one
+/// is ringed and stemmed in the accent, with a white edge between the ring
+/// and the map. It used to be the same white ring a size up, which among the
+/// Old Town's pins could hardly be told from its neighbours.
 struct PlacePin: View {
     var selected: Bool
 
     var body: some View {
         VStack(spacing: 0) {
             Mark(size: selected ? 42 : 30)
-                .overlay(Circle().stroke(.white, lineWidth: selected ? 3 : 2))
+                .overlay(Circle().stroke(selected ? Theme.accent : .white, lineWidth: selected ? 4 : 2))
+                .overlay(Circle().stroke(.white, lineWidth: 2).padding(-3).opacity(selected ? 1 : 0))
                 .shadow(color: .black.opacity(0.25), radius: 3, y: 2)
-            Rectangle().fill(.white).frame(width: 2, height: selected ? 8 : 5)
+                // The rings over the top of the stem, not the stem over them.
+                .zIndex(1)
+            Rectangle()
+                .fill(selected ? Theme.accent : .white)
+                .frame(width: selected ? 3 : 2, height: selected ? 9 : 5)
         }
         .animation(.snappy, value: selected)
     }
@@ -768,38 +862,41 @@ struct PlaceCard: View {
     @Environment(ContentStore.self) private var content
     @Environment(SavesStore.self) private var saves
     let place: Place
+    let close: () -> Void
     let open: () -> Void
     @State private var route: RouteTarget?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Button(action: open) { PlaceRow(place: place) }
-                .buttonStyle(.plain)
-            HStack(spacing: 8) {
+        MapCard(close: close) {
+            VStack(alignment: .leading, spacing: 12) {
                 Button(action: open) {
-                    Text(content.t("appOpen", "Open")).frame(maxWidth: .infinity)
+                    // Clear of the ✕ in the corner.
+                    PlaceRow(place: place).padding(.trailing, 30)
                 }
-                .buttonStyle(.prominent)
-                Button {
-                    route = RouteTarget(id: place.id, name: place.name, coordinate: place.coordinate)
-                } label: {
-                    Text(content.t("directions", "Directions")).frame(maxWidth: .infinity)
+                .buttonStyle(.plain)
+                HStack(spacing: 8) {
+                    Button(action: open) {
+                        Text(content.t("appOpen", "Open")).frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.prominent)
+                    Button {
+                        route = RouteTarget(id: place.id, name: place.name, coordinate: place.coordinate)
+                    } label: {
+                        Text(content.t("directions", "Directions")).frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    Button {
+                        saves.toggle(place.id)
+                    } label: {
+                        Image(systemName: saves.isSaved(place.id) ? "heart.fill" : "heart")
+                            .frame(width: 30)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel(content.t("savePlace", "Save this place"))
                 }
-                .buttonStyle(.bordered)
-                Button {
-                    saves.toggle(place.id)
-                } label: {
-                    Image(systemName: saves.isSaved(place.id) ? "heart.fill" : "heart")
-                        .frame(width: 30)
-                }
-                .buttonStyle(.bordered)
-                .accessibilityLabel(content.t("savePlace", "Save this place"))
+                .controlSize(.large)
             }
-            .controlSize(.large)
         }
-        .padding(14)
-        .background(Theme.paper, in: RoundedRectangle(cornerRadius: 18))
-        .shadow(color: .black.opacity(0.18), radius: 14, y: 4)
         .fullScreenCover(item: $route) { RouteView(target: $0) }
     }
 }
