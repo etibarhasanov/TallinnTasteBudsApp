@@ -243,13 +243,26 @@ struct ListItemRow: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             VStack(alignment: .leading, spacing: 4) {
                 if compact {
-                    HStack(spacing: 6) {
-                        Text(item.name).font(.headline).foregroundStyle(Theme.ink).lineLimit(1)
-                        if !item.map { notOnMap.fixedSize() }
+                    // The name comes first. The badge stands beside it only
+                    // where both fit whole: held at its full width, it left a
+                    // card's name a word or two ("Frenchy…"), and a card
+                    // whose name cannot be read is no use. Without it, the
+                    // knife and fork where a photo would be still say the
+                    // place is not one of ours.
+                    if item.map {
+                        name.lineLimit(1)
+                    } else {
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: 6) {
+                                name.fixedSize()
+                                notOnMap.fixedSize()
+                            }
+                            name.lineLimit(1)
+                        }
                     }
                     gist.font(.subheadline).lineLimit(2, reservesSpace: true)
                 } else {
-                    Text(item.name).font(.headline).foregroundStyle(Theme.ink)
+                    name
                     if !item.map { notOnMap }
                     if !item.say.isEmpty {
                         Text(item.say).font(.subheadline).foregroundStyle(Theme.ink)
@@ -265,6 +278,10 @@ struct ListItemRow: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .contentShape(Rectangle())
+    }
+
+    private var name: Text {
+        Text(item.name).font(.headline).foregroundStyle(Theme.ink)
     }
 
     private var notOnMap: some View {
@@ -430,6 +447,14 @@ private struct ListMap: View {
                 }
                 .scrollTargetLayout()
             }
+            // As tall as a card and no taller. A lazy stack, unlike an HStack,
+            // takes all the height it is offered, so the row filled the map
+            // from the locate button down and drew its card in the middle of
+            // it — over the very pin the map had just centred, with the
+            // locate button pushed to the top. And the empty rest of the row,
+            // unseen, still lay over the map: a drag sideways to move the map
+            // swiped the cards instead and changed the place.
+            .fixedSize(horizontal: false, vertical: true)
             .scrollIndicators(.hidden)
             .scrollTargetBehavior(.viewAligned)
             .scrollPosition(id: $carded)
