@@ -32,6 +32,15 @@ for (const place of places) {
   if (typeof place.lat !== 'number' || typeof place.lng !== 'number') fail(`${where}: lat/lng must be numbers`);
   if (place.price != null && typeof place.price !== 'number') fail(`${where}: price must be a number`);
   if (place.photos != null && !Array.isArray(place.photos)) fail(`${where}: photos must be an array`);
+  // Place.readShut(_:) knows these three. It reads any other value as shut
+  // for good, so a new word would not show a shut door as open, but it would
+  // say the wrong kind of shut; the weekly refresh stops here so the app
+  // learns the word first. "temporary" was the word that taught this: it was
+  // in the snapshot from 2026-11-09, and every build until this check read
+  // it as open.
+  if (place.closed !== undefined && ![false, true, 'temporary'].includes(place.closed)) {
+    fail(`${where}: closed is ${JSON.stringify(place.closed)}, which Place.swift does not know`);
+  }
 }
 
 const taxonomy = read('seed-taxonomy');
@@ -53,7 +62,8 @@ if (typeof en.ui !== 'object' || typeof en.blurbs !== 'object') fail('seed-lang-
 // regression in ten other languages, so it is caught here.
 const usedKeys = [
   'search', 'searchNone', 'filterAll', 'noResults', 'listOpen', 'listNearYou', 'listNearOldTown',
-  'mustOrder', 'directions', 'website', 'call', 'markReel', 'closedFlag', 'savePlace', 'listSaved',
+  'mustOrder', 'directions', 'website', 'call', 'markReel', 'closedFlag', 'venuesShutFor',
+  'closedTempNote', 'closedNote', 'closedReelNote', 'closedVideoNote', 'closedPhotosNote', 'savePlace', 'listSaved',
   'language', 'listsTitle', 'listsAllTitle', 'listsAllFor', 'listsAllSearchHint', 'listsEmpty',
   'listsViewList', 'listsViewMap', 'listsKeptOne', 'listsKeptN', 'venuesMaps', 'venuesShutToday',
   'findGoogleAsk', 'findGoogleAsking', 'findGoogleNone', 'findGoogleResting'
