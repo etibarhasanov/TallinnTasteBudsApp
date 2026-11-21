@@ -40,7 +40,8 @@ You do not need git or the Terminal.
 1. Go to
    <https://github.com/etibarhasanov/TallinnTasteBudsApp/tree/develop> —
    `develop` is where every change lands the moment it is merged. The
-   repository's front page shows `main`, which can be behind it.
+   repository's front page shows `main`, which moves only when a version is
+   released, and nothing is being released yet.
 2. Click the green **Code** button → **Download ZIP**.
 3. Double-click the downloaded ZIP to unpack it.
 4. Open the unpacked folder and double-click **TallinnTasteBuds.xcodeproj**.
