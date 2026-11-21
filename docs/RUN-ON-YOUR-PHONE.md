@@ -38,16 +38,21 @@ install the extra components it asks for.
 You do not need git or the Terminal.
 
 1. Go to
-   <https://github.com/etibarhasanov/TallinnTasteBudsApp/tree/main>
+   <https://github.com/etibarhasanov/TallinnTasteBudsApp/tree/develop> —
+   `develop` is where every change lands the moment it is merged. The
+   repository's front page shows `main`, which can be behind it.
 2. Click the green **Code** button → **Download ZIP**.
 3. Double-click the downloaded ZIP to unpack it.
 4. Open the unpacked folder and double-click **TallinnTasteBuds.xcodeproj**.
 
 Xcode opens. Ignore everything on screen except the toolbar at the top.
 
-> Each time a new version is released to `main`, download the ZIP again the same way. If that
-> gets tedious, install **GitHub Desktop** (<https://desktop.github.com>) — it is
-> a normal Mac app with a Fetch button, no Terminal involved.
+> Each time a change is merged, download the ZIP again the same way and open
+> the project **from the new folder**. Xcode's list of recent projects still
+> opens the old download, and building that puts the old app back on the
+> phone. If downloading gets tedious, install **GitHub Desktop**
+> (<https://desktop.github.com>) — it is a normal Mac app with a Fetch button,
+> no Terminal involved — and keep it on the `develop` branch.
 
 ---
 

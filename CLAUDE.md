@@ -6,21 +6,21 @@ tallinntastebuds.ee, and that site's `CLAUDE.md`
 — **What the app reads** there lists every route and field this app depends
 on, and a route the app starts reading is added there the same week.
 
-## Branches: develop is where the work goes, main is what was released
+## Branches: develop is where the work goes, and there are no versions
 
 - **`develop` is where all ordinary work lands.** Branch from it, open pull
   requests into it, rebase onto it. A session's own branch is cut from
   `develop`, never from `main`.
-- **`main` is the default branch and holds only releases.** Nothing is
-  committed to it directly and no feature branch is merged into it. When the
-  owner says a version is ready and names its number, `develop` is merged
-  into `main` (`git merge --no-ff develop -m "Release <number>"`),
-  `MARKETING_VERSION` in `TallinnTasteBuds.xcodeproj/project.pbxproj` (Debug
-  and Release both) is that number, committed on `develop` first, and the
-  merge is tagged `v<number>`. The version number is the owner's to choose;
-  a session does not pick one.
+- **This app has no versions** — the owner's word, 2026-11-21. Nobody asks
+  for a version number, picks one or tags one, and no change waits for a
+  release. (The rule that it did was copied from Rattatee on 2026-11-20 and
+  never wanted here.) The newest app is on `develop`, which is why the phone
+  guide downloads from there.
+- **`main` is the default branch.** Nothing is committed to it directly and
+  no feature branch is merged into it; `develop` is merged into it when the
+  owner says so.
 - **The weekly `refresh-seed` workflow commits to `develop`**, not to the
-  default branch, so a new snapshot reaches `main` with the next release.
+  default branch, so a new snapshot reaches `main` when `develop` next does.
 - `claude/ios-app-tallinn-taste-buds-dsywel` was the default branch until
   2026-11-20; `main` and `develop` both started from its last commit.
 
