@@ -283,7 +283,11 @@ Every place page has the photos, the write-up in the reader's language — the
 words it links drawn in the accent, a name opening that person's profile and a
 list opening the list — the kinds of place, what to order, the way there, the
 website, the phone and the reel, and a share link that opens the same place on
-the site.
+the site. A shut place says so under its name, as the website's panel does —
+**Closed for good** or **Temporarily closed**, out of `closed` in
+`data/map.json`, with the website's note under it on what is left to see —
+and neither kind is on the map, found by the search, shown on Discover or
+picked by Surprise me.
 
 ### What is not in it yet
 
@@ -362,7 +366,11 @@ what it answers takes the place of what was shown.
 
 A change to the app rather than the content: a new screen, a new layout, a
 new kind of field the app has to be taught to draw. New values in the fields it
-already reads never do.
+already reads never do — unless the value is a new kind of thing rather than
+more of the same. `closed` was `true` or `false` until the site added
+`"temporary"`, and every build before the one that learnt the word read it as
+open; `Tools/validate-seed.mjs` now stops the weekly snapshot on a `closed` the
+app does not know, and the app reads any such word as shut.
 
 ---
 

@@ -7,8 +7,9 @@ import CoreLocation
 ///
 /// Decoding is lenient on purpose. A key the site adds tomorrow is ignored, a
 /// key it drops falls back to empty, and a place that cannot be read at all is
-/// skipped by `Place.decodeAll` rather than taking the other seventy-eight down
-/// with it.
+/// skipped by `Place.decodeAll` rather than taking the rest down with it. The
+/// one exception is `closed`, where a value the app cannot read means shut
+/// rather than open — see `readShut(_:)`.
 struct Place: Identifiable, Hashable, Decodable {
     let id: String
     let name: String
@@ -22,7 +23,8 @@ struct Place: Identifiable, Hashable, Decodable {
     let photos: [String]
     let website: String
     let phone: String
-    let closed: Bool
+    /// Whether the door opens, and if not, whether it should again.
+    let shut: Shut
     /// Words of the write-up that open somewhere on the site — "@tallinnbits",
     /// "their list of new cafés" — in `data/map.json`'s `links`.
     let links: [BlurbLink]
@@ -34,6 +36,18 @@ struct Place: Identifiable, Hashable, Decodable {
 
     /// The day New on the map files it under: the later of the two.
     var newsDay: String { max(added, updated) }
+
+    /// Shut either way: neither kind is found, suggested or picked at random,
+    /// which is what every list and search in the app asks.
+    var closed: Bool { shut != .open }
+
+    /// The two kinds of shut door the site keeps in `closed`: `true` is for
+    /// good, `"temporary"` is a door that should open again — Google's word
+    /// for it, raised from the admin page's Google tab. The site's
+    /// `isPaused()` in `assets/app.js` reads it the same way.
+    enum Shut: Hashable {
+        case open, forGood, forNow
+    }
 
     var coordinate: CLLocationCoordinate2D { .init(latitude: lat, longitude: lng) }
     var location: CLLocation { .init(latitude: lat, longitude: lng) }
@@ -64,10 +78,31 @@ struct Place: Identifiable, Hashable, Decodable {
         photos = (try? c.decodeIfPresent([String].self, forKey: .photos)) ?? []
         website = (try? c.decodeIfPresent(String.self, forKey: .website)) ?? ""
         phone = (try? c.decodeIfPresent(String.self, forKey: .phone)) ?? ""
-        closed = (try? c.decodeIfPresent(Bool.self, forKey: .closed)) ?? false
+        shut = Self.readShut(c)
         links = (try? c.decodeIfPresent([BlurbLink].self, forKey: .links)) ?? []
         added = (try? c.decodeIfPresent(String.self, forKey: .added)) ?? ""
         updated = (try? c.decodeIfPresent(String.self, forKey: .updated)) ?? ""
+    }
+
+    /// `closed` is `false`, `true` or `"temporary"`, and the one field here
+    /// whose leniency runs the other way: a value the app cannot read means
+    /// shut, not open. It used to be read as a Bool and nothing else, so when
+    /// the site wrote `"temporary"` the read failed, fell back to false, and
+    /// a door that was shut was searched for, suggested and picked at random
+    /// as if it were open. Sending somebody across town to a shut door is the
+    /// worse mistake, so any value but `false`, `""` or none is shut, as it
+    /// is to the website, which tests the same field for truth; and any word
+    /// but `"temporary"` is shut for good, as `isPaused()` has it.
+    private static func readShut(_ c: KeyedDecodingContainer<CodingKeys>) -> Shut {
+        if let flag = try? c.decodeIfPresent(Bool.self, forKey: .closed) {
+            return flag ? .forGood : .open
+        }
+        if let word = try? c.decodeIfPresent(String.self, forKey: .closed) {
+            if word.isEmpty { return .open }
+            return word == "temporary" ? .forNow : .forGood
+        }
+        guard c.contains(.closed), (try? c.decodeNil(forKey: .closed)) == false else { return .open }
+        return .forGood
     }
 
     /// Every place that decodes; the ones that do not are dropped one by one.
