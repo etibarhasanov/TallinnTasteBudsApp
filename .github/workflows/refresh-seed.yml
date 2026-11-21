@@ -18,7 +18,7 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
-      # Work goes to develop; main moves when the owner says so (CLAUDE.md).
+      # Work goes to develop; main moves only on a release (CLAUDE.md).
       - uses: actions/checkout@v4
         with:
           ref: develop
