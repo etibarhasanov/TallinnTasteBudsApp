@@ -228,6 +228,9 @@ struct ListItemRow: View {
     @Environment(ContentStore.self) private var content
     let number: Int
     let item: ListItem
+    /// The card under a list's map: a line for the name and two for what is
+    /// said about it, whatever is said, so every card is the same height.
+    var compact = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -239,21 +242,21 @@ struct ListItemRow: View {
                 .frame(width: 56, height: 56)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             VStack(alignment: .leading, spacing: 4) {
-                Text(item.name).font(.headline).foregroundStyle(Theme.ink)
-                if !item.map {
-                    Text(content.t("appNotOnMapShort", "Not on the map"))
-                        .font(.caption)
-                        .foregroundStyle(Theme.muted)
-                        .padding(.horizontal, 6).padding(.vertical, 2)
-                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.hairline))
-                }
-                if !item.say.isEmpty {
-                    Text(item.say).font(.subheadline).foregroundStyle(Theme.ink)
-                }
-                if !item.mustOrder.isEmpty {
-                    (Text(content.t("mustOrder", "Must order") + ": ").foregroundStyle(Theme.muted)
-                     + Text(item.mustOrder).fontWeight(.semibold).foregroundStyle(Theme.ink))
-                        .font(.footnote)
+                if compact {
+                    HStack(spacing: 6) {
+                        Text(item.name).font(.headline).foregroundStyle(Theme.ink).lineLimit(1)
+                        if !item.map { notOnMap.fixedSize() }
+                    }
+                    gist.font(.subheadline).lineLimit(2, reservesSpace: true)
+                } else {
+                    Text(item.name).font(.headline).foregroundStyle(Theme.ink)
+                    if !item.map { notOnMap }
+                    if !item.say.isEmpty {
+                        Text(item.say).font(.subheadline).foregroundStyle(Theme.ink)
+                    }
+                    if !item.mustOrder.isEmpty {
+                        mustOrder.font(.footnote)
+                    }
                 }
             }
             Spacer(minLength: 0)
@@ -262,6 +265,28 @@ struct ListItemRow: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .contentShape(Rectangle())
+    }
+
+    private var notOnMap: some View {
+        Text(content.t("appNotOnMapShort", "Not on the map"))
+            .font(.caption)
+            .foregroundStyle(Theme.muted)
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.hairline))
+    }
+
+    private var mustOrder: Text {
+        Text(content.t("mustOrder", "Must order") + ": ").foregroundStyle(Theme.muted)
+            + Text(item.mustOrder).fontWeight(.semibold).foregroundStyle(Theme.ink)
+    }
+
+    /// The compact card's one say about the place, in two lines it always
+    /// keeps room for: what the author wrote, else what to order, else where
+    /// it is.
+    private var gist: Text {
+        if !item.say.isEmpty { return Text(item.say).foregroundStyle(Theme.ink) }
+        if !item.mustOrder.isEmpty { return mustOrder }
+        return Text(item.address.isEmpty ? " " : item.address).foregroundStyle(Theme.muted)
     }
 
     @ViewBuilder
@@ -293,10 +318,14 @@ private struct ListMap: View {
     private var walking: Bool { game.map { $0.started && !$0.finished } ?? false }
 
     @State private var selected: String?
+    /// The card the row of cards is on. Kept apart from `selected` so the row
+    /// is put on its first card only once it is there to scroll.
+    @State private var carded: String?
     @State private var camera: MapCameraPosition = .automatic
     /// False until the selection made on the way in has gone by, so that one
     /// does not move the map: opening on the whole list frames them all.
     @State private var settled = false
+    @State private var opened = false
 
     private struct Pinned: Identifiable {
         let number: Int
@@ -351,6 +380,10 @@ private struct ListMap: View {
             }
         }
         .onAppear {
+            // Only the first time: coming back from a place opened on a card
+            // leaves the map on the card it was swiped to.
+            guard !opened else { return }
+            opened = true
             if let focus, let pin = placed.first(where: { $0.id == focus }) {
                 selected = pin.id
                 camera = .region(MKCoordinateRegion(center: pin.coordinate, latitudinalMeters: 700, longitudinalMeters: 700))
@@ -359,8 +392,9 @@ private struct ListMap: View {
             }
         }
         .onChange(of: selected) { _, id in
-            // Pressing a pin brings it to the middle, the way the list's
-            // press does, so the card and the pin are seen together.
+            // Pressing a pin, or swiping to its card, brings it to the
+            // middle, the way the list's press does, so the card and the pin
+            // are seen together.
             guard settled else { settled = true; return }
             guard let id, let pin = placed.first(where: { $0.id == id }) else { return }
             withAnimation(.easeInOut) {
@@ -369,18 +403,56 @@ private struct ListMap: View {
         }
     }
 
+    /// The places' cards side by side in the list's order, one at a time with
+    /// the edge of the next one showing, which is what says they swipe.
+    /// Swiping to a card selects its place, so the map goes to its pin as
+    /// pressing the pin would; pressing a pin brings its card round.
+    ///
+    /// The row is lazy: a card's photo is fetched when the card comes near
+    /// the screen, not every photo on the list when the map opens. Every
+    /// card is the same height (`compact`), so the row does not jump as it
+    /// is swiped.
     @ViewBuilder
     private var card: some View {
-        if let id = selected, let found = placed.first(where: { $0.id == id }) {
-            NavigationLink(value: route(for: found.item)) {
-                ListItemRow(number: found.number, item: found.item)
-                    .padding(.vertical, 4)
-                    .background(Theme.paper, in: RoundedRectangle(cornerRadius: 18))
-                    .shadow(color: .black.opacity(0.18), radius: 14, y: 4)
+        if selected != nil, !placed.isEmpty {
+            ScrollView(.horizontal) {
+                LazyHStack(spacing: 8) {
+                    ForEach(placed) { pin in
+                        NavigationLink(value: route(for: pin.item)) {
+                            ListItemRow(number: pin.number, item: pin.item, compact: true)
+                                .padding(.vertical, 4)
+                                .background(Theme.paper, in: RoundedRectangle(cornerRadius: 18))
+                                .shadow(color: .black.opacity(0.18), radius: 14, y: 4)
+                        }
+                        .buttonStyle(.plain)
+                        .containerRelativeFrame(.horizontal)
+                    }
+                }
+                .scrollTargetLayout()
             }
-            .buttonStyle(.plain)
-            .padding(.horizontal, 12)
+            .scrollIndicators(.hidden)
+            .scrollTargetBehavior(.viewAligned)
+            .scrollPosition(id: $carded)
+            // 20 points each side: a card is that much narrower than the
+            // screen, and 12 of it (less the 8 between cards) is the edge of
+            // the next card showing.
+            .safeAreaPadding(.horizontal, 20)
+            // The cards' shadows fall outside the row; clipped, they'd be cut.
+            .scrollClipDisabled()
             .padding(.bottom, 12)
+            // The row starts on the selected place, set here rather than
+            // before the row exists so it is a change the row scrolls for.
+            .onAppear { carded = selected }
+            .onDisappear { carded = nil }
+            .onChange(of: carded) { _, id in
+                if let id, id != selected { selected = id }
+            }
+            // A pin pressed puts its card there at once, not with a scroll:
+            // a scroll past the cards between would report each of them on
+            // the way and could stop the selection on the first.
+            .onChange(of: selected) { _, id in
+                if let id, id != carded { carded = id }
+            }
         }
     }
 
