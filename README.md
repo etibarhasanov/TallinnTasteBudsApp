@@ -69,7 +69,7 @@ Four tabs, and Discover in front of the first.
 - **Me.** Signing in or making an account, your profile, signing out and
   deleting the account; **Your page** — the name you go by, your line and
   your Instagram, TikTok and Facebook, the rest of the page on the website's
-  editor — **Your rides**, below; **Change password** and **Change username**, each the website's
+  editor; **Change password** and **Change username**, each the website's
   own `/api/account` action; the language; the colour — the website's four
   styles, Red, Green, Blue and Plum; the way out to the website, Instagram and
   the privacy page.
@@ -104,7 +104,7 @@ the walk away with its checks, comments and time on the board.
 Not in the app yet: dragging the order by hand (the website's Change the
 order), and opening a name on the board into how that person walked it.
 
-### No recorder, and nobody else's rides
+### No rides in the app
 
 The Bike tab of Directions is a way like the other three and nothing more.
 It carried **Record a ride** and, under every bike way, the rides people had
@@ -113,42 +113,13 @@ both out: recording is Rattatee's (`etibarhasanov/rattatee`), which can do it
 with the phone locked in a pocket, and other people's rides beside a
 suggested way covered the map in green and gave away where they ride from.
 The website took them off its own map the day before, for the same reason.
-So this app no longer asks `GET /api/rides?bbox=` or posts a ride; Your
-rides, below, still reads the rides saved under the account.
 
-### Your rides
-
-Signed in, Me has **Your rides** (`Views/RidesView.swift`): every ride saved
-under your account, newest first, from `GET /api/rides`. Over it, the
-website's Insights ranges as chips — 7, 28, 90 days, all time — and three
-figures for the range, the distance, the riding time and how many rides, each
-set against the same length of time before in the words Insights uses, with a
-line of kilometres a day under them (a week over 90 days, a month over all
-of it). The figures are sums over the list, worked out on the phone.
-
-Under them is **Where you rode**: every ride of the range on one of Apple's
-maps, framed to fit them all, each a see-through line in the accent so a
-street ridden more than once comes out darker. It follows the chips, says so
-where a range has no rides, and is zoomed rather than panned, as one ride's
-map is. The lines are a second request, `GET /api/rides?mine=1&lines=1` —
-the same list with each ride's `line`, thinned by the site to a point every
-fifty metres or so — so the figures and the rows neither wait on them nor go
-when they fail; the card then says the site could not be reached and offers
-to try again.
-
-A row opens the ride (`Views/RideDetailView.swift`), `GET /api/rides/<id>`:
-the ride on Apple's map with a ring where it starts and a dot where it ends,
-its distance, time and average, and — where the ride has the times each
-point was passed — the fastest kilometre, the top speed, the time spent
-standing, a line of speed along the way and each kilometre's time with a bar
-for its speed. All of those numbers are the site's, worked out by
-`rideInsight()` in its `functions/api/_rides.js`; the app only draws them. A
-ride saved before the times were kept has the first three and a sentence
-saying why there is no more. The line is the stored one, with the first and
-last 200 m off. **Rename** and **Delete this ride** are `POST /api/rides`
-with `rename` and `drop`; delete asks first, since it takes the ride off the
-map too. Somebody else's ride, or one deleted elsewhere, is *This ride is not
-one of yours, or it was deleted.*
+On 2026-11-23 the owner took **Your rides** out of Me as well: the list of the
+rides saved under the account with its figures and Where you rode, and one
+ride opened with its speeds, Rename and Delete. The rides are still the
+account's, listed on the website's account page and opened in Rattatee. So
+this app asks no rides route at all — not `?bbox=`, not `?mine=1`, not
+`/api/rides/<id>` — and posts no ride.
 
 ### Ask
 
@@ -332,7 +303,6 @@ website.
 | Discover's shelves of lists, its overlooked places and Play's routes | `GET /api/discover` |
 | A list's walk: start, check in, comment, order, how you went, start again | `GET /api/walk?list=<id>`, `POST /api/walk` with `action` |
 | Your walks still going, for Play | `GET /api/walk?mine=1` |
-| Your rides, where they went, one of them opened, renamed or deleted | `GET /api/rides`, `GET /api/rides?mine=1&lines=1`, `GET /api/rides/<id>`, `POST /api/rides` with `rename` or `drop` |
 | The discounts | `data/deals.json` |
 | Whether this session may show a pass, and its drawn rate | `GET /api/pass?r=<place>` |
 | The way there on foot, by bike, by bus or by car | `GET /api/v1/route?from=…&to=…&mode=foot\|bike\|bus\|car`, and `GET /api/route` with the same query where that does not answer |
