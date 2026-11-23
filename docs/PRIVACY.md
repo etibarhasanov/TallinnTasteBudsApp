@@ -134,9 +134,10 @@ app at all.
   the site compares it with the places left and stores the place and the
   time, never the coordinates. The board of who finished a list, and any
   comment written on a walk, are public.
-- *A recorded ride.* Not recorded in this app since 2026-11-19: Rattatee
-  records rides, and this app only lists the ones saved under the account
-  (Your rides). It no longer draws anybody's rides under a bike way.
+- *A recorded ride.* Not recorded in this app since 2026-11-19, and not
+  shown in it since 2026-11-23: Rattatee records rides, and the website's
+  account page lists the ones saved under the account. The app draws nobody's
+  rides, its own or anybody else's.
 - *An account.* A username and password to `/api/account`. The site keeps the
   username and a scrambled password. Signed in, the app sends what you make:
   lists, the places on them, what you wrote about each, which lists you

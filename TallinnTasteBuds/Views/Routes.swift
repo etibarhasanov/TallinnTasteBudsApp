@@ -2,7 +2,7 @@ import SwiftUI
 import MapKit
 
 /// Every screen one tab can push onto another: a place, a list, a person, a
-/// place a list named that is not on the map, or one of your rides.
+/// place a list named that is not on the map, or the discounts.
 enum Route: Hashable {
     case place(String)
     case list(String)
@@ -11,9 +11,6 @@ enum Route: Hashable {
     case profile(String)
     case venue(ListItem)
     case discounts
-    /// Your rides, and one of them opened.
-    case rides
-    case ride(String)
 }
 
 extension View {
@@ -38,8 +35,6 @@ struct RouteScreen: View {
         case .profile(let name): ProfileView(name: name)
         case .venue(let item): VenueView(item: item)
         case .discounts: DiscountsView()
-        case .rides: RidesView()
-        case .ride(let id): RideDetailView(id: id)
         }
     }
 }
