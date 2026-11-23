@@ -136,6 +136,7 @@ jobs:
           shot 01d-discover-ru -lang ru
           shot 02-map-pressed -ttbSelect badam
           shot 03-place -ttbOpen place:badam
+          shot 03b-place-temporarily-closed -ttbOpen place:borsch-ja-varenyk
           shot 04-lists -ttbTab 1
           shot 05-list -ttbTab 1 -ttbOpen list:top-bars-hxzz7m
           shot 06-list-map -ttbTab 1 -ttbOpen list:top-bars-hxzz7m -ttbListMap YES

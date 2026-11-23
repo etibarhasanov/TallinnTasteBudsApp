@@ -19,6 +19,11 @@ on, and a route the app starts reading is added there the same week.
   and Release both) is that number, committed on `develop` first, and the
   merge is tagged `v<number>`. The version number is the owner's to choose;
   a session does not pick one.
+- **Nothing is being released yet** — the owner, 2026-11-21. The rule above
+  is for when releases begin. Until the owner says they have, `main` stays
+  where it is, and no session asks for a version number or offers a release:
+  a change is done when it is merged into `develop`. The newest app is
+  `develop`, and that is what the phone guide downloads.
 - **The weekly `refresh-seed` workflow commits to `develop`**, not to the
   default branch, so a new snapshot reaches `main` with the next release.
 - `claude/ios-app-tallinn-taste-buds-dsywel` was the default branch until

@@ -34,11 +34,7 @@ struct PlaceDetailView: View {
                         Text(place.name).font(.title.bold()).foregroundStyle(Theme.ink)
                         Text(facts(place)).font(.subheadline).foregroundStyle(Theme.muted)
                     }
-                    if place.closed {
-                        Label(content.t("closedFlag", "Closed for good"), systemImage: "xmark.octagon")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Theme.accent)
-                    }
+                    if place.closed { shutFlag(place) }
                     if !place.types.isEmpty {
                         FlowLayout {
                             ForEach(place.types, id: \.self) { t in
@@ -92,6 +88,42 @@ struct PlaceDetailView: View {
                 .accessibilityLabel(content.t("savePlace", "Save this place"))
             }
         }
+    }
+
+    /// A shut door, said the way the website's panel says it: the flag in
+    /// full, then a note on what is left. A door that should open again wears
+    /// the broken ring the website draws round its pin and its flag; one shut
+    /// for good keeps the stop sign it always had here.
+    private func shutFlag(_ place: Place) -> some View {
+        let paused = place.shut == .forNow
+        return VStack(alignment: .leading, spacing: 4) {
+            Label(paused ? content.t("venuesShutFor", "Temporarily closed") : content.t("closedFlag", "Closed for good"),
+                  systemImage: paused ? "circle.dashed" : "xmark.octagon")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.accent)
+            Text(shutNote(place)).font(.footnote).foregroundStyle(Theme.muted)
+        }
+    }
+
+    /// The note under the flag, picked as `closedNoteKey()` in
+    /// `assets/app.js` picks it. For a door that should open again it says
+    /// so. For one shut for good it says what is still there to see — the
+    /// reel, the video, the photographs — since that is why the site keeps
+    /// the place at all.
+    private func shutNote(_ place: Place) -> String {
+        if place.shut == .forNow {
+            return content.t("closedTempNote", "Shut for the moment, not for good — the door should open again. Everything here stays put meanwhile, and every link ever shared still lands right here.")
+        }
+        if !place.reel.isEmpty {
+            if place.reel.hasPrefix("https://www.tiktok.com/") {
+                return content.t("closedVideoNote", "Shut for good, sadly. The video stays up though — you can still see what it was like in there, and every link ever shared still lands right here.")
+            }
+            return content.t("closedReelNote", "Shut for good, sadly. The reel stays up though — you can still see what it was like in there, and every link ever shared still lands right here.")
+        }
+        if !place.photos.isEmpty {
+            return content.t("closedPhotosNote", "Shut for good, sadly. The photos stay up though — you can still see what it was like in there, and every link ever shared still lands right here.")
+        }
+        return content.t("closedNote", "Shut for good, sadly. Nothing was ever filmed inside, but the place keeps its spot on the map so every link ever shared still lands right here.")
     }
 
     /// The write-up with its links drawn in, in the accent, the way the

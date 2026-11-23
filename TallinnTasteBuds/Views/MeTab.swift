@@ -100,9 +100,6 @@ struct MeTab: View {
                     }
                 }
                 NavigationLink(content.t("editTitle", "Your page")) { EditPageView() }
-                NavigationLink(value: Route.rides) {
-                    Label(content.t("ridesYours", "Your rides"), systemImage: "bicycle")
-                }
                 NavigationLink(content.t("accountChange", "Change password")) { ChangePasswordView() }
                 NavigationLink(content.t("accountName", "Change username")) { ChangeUsernameView() }
                 Button(content.t("accountSignOut", "Sign out")) { Task { await account.signOut() } }
